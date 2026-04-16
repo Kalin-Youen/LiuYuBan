@@ -1,0 +1,129 @@
+\documentclass[12pt,a4paper]{ctexart}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\geometry{margin=2.5cm}
+\title{力的落差与宇宙非均匀演化\\严谨重写版论文草稿}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+本文将“力的落差、自旋、混沌与秩序、宇宙非均匀演化”相关构想重写为一个可继续研究的框架。文章区分标准物理结论与哲学扩展假说，并围绕经典力学中的外场梯度与力矩、流体力学中的涡量生成、量子力学中的内禀自旋以及宇宙学中的线性扰动增长给出更严格的表达。
+\end{abstract}
+
+\section{方法论边界}
+
+本文不把“力的落差理论”直接表述为已确立的基础物理，而是视为一个围绕“非均匀性、梯度、各向异性”的研究程序。任何更强命题都需要新方程、新预测与可证伪方案。
+
+\section{力的落差概念的严格化}
+
+原始写法
+\begin{equation}
+FD = \nabla \bm{F} + \Delta U
+\end{equation}
+不能直接作为基本定义，因为各项量纲不一致。更稳妥的做法是拆分为势能落差与力场非均匀性：
+
+\begin{equation}
+D_U(\bm{x};\ell)=\frac{|U(\bm{x}+\ell)-U(\bm{x})|}{\|\ell\|},
+\end{equation}
+
+\begin{equation}
+D_F(\bm{x})=\|\nabla\otimes\bm{F}(\bm{x})\|.
+\end{equation}
+
+若系统满足保守条件，则
+\begin{equation}
+\bm{F}=-\nabla U,
+\end{equation}
+并且
+\begin{equation}
+\nabla\otimes\bm{F}=-H(U),
+\end{equation}
+其中 $H(U)$ 为势能的 Hessian 矩阵。
+
+\section{非均匀外场与力矩}
+
+设扩展体质心为 $\bm{R}$，内部坐标为 $\bm{r}$，密度分布为 $\rho(\bm{r})$。总力矩写为
+\begin{equation}
+\bm{\tau}=\int \bm{r}\times \rho(\bm{r})\bm{F}(\bm{R}+\bm{r})\,d^3r.
+\end{equation}
+
+在质心附近做一阶展开：
+\begin{equation}
+\bm{F}(\bm{R}+\bm{r})=\bm{F}(\bm{R})+(\bm{r}\cdot\nabla)\bm{F}(\bm{R})+O(r^2).
+\end{equation}
+
+于是
+\begin{equation}
+\bm{\tau}=
+\int \bm{r}\times \rho(\bm{r})[(\bm{r}\cdot\nabla)\bm{F}(\bm{R})]\,d^3r
++ O(r^3).
+\end{equation}
+
+因此，严格结论不是“有梯度就必然自旋”，而是“外场梯度可能与扩展体内部结构耦合，从而产生力矩”。
+
+\section{涡量方程与漩涡形成}
+
+对粘性流体，Navier--Stokes 方程为
+\begin{equation}
+\frac{\partial \bm{v}}{\partial t}
++(\bm{v}\cdot\nabla)\bm{v}
+=
+-\frac{1}{\rho}\nabla p+\nu\nabla^2\bm{v}+\bm{f}.
+\end{equation}
+
+定义涡量 $\bm{\omega}=\nabla\times\bm{v}$，则
+\begin{equation}
+\frac{\partial \bm{\omega}}{\partial t}
+=
+\nabla\times(\bm{v}\times\bm{\omega})
++\frac{\nabla\rho\times\nabla p}{\rho^2}
++\nu\nabla^2\bm{\omega}
++\nabla\times\bm{f}.
+\end{equation}
+
+这表明漩涡的生成与剪切、斜压项、外力旋度等机制相关，而不是一句抽象的“落差”即可替代。
+
+\section{量子自旋}
+
+量子自旋满足角动量代数
+\begin{equation}
+[S_i,S_j]=i\hbar\epsilon_{ijk}S_k.
+\end{equation}
+
+其本征值问题写为
+\begin{equation}
+S^2|s,m\rangle=s(s+1)\hbar^2|s,m\rangle,
+\qquad
+S_z|s,m\rangle=m\hbar|s,m\rangle.
+\end{equation}
+
+因此，自旋应被理解为内禀量子自由度，而不是经典小球自转的简单缩放模型。
+
+\section{宇宙学中的非均匀性增长}
+
+令密度对比度为 $\delta$，物质密度写作
+\begin{equation}
+\rho(\bm{x},t)=\bar{\rho}(t)[1+\delta(\bm{x},t)].
+\end{equation}
+
+在线性近似和亚视界尺度下，
+\begin{equation}
+\nabla^2\Phi=4\pi G a^2\bar{\rho}_m\delta,
+\end{equation}
+并满足
+\begin{equation}
+\ddot{\delta}+2H\dot{\delta}-4\pi G\bar{\rho}_m\delta=0.
+\end{equation}
+
+这支持“早期宇宙微小不均匀可在引力下增长为大尺度结构”的标准结论。
+
+\section{结论}
+
+更稳妥的总述是：非均匀性、梯度与各向异性在多个物理尺度上确实与结构形成密切相关；但如果要把“力的落差”升级成新理论，仍需定义新变量、给出新预测并设计证伪路径。
+
+\end{document}

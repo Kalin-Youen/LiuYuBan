@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>研究文稿 - 公式预览</title>
+  <style>
+    :root {
+      --bg: #f4f1e8;
+      --panel: #fffdf8;
+      --ink: #1f2a30;
+      --muted: #5e6b70;
+      --accent: #8a3b12;
+      --line: #d9cbb7;
+      --code: #f7efe3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Serif SC", "Source Han Serif SC", Georgia, serif;
+      background:
+        radial-gradient(circle at top left, rgba(138,59,18,.08), transparent 28%),
+        linear-gradient(180deg, #f6f1e7 0%, #efe8d9 100%);
+      color: var(--ink);
+      line-height: 1.8;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+    .hero {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 18px 40px rgba(31,42,48,.08);
+    }
+    h1, h2, h3 {
+      line-height: 1.3;
+      margin: 0 0 16px;
+    }
+    h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: .02em;
+    }
+    h2 {
+      margin-top: 36px;
+      font-size: 1.6rem;
+      color: var(--accent);
+    }
+    h3 {
+      margin-top: 22px;
+      font-size: 1.1rem;
+    }
+    p {
+      margin: 12px 0;
+    }
+    .muted {
+      color: var(--muted);
+    }
+    .card {
+      margin-top: 20px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 24px rgba(31,42,48,.05);
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(138,59,18,.1);
+      color: var(--accent);
+      font-size: .9rem;
+      margin-right: 8px;
+      margin-bottom: 10px;
+    }
+    code {
+      background: var(--code);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: .95em;
+    }
+    ul {
+      padding-left: 1.2rem;
+    }
+    .footer {
+      margin-top: 28px;
+      font-size: .95rem;
+      color: var(--muted);
+    }
+    a {
+      color: var(--accent);
+    }
+  </style>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="pill">研究底稿</div>
+      <div class="pill">MathJax 公式预览</div>
+      <h1>规则形成与宇宙非均匀演化</h1>
+      <p class="muted">
+        这个页面用于快速预览核心公式。它把“严格成立的物理结论”和“可继续发展的哲学假说”区分开，并补入了规则形成、光速与量子理论的新入口。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>1. 力的落差的严格化</h2>
+      <p>原始写法 <code>FD = \nabla \vec{F} + \Delta U</code> 存在量纲不一致问题，因此这里拆成两个量。</p>
+
+      <h3>势能落差</h3>
+      <p>$$D_U(\mathbf{x};\ell)=\frac{|U(\mathbf{x}+\ell)-U(\mathbf{x})|}{\|\ell\|}$$</p>
+
+      <h3>力场非均匀性</h3>
+      <p>$$D_F(\mathbf{x})=\|\nabla\otimes \mathbf{F}(\mathbf{x})\|$$</p>
+
+      <p>若系统是保守的，则</p>
+      <p>$$\mathbf{F}=-\nabla U,\qquad \nabla\otimes\mathbf{F}=-H(U).$$</p>
+    </section>
+
+    <section class="card">
+      <h2>2. 外场梯度与力矩</h2>
+      <p>严格说，非均匀外场对扩展体可能产生力矩，但对点粒子并不自动成立。</p>
+      <p>$$\boldsymbol{\tau}=\int \mathbf{r}\times \rho(\mathbf{r})\mathbf{F}(\mathbf{R}+\mathbf{r})\,d^3r$$</p>
+      <p>展开外场：</p>
+      <p>$$\mathbf{F}(\mathbf{R}+\mathbf{r})=\mathbf{F}(\mathbf{R})+(\mathbf{r}\cdot\nabla)\mathbf{F}(\mathbf{R})+O(r^2)$$</p>
+      <p>于是主导项变成“场梯度与内部结构的耦合”，而不是一句“有落差就一定旋转”。</p>
+    </section>
+
+    <section class="card">
+      <h2>3. 漩涡的严格动力学</h2>
+      <p>应使用 Navier-Stokes 方程与涡量方程，而不是直接用直觉替代推导。</p>
+      <p>$$\frac{\partial \mathbf{v}}{\partial t}+(\mathbf{v}\cdot\nabla)\mathbf{v}=-\frac{1}{\rho}\nabla p+\nu\nabla^2\mathbf{v}+\mathbf{f}$$</p>
+      <p>定义涡量 $$\boldsymbol{\omega}=\nabla\times\mathbf{v}$$，可得</p>
+      <p>$$\frac{\partial \boldsymbol{\omega}}{\partial t}=\nabla\times(\mathbf{v}\times\boldsymbol{\omega})+\frac{\nabla\rho\times\nabla p}{\rho^2}+\nu\nabla^2\boldsymbol{\omega}+\nabla\times\mathbf{f}$$</p>
+      <p>这说明剪切、斜压项、外力旋度等机制才是漩涡生成的标准入口。</p>
+    </section>
+
+    <section class="card">
+      <h2>4. 量子自旋</h2>
+      <p>量子自旋必须作为内禀自由度处理，不能直接当作“缩小版机械旋转”。</p>
+      <p>$$[S_i,S_j]=i\hbar\epsilon_{ijk}S_k$$</p>
+      <p>$$S^2|s,m\rangle=s(s+1)\hbar^2|s,m\rangle,\qquad S_z|s,m\rangle=m\hbar|s,m\rangle$$</p>
+      <p>磁矩关系为</p>
+      <p>$$\boldsymbol{\mu}=g\frac{q}{2m}\mathbf{S}$$</p>
+    </section>
+
+    <section class="card">
+      <h2>5. 宇宙学中的非均匀性增长</h2>
+      <p>早期宇宙并非绝对均匀，这是标准宇宙学最能支持的部分。</p>
+      <p>$$\rho(\mathbf{x},t)=\bar{\rho}(t)[1+\delta(\mathbf{x},t)]$$</p>
+      <p>$$\nabla^2\Phi=4\pi G a^2\bar{\rho}_m\delta$$</p>
+      <p>$$\ddot{\delta}+2H\dot{\delta}-4\pi G\bar{\rho}_m\delta=0$$</p>
+      <p>同时，CMB 温度各向异性量级约为</p>
+      <p>$$\frac{\Delta T}{T}\sim 10^{-5}$$</p>
+    </section>
+
+    <section class="card">
+      <h2>6. 规则形成的新框架</h2>
+      <p>新增文稿把规则形成拆成时空结构、动力学、量子约束、稳定对象与涌现五层。</p>
+      <p>时空结构层的核心公式：</p>
+      <p>$$ds^2=-c^2dt^2+dx^2+dy^2+dz^2$$</p>
+      <p>量子层的核心公式：</p>
+      <p>$$i\hbar\frac{\partial}{\partial t}|\psi(t)\rangle=\hat H|\psi(t)\rangle$$</p>
+      <p>规则形成的抽象判据：</p>
+      <p>$$\|C(T_t x)-\Phi_t(Cx)\|\le\varepsilon$$</p>
+      <p class="footer">
+        完整文字版请查看
+        <a href="./规则形成理论体系_光速与量子.md">规则形成理论体系_光速与量子.md</a>。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>7. 思考机理与想象边界</h2>
+      <p>新增认知文稿把思考定义为一种受约束的生成、预测与更新过程。</p>
+      <p>最抽象的神经动力学形式：</p>
+      <p>$$\frac{d\mathbf{x}}{dt}=F(\mathbf{x},\mathbf{u},\theta)+\boldsymbol{\eta}(t)$$</p>
+      <p>想象的表征基底形式：</p>
+      <p>$$C=\sum_i \alpha_i b_i+\sum_j \beta_j R_j(\mathcal{B})$$</p>
+      <p>这对应一个核心结论：思考的载体受物理约束，但思考内容可以超出现实对象。</p>
+      <p class="footer">
+        完整文字版请查看
+        <a href="./思考机理_认知与物理规则.md">思考机理_认知与物理规则.md</a>。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>8. 意识、自我与高阶心智</h2>
+      <p>新增高层认知文稿把意识解释为全局可用状态，把自我解释为稳定自我模型。</p>
+      <p>全局工作空间的抽象形式：</p>
+      <p>$$W_t=\mathcal{B}(z_t,A_t,C_t)$$</p>
+      <p>自我模型的抽象形式：</p>
+      <p>$$S_t=J(B_t,H_t,G_t,R_t)$$</p>
+      <p>直觉的压缩推断形式：</p>
+      <p>$$\hat y=K(x;\theta)$$</p>
+      <p class="footer">
+        完整文字版请查看
+        <a href="./意识自我_直觉灵感与错误推理.md">意识自我_直觉灵感与错误推理.md</a>。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>9. 思考力学与量子比较</h2>
+      <p>新增文稿把思考写成状态空间中的开放动力学，而不是直接等同于量子叠加。</p>
+      <p>思考的最小动力学形式：</p>
+      <p>$$\tau \frac{d\mathbf{x}}{dt}=-\nabla U_c(\mathbf{x})+W\sigma(\mathbf{x})+B\mathbf{u}(t)+M\mathbf{m}(t)+\boldsymbol{\xi}(t)$$</p>
+      <p>决策的漂移扩散形式：</p>
+      <p>$$dz_t=\mu\,dt+\sigma\,dW_t$$</p>
+      <p>量子层的对照公式：</p>
+      <p>$$i\hbar\frac{\partial}{\partial t}|\psi\rangle=\hat H|\psi\rangle$$</p>
+      <p class="footer">
+        完整文字版请查看
+        <a href="./思考力学_与量子力学异同.md">思考力学_与量子力学异同.md</a>。
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>10. 适合继续发展的研究假说</h2>
+      <ul>
+        <li>空间非均匀性、梯度与各向异性，可以作为跨尺度研究结构形成的共同语言。</li>
+        <li>“力的落差”目前更适合作为解释框架，而不是新基本定律。</li>
+        <li>如果要升级成理论，必须定义新变量、给出新预测，并设计证伪方案。</li>
+      </ul>
+      <p class="footer">
+        更完整的文字版请查看同目录下的
+        <a href="./理论框架_严谨版.md">理论框架_严谨版.md</a>
+        与
+        <a href="./公式推导补充.md">公式推导补充.md</a>，
+        以及
+        <a href="./规则形成理论体系_光速与量子.md">规则形成理论体系_光速与量子.md</a>、
+        <a href="./思考机理_认知与物理规则.md">思考机理_认知与物理规则.md</a>、
+        <a href="./意识自我_直觉灵感与错误推理.md">意识自我_直觉灵感与错误推理.md</a>、
+        <a href="./思考力学_与量子力学异同.md">思考力学_与量子力学异同.md</a>。
+      </p>
+    </section>
+  </main>
+</body>
+</html>
