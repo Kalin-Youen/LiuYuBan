@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>流态存在论</title>
+    <meta
+      name="description"
+      content="以落差、流向与规则形成重写世界的在线书稿。"
+    />
+    <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"], ["\\(", "\\)"]],
+          displayMath: [["$$", "$$"], ["\\[", "\\]"]]
+        },
+        svg: {
+          fontCache: "global"
+        }
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <aside class="sidebar">
+        <div class="brand-card">
+          <p class="eyebrow">Theory · Book · Archive</p>
+          <h1 id="site-title">流态存在论</h1>
+          <p id="site-tagline" class="tagline"></p>
+        </div>
+
+        <label class="search-box">
+          <span>搜索章节</span>
+          <input id="search-input" type="search" placeholder="输入标题或关键词" />
+        </label>
+
+        <nav id="nav-sections" class="nav-sections"></nav>
+
+        <div class="sidebar-footer">
+          <p id="site-stats"></p>
+          <a id="repo-link" class="ghost-link" href="#" target="_blank" rel="noreferrer">查看 GitHub</a>
+        </div>
+      </aside>
+
+      <main class="main-pane">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Online Edition</p>
+            <h2 id="view-title">理论总览</h2>
+          </div>
+          <div class="topbar-actions">
+            <button id="home-button" class="topbar-button" type="button">回到首页</button>
+          </div>
+        </header>
+
+        <section id="home-view" class="home-view">
+          <div class="hero-panel">
+            <p class="eyebrow">Project Manifest</p>
+            <h2 id="hero-title"></h2>
+            <p id="hero-text" class="hero-text"></p>
+          </div>
+
+          <div class="home-grid">
+            <article class="info-card">
+              <h3>这是什么</h3>
+              <p>
+                这是一个直接以研究文稿为内容源生成的在线书稿站点。你后续只需要继续更新仓库里的书稿与总述文件，站点就能同步展示。
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>如何阅读</h3>
+              <p>
+                左侧目录按“理论总述 / 书稿全文 / 术语与边界”组织。你可以先看总述，再顺着书稿章节推进。
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>如何更新</h3>
+              <p>
+                更新 Markdown 源文稿后，运行一次站点构建脚本即可。若启用 GitHub Pages 自动部署，推送后网页会自动更新。
+              </p>
+            </article>
+          </div>
+
+          <section class="quick-list">
+            <div class="section-heading">
+              <p class="eyebrow">Quick Start</p>
+              <h3>快速入口</h3>
+            </div>
+            <div id="quick-links" class="quick-links"></div>
+          </section>
+        </section>
+
+        <section id="doc-view" class="doc-view hidden">
+          <div class="doc-meta">
+            <p id="doc-breadcrumb" class="eyebrow"></p>
+            <h2 id="doc-title"></h2>
+            <div class="meta-row">
+              <span id="doc-updated"></span>
+              <span id="doc-source"></span>
+            </div>
+          </div>
+
+          <div class="content-layout">
+            <article id="doc-content" class="doc-content"></article>
+            <aside id="doc-toc" class="doc-toc"></aside>
+          </div>
+
+          <nav id="doc-pagination" class="doc-pagination"></nav>
+        </section>
+      </main>
+    </div>
+
+    <script src="./assets/app.js" defer></script>
+  </body>
+</html>
