@@ -4,13 +4,13 @@
     "tagline": "以落差、流向与规则形成重写世界的在线书稿",
     "description": "一个围绕“落差”“流向”“趋势”“规则”展开的哲学与宇宙论书稿网站，包含理论总述、完整书稿与补充说明。",
     "author": "尤安",
-    "repoUrl": "",
-    "siteUrl": "",
+    "repoUrl": "https://github.com/Kalin-Youen/LiuYuBan",
+    "siteUrl": "https://kalin-youen.github.io/LiuYuBan/",
     "customDomain": "",
     "heroTitle": "让理论直接被看见",
     "heroText": "这不是一堆分散文稿的堆叠，而是一条从落差、流向到规则形成的持续研究主线。网站会直接展示书稿与总述，并为之后的更新保留统一入口。"
   },
-  "generatedAt": "2026-04-19T08:40:08.314416+00:00",
+  "generatedAt": "2026-04-19T09:05:17.273699+00:00",
   "stats": {
     "documentCount": 25,
     "totalChars": 117332,
