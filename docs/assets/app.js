@@ -57,6 +57,7 @@ const dom = {
   readerProgressBar: document.getElementById("reader-progress-bar"),
   readerPaper: document.getElementById("reader-paper"),
   commentsNote: document.getElementById("comments-note"),
+  commentsMount: document.getElementById("comments-mount"),
 };
 
 function loadPreferences() {
@@ -135,6 +136,10 @@ function syncOverlay() {
 
 function findItemById(id) {
   return state.payload.items.find((item) => item.id === id) || null;
+}
+
+function getCommentsConfig() {
+  return state.payload.site.comments || {};
 }
 
 function getPrimaryStartItem() {
@@ -315,6 +320,69 @@ function updateChapterButtons(prev, next) {
   dom.mobileNextButton.disabled = !next;
 }
 
+function getDocPublicUrl(item) {
+  const base = state.payload.site.siteUrl || window.location.href.split("#")[0];
+  const normalized = base.endsWith("/") ? base : `${base}/`;
+  return `${normalized}#doc/${encodeURIComponent(item.id)}`;
+}
+
+function mountDisqus(item, shortname) {
+  dom.commentsMount.innerHTML = `<div id="disqus_thread"></div>`;
+
+  const pageUrl = getDocPublicUrl(item);
+  const pageIdentifier = item.id;
+  const pageTitle = `${state.payload.site.title} · ${item.title}`;
+
+  window.disqus_config = function disqusConfig() {
+    this.page.url = pageUrl;
+    this.page.identifier = pageIdentifier;
+    this.page.title = pageTitle;
+  };
+
+  if (window.DISQUS) {
+    window.DISQUS.reset({
+      reload: true,
+      config: window.disqus_config,
+    });
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.src = `https://${shortname}.disqus.com/embed.js`;
+  script.setAttribute("data-timestamp", String(Date.now()));
+  script.async = true;
+  (document.head || document.body).appendChild(script);
+}
+
+function renderComments(item) {
+  const comments = getCommentsConfig();
+
+  if (comments.provider !== "disqus") {
+    dom.commentsNote.textContent = "当前站点还没有启用评论服务。";
+    dom.commentsMount.innerHTML = `
+      <div class="comments-placeholder">
+        评论功能尚未接入具体服务。
+      </div>
+    `;
+    return;
+  }
+
+  if (!comments.disqusShortname) {
+    dom.commentsNote.textContent =
+      "本站已预设为使用 Disqus 免费评论。站长只需要在 Disqus 后台创建站点并填入 shortname，就能启用游客评论。";
+    dom.commentsMount.innerHTML = `
+      <div class="comments-placeholder">
+        Disqus 已预留，但还没有填写 shortname。
+      </div>
+    `;
+    return;
+  }
+
+  dom.commentsNote.textContent =
+    "评论区已接入 Disqus。若要让未登录 GitHub 的读者直接评论，请在 Disqus 后台打开 Guest Commenting。";
+  mountDisqus(item, comments.disqusShortname);
+}
+
 function renderPagination(item) {
   const currentIndex = state.payload.items.findIndex((entry) => entry.id === item.id);
   const prev = state.payload.items[currentIndex - 1] || null;
@@ -377,8 +445,7 @@ async function renderDoc(id) {
   dom.docUpdated.textContent = relativeTime(item.updatedAt);
   dom.docSource.textContent = `源文件：${item.sourcePath}`;
   dom.docContent.innerHTML = item.html;
-  dom.commentsNote.textContent =
-    "这里已经预留为公开评论区。若要支持未登录 GitHub 的访客评论，需要接入带后端的评论服务，例如 Waline 或允许游客评论的 Disqus。";
+  renderComments(item);
 
   renderToc(item);
   renderPagination(item);

@@ -208,6 +208,7 @@ def build_payload(config: dict) -> dict:
             "repoUrl": config["repoUrl"],
             "siteUrl": config["siteUrl"],
             "customDomain": config["customDomain"],
+            "comments": config.get("comments", {}),
             "heroTitle": config["heroTitle"],
             "heroText": config["heroText"],
         },
