@@ -1,12 +1,27 @@
 const contentUrl = "./assets/data/content.json";
+const STORAGE_KEY = "readerPreferences";
+const THEME_ORDER = ["paper", "sepia", "night"];
+const THEME_LABELS = {
+  paper: "纸张",
+  sepia: "暖棕",
+  night: "夜读",
+};
 
 const state = {
   payload: null,
   filteredItems: [],
   activeId: null,
+  drawerOpen: false,
+  tocOpen: false,
+  currentPrevId: null,
+  currentNextId: null,
+  preferences: loadPreferences(),
 };
 
 const dom = {
+  pageOverlay: document.getElementById("page-overlay"),
+  catalogDrawer: document.getElementById("catalog-drawer"),
+  tocDrawer: document.getElementById("toc-drawer"),
   siteTitle: document.getElementById("site-title"),
   siteTagline: document.getElementById("site-tagline"),
   siteStats: document.getElementById("site-stats"),
@@ -27,7 +42,43 @@ const dom = {
   docContent: document.getElementById("doc-content"),
   docToc: document.getElementById("doc-toc"),
   docPagination: document.getElementById("doc-pagination"),
+  catalogButton: document.getElementById("catalog-button"),
+  tocButton: document.getElementById("toc-button"),
+  themeButton: document.getElementById("theme-button"),
+  fontDownButton: document.getElementById("font-down-button"),
+  fontUpButton: document.getElementById("font-up-button"),
+  startReadingButton: document.getElementById("start-reading-button"),
+  openCatalogButton: document.getElementById("open-catalog-button"),
+  mobileHomeButton: document.getElementById("mobile-home-button"),
+  mobileCatalogButton: document.getElementById("mobile-catalog-button"),
+  mobileThemeButton: document.getElementById("mobile-theme-button"),
+  mobilePrevButton: document.getElementById("mobile-prev-button"),
+  mobileNextButton: document.getElementById("mobile-next-button"),
+  readerProgressBar: document.getElementById("reader-progress-bar"),
+  readerPaper: document.getElementById("reader-paper"),
+  commentsNote: document.getElementById("comments-note"),
 };
+
+function loadPreferences() {
+  const fallback = { theme: "paper", fontSize: 20 };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    return {
+      theme: THEME_ORDER.includes(saved.theme) ? saved.theme : fallback.theme,
+      fontSize: clamp(Number(saved.fontSize) || fallback.fontSize, 16, 28),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function savePreferences() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.preferences));
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
 
 function formatDate(isoString) {
   if (!isoString) return "未知";
@@ -37,6 +88,15 @@ function formatDate(isoString) {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
+}
+
+function relativeTime(isoString) {
+  if (!isoString) return "";
+  const diff = Date.now() - new Date(isoString).getTime();
+  const day = 24 * 60 * 60 * 1000;
+  if (diff < day) return "今天更新";
+  if (diff < day * 7) return `${Math.max(1, Math.round(diff / day))} 天前更新`;
+  return `更新于 ${formatDate(isoString)}`;
 }
 
 function getDocIdFromHash() {
@@ -49,16 +109,84 @@ function setHashForDoc(id) {
   window.location.hash = `doc/${encodeURIComponent(id)}`;
 }
 
+function closePanels() {
+  setDrawerOpen(false);
+  setTocOpen(false);
+}
+
+function setDrawerOpen(open) {
+  state.drawerOpen = open;
+  dom.catalogDrawer.classList.toggle("is-open", open);
+  syncOverlay();
+}
+
+function setTocOpen(open) {
+  state.tocOpen = open;
+  dom.tocDrawer.classList.toggle("is-open", open);
+  syncOverlay();
+}
+
+function syncOverlay() {
+  const visible = state.drawerOpen || state.tocOpen;
+  dom.pageOverlay.classList.toggle("hidden", !visible);
+  dom.pageOverlay.classList.toggle("is-visible", visible);
+  document.body.classList.toggle("lock-scroll", visible && window.innerWidth <= 760);
+}
+
+function findItemById(id) {
+  return state.payload.items.find((item) => item.id === id) || null;
+}
+
+function getPrimaryStartItem() {
+  return (
+    state.payload.items.find((item) => item.sectionId === "book") ||
+    state.payload.items[0] ||
+    null
+  );
+}
+
+function applyPreferences() {
+  document.documentElement.dataset.theme = state.preferences.theme;
+  document.documentElement.style.setProperty(
+    "--reader-font-size",
+    `${state.preferences.fontSize}px`,
+  );
+
+  const themeLabel = THEME_LABELS[state.preferences.theme];
+  dom.themeButton.textContent = `主题 · ${themeLabel}`;
+  dom.mobileThemeButton.textContent = themeLabel;
+}
+
+function cycleTheme() {
+  const currentIndex = THEME_ORDER.indexOf(state.preferences.theme);
+  state.preferences.theme = THEME_ORDER[(currentIndex + 1) % THEME_ORDER.length];
+  savePreferences();
+  applyPreferences();
+}
+
+function adjustFont(delta) {
+  state.preferences.fontSize = clamp(state.preferences.fontSize + delta, 16, 28);
+  savePreferences();
+  applyPreferences();
+}
+
 function buildQuickLinks() {
-  const items = state.payload.items.slice(0, 6);
+  const items = state.payload.items
+    .filter((item) => item.sectionId === "book")
+    .slice(0, 6);
+
   dom.quickLinks.innerHTML = "";
-  items.forEach((item) => {
+
+  items.forEach((item, index) => {
     const link = document.createElement("a");
-    link.className = "quick-link";
+    link.className = "book-card";
     link.href = `#doc/${encodeURIComponent(item.id)}`;
     link.innerHTML = `
-      <h4>${item.title}</h4>
-      <p>${item.excerpt || item.sectionTitle}</p>
+      <div class="book-card-index">${String(index + 1).padStart(2, "0")}</div>
+      <div class="book-card-copy">
+        <h4>${item.title}</h4>
+        <p>${item.excerpt || item.sectionTitle}</p>
+      </div>
     `;
     dom.quickLinks.appendChild(link);
   });
@@ -79,7 +207,7 @@ function buildNav() {
 
   state.payload.sections.forEach((section) => {
     const sectionItems = section.items
-      .map((id) => state.payload.items.find((item) => item.id === id))
+      .map((id) => findItemById(id))
       .filter(Boolean)
       .filter((item) => filteredIds.has(item.id));
 
@@ -100,12 +228,20 @@ function buildNav() {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "nav-item";
-      if (item.id === state.activeId) button.classList.add("is-active");
+      if (item.id === state.activeId) {
+        button.classList.add("is-active");
+      }
+
       button.innerHTML = `
         <strong>${item.title}</strong>
         <span>${item.excerpt || item.sectionTitle}</span>
       `;
-      button.addEventListener("click", () => setHashForDoc(item.id));
+
+      button.addEventListener("click", () => {
+        closePanels();
+        setHashForDoc(item.id);
+      });
+
       list.appendChild(button);
     });
 
@@ -120,60 +256,83 @@ function buildNav() {
 
 function renderHome() {
   state.activeId = null;
-  dom.viewTitle.textContent = "理论总览";
+  state.currentPrevId = null;
+  state.currentNextId = null;
+
+  document.title = `${state.payload.site.title} · 在线书稿`;
+  document.body.classList.remove("is-reading");
+  dom.viewTitle.textContent = "书架";
   dom.homeView.classList.remove("hidden");
   dom.docView.classList.add("hidden");
+  dom.readerProgressBar.style.transform = "scaleX(0)";
+  dom.tocButton.disabled = true;
+  updateChapterButtons(null, null);
+  closePanels();
   buildNav();
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function buildTocLink(label, anchor, level) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "toc-link";
+  button.dataset.level = String(level);
+  button.textContent = label;
+  button.addEventListener("click", () => {
+    const target = document.getElementById(anchor);
+    if (!target) return;
+    closePanels();
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  return button;
 }
 
 function renderToc(item) {
+  dom.docToc.innerHTML = "";
+
+  const title = document.createElement("h3");
+  title.className = "toc-title";
+  title.textContent = "本章目录";
+  dom.docToc.appendChild(title);
+
   if (!item.headings?.length) {
-    dom.docToc.innerHTML = `<p class="empty-state">当前文稿没有可用目录。</p>`;
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "当前章节暂无小节目录。";
+    dom.docToc.appendChild(empty);
     return;
   }
 
-  dom.docToc.innerHTML = `<h3>章节目录</h3>`;
   item.headings.forEach((heading) => {
-    const anchor = document.createElement("a");
-    anchor.href = `#${heading.anchor}`;
-    anchor.textContent = heading.label;
-    anchor.dataset.level = String(heading.level);
-    dom.docToc.appendChild(anchor);
+    dom.docToc.appendChild(buildTocLink(heading.label, heading.anchor, heading.level));
   });
+}
+
+function updateChapterButtons(prev, next) {
+  state.currentPrevId = prev?.id || null;
+  state.currentNextId = next?.id || null;
+  dom.mobilePrevButton.disabled = !prev;
+  dom.mobileNextButton.disabled = !next;
 }
 
 function renderPagination(item) {
   const currentIndex = state.payload.items.findIndex((entry) => entry.id === item.id);
-  const prev = state.payload.items[currentIndex - 1];
-  const next = state.payload.items[currentIndex + 1];
+  const prev = state.payload.items[currentIndex - 1] || null;
+  const next = state.payload.items[currentIndex + 1] || null;
 
+  updateChapterButtons(prev, next);
   dom.docPagination.innerHTML = "";
 
-  if (prev) {
-    const prevLink = document.createElement("a");
-    prevLink.className = "pager-card";
-    prevLink.href = `#doc/${encodeURIComponent(prev.id)}`;
-    prevLink.innerHTML = `<small>上一篇</small><strong>${prev.title}</strong>`;
-    dom.docPagination.appendChild(prevLink);
-  } else {
-    const placeholder = document.createElement("div");
-    placeholder.className = "pager-card";
-    placeholder.innerHTML = `<small>上一篇</small><strong>已经到头</strong>`;
-    dom.docPagination.appendChild(placeholder);
-  }
+  const cards = [
+    prev
+      ? `<a class="pager-card" href="#doc/${encodeURIComponent(prev.id)}"><small>上一章</small><strong>${prev.title}</strong></a>`
+      : `<div class="pager-card"><small>上一章</small><strong>已经到头了</strong></div>`,
+    next
+      ? `<a class="pager-card" href="#doc/${encodeURIComponent(next.id)}"><small>下一章</small><strong>${next.title}</strong></a>`
+      : `<div class="pager-card"><small>下一章</small><strong>已经到底了</strong></div>`,
+  ];
 
-  if (next) {
-    const nextLink = document.createElement("a");
-    nextLink.className = "pager-card";
-    nextLink.href = `#doc/${encodeURIComponent(next.id)}`;
-    nextLink.innerHTML = `<small>下一篇</small><strong>${next.title}</strong>`;
-    dom.docPagination.appendChild(nextLink);
-  } else {
-    const placeholder = document.createElement("div");
-    placeholder.className = "pager-card";
-    placeholder.innerHTML = `<small>下一篇</small><strong>已经到底</strong>`;
-    dom.docPagination.appendChild(placeholder);
-  }
+  dom.docPagination.innerHTML = cards.join("");
 }
 
 async function typesetMath() {
@@ -182,34 +341,56 @@ async function typesetMath() {
   }
 }
 
+function updateReadingProgress() {
+  if (!state.activeId || dom.docView.classList.contains("hidden")) {
+    dom.readerProgressBar.style.transform = "scaleX(0)";
+    return;
+  }
+
+  const paper = dom.readerPaper;
+  const start = window.scrollY + paper.getBoundingClientRect().top - 120;
+  const distance = Math.max(1, paper.offsetHeight - window.innerHeight * 0.72);
+  const progress = clamp((window.scrollY - start) / distance, 0, 1);
+
+  dom.readerProgressBar.style.transform = `scaleX(${progress})`;
+}
+
 async function renderDoc(id) {
-  const item = state.payload.items.find((entry) => entry.id === id);
+  const item = findItemById(id);
   if (!item) {
     renderHome();
     return;
   }
 
   state.activeId = item.id;
-  buildNav();
-  dom.viewTitle.textContent = item.title;
+  document.body.classList.add("is-reading");
   dom.homeView.classList.add("hidden");
   dom.docView.classList.remove("hidden");
+  dom.viewTitle.textContent = item.title;
+  dom.tocButton.disabled = false;
+
+  buildNav();
+  closePanels();
 
   dom.docBreadcrumb.textContent = item.sectionTitle;
   dom.docTitle.textContent = item.title;
-  dom.docUpdated.textContent = `更新于 ${formatDate(item.updatedAt)}`;
+  dom.docUpdated.textContent = relativeTime(item.updatedAt);
   dom.docSource.textContent = `源文件：${item.sourcePath}`;
   dom.docContent.innerHTML = item.html;
-  dom.docContent.scrollTop = 0;
+  dom.commentsNote.textContent =
+    "这里已经预留为公开评论区。若要支持未登录 GitHub 的访客评论，需要接入带后端的评论服务，例如 Waline 或允许游客评论的 Disqus。";
+
   renderToc(item);
   renderPagination(item);
+  window.scrollTo({ top: 0, behavior: "auto" });
   await typesetMath();
+  updateReadingProgress();
 }
 
 function updateShell() {
   const site = state.payload.site;
   const stats = state.payload.stats;
-  document.title = `${site.title} · 在线书稿`;
+
   dom.siteTitle.textContent = site.title;
   dom.siteTagline.textContent = site.tagline;
   dom.heroTitle.textContent = site.heroTitle;
@@ -233,6 +414,76 @@ async function route() {
   await renderDoc(id);
 }
 
+function bindEvents() {
+  dom.searchInput.addEventListener("input", buildNav);
+  dom.catalogButton.addEventListener("click", () => {
+    setTocOpen(false);
+    setDrawerOpen(!state.drawerOpen);
+  });
+  dom.tocButton.addEventListener("click", () => {
+    if (!state.activeId) return;
+    setDrawerOpen(false);
+    setTocOpen(!state.tocOpen);
+  });
+  dom.themeButton.addEventListener("click", cycleTheme);
+  dom.fontDownButton.addEventListener("click", () => adjustFont(-1));
+  dom.fontUpButton.addEventListener("click", () => adjustFont(1));
+  dom.homeButton.addEventListener("click", () => {
+    window.location.hash = "";
+  });
+
+  dom.startReadingButton.addEventListener("click", () => {
+    const item = getPrimaryStartItem();
+    if (item) setHashForDoc(item.id);
+  });
+  dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
+
+  dom.mobileHomeButton.addEventListener("click", () => {
+    window.location.hash = "";
+  });
+  dom.mobileCatalogButton.addEventListener("click", () => {
+    setTocOpen(false);
+    setDrawerOpen(!state.drawerOpen);
+  });
+  dom.mobileThemeButton.addEventListener("click", cycleTheme);
+  dom.mobilePrevButton.addEventListener("click", () => {
+    if (state.currentPrevId) setHashForDoc(state.currentPrevId);
+  });
+  dom.mobileNextButton.addEventListener("click", () => {
+    if (state.currentNextId) setHashForDoc(state.currentNextId);
+  });
+
+  dom.pageOverlay.addEventListener("click", closePanels);
+
+  window.addEventListener("hashchange", () => {
+    route().catch(console.error);
+  });
+
+  window.addEventListener("scroll", updateReadingProgress, { passive: true });
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 760) {
+      document.body.classList.remove("lock-scroll");
+    }
+    updateReadingProgress();
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closePanels();
+    }
+
+    if (!state.activeId) return;
+
+    if (event.key === "ArrowLeft" && state.currentPrevId) {
+      setHashForDoc(state.currentPrevId);
+    }
+
+    if (event.key === "ArrowRight" && state.currentNextId) {
+      setHashForDoc(state.currentNextId);
+    }
+  });
+}
+
 async function init() {
   const response = await fetch(contentUrl, { cache: "no-store" });
   if (!response.ok) {
@@ -241,18 +492,10 @@ async function init() {
 
   state.payload = await response.json();
   updateShell();
+  applyPreferences();
   buildQuickLinks();
   buildNav();
-
-  dom.searchInput.addEventListener("input", buildNav);
-  dom.homeButton.addEventListener("click", () => {
-    window.location.hash = "";
-  });
-
-  window.addEventListener("hashchange", () => {
-    route().catch(console.error);
-  });
-
+  bindEvents();
   await route();
 }
 
@@ -261,5 +504,5 @@ init().catch((error) => {
   dom.homeView.classList.remove("hidden");
   dom.docView.classList.add("hidden");
   dom.heroTitle.textContent = "站点加载失败";
-  dom.heroText.textContent = "内容数据没有成功加载。你可以先运行一次构建脚本，再重新打开网页。";
+  dom.heroText.textContent = "内容数据没有成功加载。你可以先重新运行构建脚本，再刷新网页。";
 });
