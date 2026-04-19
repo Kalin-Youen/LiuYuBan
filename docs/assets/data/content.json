@@ -8,14 +8,16 @@
     "siteUrl": "https://kalin-youen.github.io/LiuYuBan/",
     "customDomain": "",
     "comments": {
-      "provider": "disqus",
-      "disqusShortname": "liuyuban",
-      "guestEnabled": true
+      "provider": "twikoo",
+      "envId": "",
+      "region": "ap-shanghai",
+      "lang": "zh-CN",
+      "scriptUrl": "./assets/vendor/twikoo.all.min.js"
     },
     "heroTitle": "让理论直接被看见",
     "heroText": "这不是一堆分散文稿的堆叠，而是一条从落差、流向到规则形成的持续研究主线。网站会直接展示书稿与总述，并为之后的更新保留统一入口。"
   },
-  "generatedAt": "2026-04-19T09:47:07.433484+00:00",
+  "generatedAt": "2026-04-19T10:16:09.301082+00:00",
   "stats": {
     "documentCount": 25,
     "totalChars": 117332,

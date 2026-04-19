@@ -66,8 +66,11 @@
         <div class="header-actions">
           <button id="toc-button" class="reader-button" type="button">本章</button>
           <button id="theme-button" class="reader-button" type="button">主题</button>
-          <button id="font-down-button" class="reader-button" type="button">A-</button>
-          <button id="font-up-button" class="reader-button" type="button">A+</button>
+          <div class="font-controls" aria-label="字体大小">
+            <button id="font-down-button" class="reader-button" type="button" aria-label="减小字体">A-</button>
+            <span id="font-size-indicator" class="font-size-indicator" aria-live="polite"></span>
+            <button id="font-up-button" class="reader-button" type="button" aria-label="增大字体">A+</button>
+          </div>
           <button id="home-button" class="reader-button reader-button-strong" type="button">首页</button>
         </div>
       </header>
@@ -132,12 +135,12 @@
                   <p class="eyebrow">Discussion</p>
                   <h3>评论区</h3>
                   <p id="comments-note">
-                    这里已经预留为公开评论区。若要支持未登录 GitHub 的访客评论，需要接入带后端的评论服务，例如 Waline 或允许游客评论的 Disqus。
+                    这里将接入适合中国大陆访问的评论系统。你只需要创建腾讯云云开发环境并提供 envId，就能启用游客评论。
                   </p>
                 </div>
                 <div id="comments-mount" class="comments-mount">
                   <div class="comments-placeholder">
-                    评论功能尚未接入具体服务。
+                    评论功能正在切换到 Twikoo。
                   </div>
                 </div>
               </section>
@@ -151,10 +154,25 @@
       <nav class="mobile-reader-bar">
         <button id="mobile-home-button" class="mobile-tool" type="button">首页</button>
         <button id="mobile-catalog-button" class="mobile-tool" type="button">目录</button>
-        <button id="mobile-theme-button" class="mobile-tool" type="button">主题</button>
+        <button id="mobile-font-button" class="mobile-tool" type="button">字号</button>
         <button id="mobile-prev-button" class="mobile-tool" type="button">上一章</button>
         <button id="mobile-next-button" class="mobile-tool" type="button">下一章</button>
       </nav>
+
+      <div id="mobile-font-panel" class="mobile-font-panel hidden" aria-hidden="true">
+        <div class="mobile-font-panel-card">
+          <p class="mobile-font-title">字体大小</p>
+          <div class="mobile-font-actions">
+            <button id="mobile-font-down-button" class="reader-button" type="button" aria-label="减小字体">A-</button>
+            <span id="mobile-font-size-indicator" class="font-size-indicator font-size-indicator-strong" aria-live="polite"></span>
+            <button id="mobile-font-up-button" class="reader-button" type="button" aria-label="增大字体">A+</button>
+          </div>
+          <div class="mobile-font-meta">
+            <button id="mobile-theme-button" class="reader-button" type="button">主题</button>
+            <button id="font-reset-button" class="reader-button" type="button">默认</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="./assets/app.js" defer></script>

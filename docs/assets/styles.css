@@ -285,6 +285,7 @@ input {
 
 .header-start,
 .header-actions,
+.font-controls,
 .hero-actions,
 .doc-pagination,
 .meta-row {
@@ -327,6 +328,22 @@ input {
   background: var(--accent);
   color: #fff8f1;
   border-color: transparent;
+}
+
+.font-size-indicator {
+  min-width: 4.5rem;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--paper-line);
+  background: rgba(255, 255, 255, 0.44);
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-soft);
+}
+
+.font-size-indicator-strong {
+  font-weight: 700;
+  color: var(--text);
 }
 
 .pill-button-ghost {
@@ -677,6 +694,10 @@ input {
   display: none;
 }
 
+.mobile-font-panel {
+  display: none;
+}
+
 .mobile-tool[disabled] {
   opacity: 0.45;
   cursor: default;
@@ -702,7 +723,6 @@ input {
 
 @media (max-width: 760px) {
   :root {
-    --reader-font-size: 18px;
     --reader-width: calc(100vw - 16px);
     --header-height: 70px;
   }
@@ -729,7 +749,7 @@ input {
   }
 
   .doc-meta h2 {
-    font-size: 1.9rem;
+    font-size: 1.72rem;
   }
 
   .doc-content {
@@ -779,5 +799,55 @@ input {
     padding: 11px 6px;
     border-radius: 16px;
     font-size: 0.82rem;
+  }
+
+  .mobile-tool.is-active {
+    border-color: rgba(139, 63, 52, 0.28);
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  .mobile-font-panel {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 84px);
+    z-index: 46;
+    display: block;
+  }
+
+  .mobile-font-panel-card {
+    border: 1px solid var(--paper-line);
+    border-radius: 22px;
+    background: rgba(255, 248, 239, 0.92);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow-soft);
+    padding: 14px;
+  }
+
+  .mobile-font-title {
+    margin: 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .mobile-font-actions,
+  .mobile-font-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .mobile-font-actions .reader-button,
+  .mobile-font-meta .reader-button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .mobile-font-actions .font-size-indicator {
+    flex: 1.15;
+    min-width: 0;
   }
 }

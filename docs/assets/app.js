@@ -1,6 +1,13 @@
 const contentUrl = "./assets/data/content.json";
 const STORAGE_KEY = "readerPreferences";
 const THEME_ORDER = ["paper", "sepia", "night"];
+const FONT_MIN = 15;
+const FONT_MAX = 28;
+const MOBILE_BREAKPOINT = 760;
+const DEFAULT_FONT_SIZE = {
+  desktop: 20,
+  mobile: 17,
+};
 const THEME_LABELS = {
   paper: "纸张",
   sepia: "暖棕",
@@ -13,6 +20,7 @@ const state = {
   activeId: null,
   drawerOpen: false,
   tocOpen: false,
+  mobileFontPanelOpen: false,
   currentPrevId: null,
   currentNextId: null,
   preferences: loadPreferences(),
@@ -47,11 +55,18 @@ const dom = {
   themeButton: document.getElementById("theme-button"),
   fontDownButton: document.getElementById("font-down-button"),
   fontUpButton: document.getElementById("font-up-button"),
+  fontSizeIndicator: document.getElementById("font-size-indicator"),
   startReadingButton: document.getElementById("start-reading-button"),
   openCatalogButton: document.getElementById("open-catalog-button"),
   mobileHomeButton: document.getElementById("mobile-home-button"),
   mobileCatalogButton: document.getElementById("mobile-catalog-button"),
+  mobileFontButton: document.getElementById("mobile-font-button"),
+  mobileFontPanel: document.getElementById("mobile-font-panel"),
+  mobileFontDownButton: document.getElementById("mobile-font-down-button"),
+  mobileFontUpButton: document.getElementById("mobile-font-up-button"),
+  mobileFontSizeIndicator: document.getElementById("mobile-font-size-indicator"),
   mobileThemeButton: document.getElementById("mobile-theme-button"),
+  fontResetButton: document.getElementById("font-reset-button"),
   mobilePrevButton: document.getElementById("mobile-prev-button"),
   mobileNextButton: document.getElementById("mobile-next-button"),
   readerProgressBar: document.getElementById("reader-progress-bar"),
@@ -60,13 +75,28 @@ const dom = {
   commentsMount: document.getElementById("comments-mount"),
 };
 
+function getDefaultFontSize() {
+  return window.innerWidth <= MOBILE_BREAKPOINT
+    ? DEFAULT_FONT_SIZE.mobile
+    : DEFAULT_FONT_SIZE.desktop;
+}
+
 function loadPreferences() {
-  const fallback = { theme: "paper", fontSize: 20 };
+  const fallback = {
+    theme: "paper",
+    fontSize: getDefaultFontSize(),
+    hasCustomFontSize: false,
+  };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    const parsedFontSize = Number(saved.fontSize);
+    const hasCustomFontSize = Number.isFinite(parsedFontSize);
     return {
       theme: THEME_ORDER.includes(saved.theme) ? saved.theme : fallback.theme,
-      fontSize: clamp(Number(saved.fontSize) || fallback.fontSize, 16, 28),
+      fontSize: hasCustomFontSize
+        ? clamp(parsedFontSize, FONT_MIN, FONT_MAX)
+        : fallback.fontSize,
+      hasCustomFontSize,
     };
   } catch {
     return fallback;
@@ -74,7 +104,15 @@ function loadPreferences() {
 }
 
 function savePreferences() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.preferences));
+  const payload = {
+    theme: state.preferences.theme,
+  };
+
+  if (state.preferences.hasCustomFontSize) {
+    payload.fontSize = state.preferences.fontSize;
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
 
 function clamp(value, min, max) {
@@ -113,6 +151,7 @@ function setHashForDoc(id) {
 function closePanels() {
   setDrawerOpen(false);
   setTocOpen(false);
+  setMobileFontPanelOpen(false);
 }
 
 function setDrawerOpen(open) {
@@ -127,11 +166,22 @@ function setTocOpen(open) {
   syncOverlay();
 }
 
+function setMobileFontPanelOpen(open) {
+  state.mobileFontPanelOpen = open;
+  dom.mobileFontPanel.classList.toggle("hidden", !open);
+  dom.mobileFontPanel.setAttribute("aria-hidden", String(!open));
+  dom.mobileFontButton.classList.toggle("is-active", open);
+  syncOverlay();
+}
+
 function syncOverlay() {
-  const visible = state.drawerOpen || state.tocOpen;
+  const visible = state.drawerOpen || state.tocOpen || state.mobileFontPanelOpen;
   dom.pageOverlay.classList.toggle("hidden", !visible);
   dom.pageOverlay.classList.toggle("is-visible", visible);
-  document.body.classList.toggle("lock-scroll", visible && window.innerWidth <= 760);
+  document.body.classList.toggle(
+    "lock-scroll",
+    window.innerWidth <= MOBILE_BREAKPOINT && (state.drawerOpen || state.tocOpen),
+  );
 }
 
 function findItemById(id) {
@@ -150,16 +200,36 @@ function getPrimaryStartItem() {
   );
 }
 
+function getAppliedFontSize() {
+  return state.preferences.hasCustomFontSize
+    ? state.preferences.fontSize
+    : getDefaultFontSize();
+}
+
+function syncFontControls(fontSize) {
+  const label = `${fontSize}px`;
+  const atMin = fontSize <= FONT_MIN;
+  const atMax = fontSize >= FONT_MAX;
+
+  dom.fontSizeIndicator.textContent = label;
+  dom.mobileFontSizeIndicator.textContent = label;
+  dom.fontDownButton.disabled = atMin;
+  dom.fontUpButton.disabled = atMax;
+  dom.mobileFontDownButton.disabled = atMin;
+  dom.mobileFontUpButton.disabled = atMax;
+  dom.fontResetButton.disabled = !state.preferences.hasCustomFontSize;
+}
+
 function applyPreferences() {
+  const fontSize = getAppliedFontSize();
+
   document.documentElement.dataset.theme = state.preferences.theme;
-  document.documentElement.style.setProperty(
-    "--reader-font-size",
-    `${state.preferences.fontSize}px`,
-  );
+  document.documentElement.style.setProperty("--reader-font-size", `${fontSize}px`);
 
   const themeLabel = THEME_LABELS[state.preferences.theme];
   dom.themeButton.textContent = `主题 · ${themeLabel}`;
-  dom.mobileThemeButton.textContent = themeLabel;
+  dom.mobileThemeButton.textContent = `主题 · ${themeLabel}`;
+  syncFontControls(fontSize);
 }
 
 function cycleTheme() {
@@ -170,7 +240,15 @@ function cycleTheme() {
 }
 
 function adjustFont(delta) {
-  state.preferences.fontSize = clamp(state.preferences.fontSize + delta, 16, 28);
+  state.preferences.fontSize = clamp(getAppliedFontSize() + delta, FONT_MIN, FONT_MAX);
+  state.preferences.hasCustomFontSize = true;
+  savePreferences();
+  applyPreferences();
+}
+
+function resetFontSize() {
+  state.preferences.fontSize = getDefaultFontSize();
+  state.preferences.hasCustomFontSize = false;
   savePreferences();
   applyPreferences();
 }
@@ -320,67 +398,93 @@ function updateChapterButtons(prev, next) {
   dom.mobileNextButton.disabled = !next;
 }
 
-function getDocPublicUrl(item) {
-  const base = state.payload.site.siteUrl || window.location.href.split("#")[0];
-  const normalized = base.endsWith("/") ? base : `${base}/`;
-  return `${normalized}#doc/${encodeURIComponent(item.id)}`;
+function getCommentPath(item) {
+  return `/doc/${item.id}`;
 }
 
-function mountDisqus(item, shortname) {
-  dom.commentsMount.innerHTML = `<div id="disqus_thread"></div>`;
+function renderCommentsPlaceholder(note, body) {
+  dom.commentsNote.textContent = note;
+  dom.commentsMount.innerHTML = `
+    <div class="comments-placeholder">
+      ${body}
+    </div>
+  `;
+}
 
-  const pageUrl = getDocPublicUrl(item);
-  const pageIdentifier = item.id;
-  const pageTitle = `${state.payload.site.title} · ${item.title}`;
-
-  window.disqus_config = function disqusConfig() {
-    this.page.url = pageUrl;
-    this.page.identifier = pageIdentifier;
-    this.page.title = pageTitle;
-  };
-
-  if (window.DISQUS) {
-    window.DISQUS.reset({
-      reload: true,
-      config: window.disqus_config,
-    });
-    return;
+function ensureTwikooLoaded(scriptUrl) {
+  if (window.twikoo) {
+    return Promise.resolve(window.twikoo);
   }
 
-  const script = document.createElement("script");
-  script.src = `https://${shortname}.disqus.com/embed.js`;
-  script.setAttribute("data-timestamp", String(Date.now()));
-  script.async = true;
-  (document.head || document.body).appendChild(script);
+  if (window.__twikooLoadingPromise) {
+    return window.__twikooLoadingPromise;
+  }
+
+  window.__twikooLoadingPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-twikoo-script="true"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.twikoo), { once: true });
+      existing.addEventListener("error", reject, { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = scriptUrl;
+    script.async = true;
+    script.dataset.twikooScript = "true";
+    script.onload = () => resolve(window.twikoo);
+    script.onerror = () => reject(new Error(`Failed to load Twikoo script: ${scriptUrl}`));
+    (document.head || document.body).appendChild(script);
+  });
+
+  return window.__twikooLoadingPromise;
 }
 
-function renderComments(item) {
+async function mountTwikoo(item, comments) {
+  await ensureTwikooLoaded(comments.scriptUrl || "./assets/vendor/twikoo.all.min.js");
+
+  dom.commentsMount.innerHTML = "";
+
+  await window.twikoo.init({
+    el: "#comments-mount",
+    envId: comments.envId,
+    region: comments.region || undefined,
+    lang: comments.lang || "zh-CN",
+    path: getCommentPath(item),
+  });
+}
+
+async function renderComments(item) {
   const comments = getCommentsConfig();
 
-  if (comments.provider !== "disqus") {
-    dom.commentsNote.textContent = "当前站点还没有启用评论服务。";
-    dom.commentsMount.innerHTML = `
-      <div class="comments-placeholder">
-        评论功能尚未接入具体服务。
-      </div>
-    `;
+  if (comments.provider !== "twikoo") {
+    renderCommentsPlaceholder(
+      "当前站点还没有启用评论服务。",
+      "评论功能尚未接入具体服务。",
+    );
     return;
   }
 
-  if (!comments.disqusShortname) {
-    dom.commentsNote.textContent =
-      "本站已预设为使用 Disqus 免费评论。站长只需要在 Disqus 后台创建站点并填入 shortname，就能启用游客评论。";
-    dom.commentsMount.innerHTML = `
-      <div class="comments-placeholder">
-        Disqus 已预留，但还没有填写 shortname。
-      </div>
-    `;
+  if (!comments.envId) {
+    renderCommentsPlaceholder(
+      "本站已切换为 Twikoo。只要创建腾讯云云开发环境并填入 envId，就能启用大陆可访问的游客评论。",
+      "Twikoo 已预留，但还没有填写腾讯云 CloudBase 的 envId。",
+    );
     return;
   }
 
   dom.commentsNote.textContent =
-    "评论区已接入 Disqus。若要让未登录 GitHub 的读者直接评论，请在 Disqus 后台打开 Guest Commenting。";
-  mountDisqus(item, comments.disqusShortname);
+    "评论区已接入 Twikoo。当前每个章节会使用独立评论线程，适合书稿式连续阅读。";
+
+  try {
+    await mountTwikoo(item, comments);
+  } catch (error) {
+    console.error(error);
+    renderCommentsPlaceholder(
+      "Twikoo 评论区加载失败。",
+      "评论脚本或云环境暂时不可用。你可以稍后刷新重试，或检查 envId 与云环境部署是否完成。",
+    );
+  }
 }
 
 function renderPagination(item) {
@@ -445,7 +549,7 @@ async function renderDoc(id) {
   dom.docUpdated.textContent = relativeTime(item.updatedAt);
   dom.docSource.textContent = `源文件：${item.sourcePath}`;
   dom.docContent.innerHTML = item.html;
-  renderComments(item);
+  await renderComments(item);
 
   renderToc(item);
   renderPagination(item);
@@ -484,18 +588,24 @@ async function route() {
 function bindEvents() {
   dom.searchInput.addEventListener("input", buildNav);
   dom.catalogButton.addEventListener("click", () => {
+    setMobileFontPanelOpen(false);
     setTocOpen(false);
     setDrawerOpen(!state.drawerOpen);
   });
   dom.tocButton.addEventListener("click", () => {
     if (!state.activeId) return;
+    setMobileFontPanelOpen(false);
     setDrawerOpen(false);
     setTocOpen(!state.tocOpen);
   });
   dom.themeButton.addEventListener("click", cycleTheme);
   dom.fontDownButton.addEventListener("click", () => adjustFont(-1));
   dom.fontUpButton.addEventListener("click", () => adjustFont(1));
+  dom.mobileFontDownButton.addEventListener("click", () => adjustFont(-1));
+  dom.mobileFontUpButton.addEventListener("click", () => adjustFont(1));
+  dom.fontResetButton.addEventListener("click", resetFontSize);
   dom.homeButton.addEventListener("click", () => {
+    closePanels();
     window.location.hash = "";
   });
 
@@ -506,18 +616,31 @@ function bindEvents() {
   dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
 
   dom.mobileHomeButton.addEventListener("click", () => {
+    closePanels();
     window.location.hash = "";
   });
   dom.mobileCatalogButton.addEventListener("click", () => {
+    setMobileFontPanelOpen(false);
     setTocOpen(false);
     setDrawerOpen(!state.drawerOpen);
   });
+  dom.mobileFontButton.addEventListener("click", () => {
+    setDrawerOpen(false);
+    setTocOpen(false);
+    setMobileFontPanelOpen(!state.mobileFontPanelOpen);
+  });
   dom.mobileThemeButton.addEventListener("click", cycleTheme);
   dom.mobilePrevButton.addEventListener("click", () => {
-    if (state.currentPrevId) setHashForDoc(state.currentPrevId);
+    if (state.currentPrevId) {
+      closePanels();
+      setHashForDoc(state.currentPrevId);
+    }
   });
   dom.mobileNextButton.addEventListener("click", () => {
-    if (state.currentNextId) setHashForDoc(state.currentNextId);
+    if (state.currentNextId) {
+      closePanels();
+      setHashForDoc(state.currentNextId);
+    }
   });
 
   dom.pageOverlay.addEventListener("click", closePanels);
@@ -528,9 +651,11 @@ function bindEvents() {
 
   window.addEventListener("scroll", updateReadingProgress, { passive: true });
   window.addEventListener("resize", () => {
-    if (window.innerWidth > 760) {
+    if (window.innerWidth > MOBILE_BREAKPOINT) {
       document.body.classList.remove("lock-scroll");
+      setMobileFontPanelOpen(false);
     }
+    applyPreferences();
     updateReadingProgress();
   });
 
