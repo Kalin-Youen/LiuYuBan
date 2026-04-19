@@ -7,10 +7,15 @@
     "repoUrl": "https://github.com/Kalin-Youen/LiuYuBan",
     "siteUrl": "https://kalin-youen.github.io/LiuYuBan/",
     "customDomain": "",
+    "comments": {
+      "provider": "disqus",
+      "disqusShortname": "",
+      "guestEnabled": true
+    },
     "heroTitle": "让理论直接被看见",
     "heroText": "这不是一堆分散文稿的堆叠，而是一条从落差、流向到规则形成的持续研究主线。网站会直接展示书稿与总述，并为之后的更新保留统一入口。"
   },
-  "generatedAt": "2026-04-19T09:05:17.273699+00:00",
+  "generatedAt": "2026-04-19T09:37:16.254213+00:00",
   "stats": {
     "documentCount": 25,
     "totalChars": 117332,
