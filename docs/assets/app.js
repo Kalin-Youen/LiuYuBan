@@ -30,12 +30,256 @@ const LAB_PAGES = {
       "从差结构条件出发，推演什么时候只会形成事件，什么时候能沉淀为结构、稳态甚至规则。",
   },
 };
+const LAB_INFER_DOMAINS = ["fluid", "disk", "galaxy", "ai"];
+const LAB_CONTROL_DEFAULTS = {
+  validate: {
+    "fluid-gradient": 72,
+    "fluid-rotation": 58,
+    "fluid-boundary": 63,
+    "fluid-dissipation": 34,
+    "disk-tidal": 68,
+    "disk-asymmetry": 54,
+    "disk-dissipation": 29,
+    "disk-duration": 61,
+    "galaxy-anisotropy": 64,
+    "galaxy-alignment": 57,
+    "galaxy-merger": 33,
+    "galaxy-observed": 52,
+  },
+  infer: {
+    "infer-domain": "fluid",
+    "infer-difference": 70,
+    "infer-boundary": 58,
+    "infer-feedback": 62,
+    "infer-dissipation": 46,
+    "infer-memory": 55,
+  },
+};
+const LAB_ARCHITECTURE_LAYERS = [
+  {
+    title: "理论层",
+    copy: "把落差、边界、反馈、稳态这些主轴压成可以连续阅读的理论语言。",
+    pages: ["learn"],
+  },
+  {
+    title: "变量层",
+    copy: "把理论词转成可调参数、代理指标和观测提示，避免只剩抽象口号。",
+    pages: ["learn", "validate"],
+  },
+  {
+    title: "判别层",
+    copy: "比较描述簇语言与传统基线在不同条件下各自解释得多深。",
+    pages: ["validate"],
+  },
+  {
+    title: "推演层",
+    copy: "把当前条件推向事件、短命结构、准稳态或规则沉淀，给出下一步判断。",
+    pages: ["infer"],
+  },
+  {
+    title: "接口层",
+    copy: "为真实求解器、观测数据、批量扫描和研究日志预留挂接位置。",
+    pages: ["learn", "validate", "infer"],
+  },
+];
+const LAB_PAGE_ARCHITECTURE = {
+  learn: {
+    title: "先把理论骨架搭稳，再让交互去承重",
+    copy:
+      "学习页负责把整套实验台的语言系统先立住，让“落差如何站成结构”不只是抽象句子，而是后面所有调参、对比和推演的共同入口。",
+    focus:
+      "当前这页更偏向理论层与变量层：先把概念链和实验问题对齐，再进入真正的参数比较。",
+    hookTitle: "学习页后面能继续挂什么",
+  },
+  validate: {
+    title: "把理论词压成参数，再让解释力正面碰撞",
+    copy:
+      "检验页负责把前面的主轴落到参数与代理量上，让旋转流体、原行星盘和星系角动量分布可以在同一套阅读框架里被比较、被筛选、被追问。",
+    focus:
+      "当前这页更偏向变量层、判别层与接口层：先找解释力切换边界，再决定后面该接哪种模拟器或观测数据。",
+    hookTitle: "检验页后面能继续挂什么",
+  },
+  infer: {
+    title: "把当前条件向更高层推进，逼近结构之后的规则",
+    copy:
+      "推演页负责把已有的差结构条件推向更高层级，判断它们究竟会停在事件、短命结构、准稳态，还是继续压缩为可重复的规则。",
+    focus:
+      "当前这页更偏向推演层与接口层：不是直接宣布结论，而是把下一步实验、采样和系统升级的方向挑出来。",
+    hookTitle: "推演页后面能继续挂什么",
+  },
+};
+const LAB_EXTENSION_LAYERS = {
+  learn: [
+    {
+      title: "术语映射",
+      copy: "把正文、白话卷、实验变量和批注语言互相映射，减少切换成本。",
+    },
+    {
+      title: "案例库",
+      copy: "把流体、天体、生命、AI 等案例压进同一套理论主轴，形成可切换学习包。",
+    },
+    {
+      title: "研究笔记",
+      copy: "把读者反馈、章节疑问和新假设直接沉淀为后续实验任务。",
+    },
+  ],
+  validate: [
+    {
+      title: "真实求解器接口",
+      copy: "后续可以接 CFD、盘面数值模拟或宇宙学快照，让教学代理指标过渡为正式求解。",
+    },
+    {
+      title: "参数扫描",
+      copy: "把单次调参扩成批量扫描，找出解释力切换最敏感的参数边界。",
+    },
+    {
+      title: "观测模板",
+      copy: "引入文献曲线、观测 catalog 或自定义快照，和当前理论模板做直接对照。",
+    },
+  ],
+  infer: [
+    {
+      title: "AI 日志接口",
+      copy: "把模型调用日志、工具链闭环和长期记忆状态接进来，验证“下一层”是否真的站住。",
+    },
+    {
+      title: "报告导出",
+      copy: "把当前推演结果自动整理为研究摘要、下一步任务和待验证变量列表。",
+    },
+    {
+      title: "跨域比对",
+      copy: "把流体、天体与 AI 系统的推演结果并排比较，检验同一主轴的可迁移性。",
+    },
+  ],
+};
+const LAB_PRESETS = {
+  validate: [
+    {
+      id: "boundary-lock",
+      label: "边界站稳",
+      description: "抬高非均匀度和边界清晰度，看描述簇何时开始明显占优。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.validate,
+        "fluid-gradient": 88,
+        "fluid-rotation": 46,
+        "fluid-boundary": 91,
+        "fluid-dissipation": 21,
+        "disk-tidal": 64,
+        "disk-asymmetry": 74,
+        "disk-dissipation": 24,
+        "disk-duration": 58,
+        "galaxy-anisotropy": 69,
+        "galaxy-alignment": 72,
+        "galaxy-merger": 18,
+      },
+    },
+    {
+      id: "traditional-core",
+      label: "传统基线",
+      description: "提高旋转和总强度，弱化非均匀边界效应，看看传统解释什么时候就够用。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.validate,
+        "fluid-gradient": 31,
+        "fluid-rotation": 85,
+        "fluid-boundary": 42,
+        "fluid-dissipation": 26,
+        "disk-tidal": 74,
+        "disk-asymmetry": 28,
+        "disk-dissipation": 31,
+        "disk-duration": 57,
+        "galaxy-anisotropy": 34,
+        "galaxy-alignment": 29,
+        "galaxy-merger": 24,
+      },
+    },
+    {
+      id: "noise-washout",
+      label: "噪声洗平",
+      description: "提高耗散与并合噪声，观察结构如何被洗掉、趋势如何被遮蔽。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.validate,
+        "fluid-gradient": 62,
+        "fluid-rotation": 55,
+        "fluid-boundary": 48,
+        "fluid-dissipation": 78,
+        "disk-tidal": 59,
+        "disk-asymmetry": 47,
+        "disk-dissipation": 76,
+        "disk-duration": 43,
+        "galaxy-anisotropy": 52,
+        "galaxy-alignment": 44,
+        "galaxy-merger": 84,
+        "galaxy-observed": 57,
+      },
+    },
+  ],
+  infer: [
+    {
+      id: "event-threshold",
+      label: "事件态",
+      description: "差异已经出现，但几乎留不住结构。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.infer,
+        "infer-domain": "fluid",
+        "infer-difference": 41,
+        "infer-boundary": 23,
+        "infer-feedback": 28,
+        "infer-dissipation": 81,
+        "infer-memory": 18,
+      },
+    },
+    {
+      id: "quasi-steady",
+      label: "准稳态",
+      description: "结构能维持一段时间，但还没压到规则层。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.infer,
+        "infer-domain": "disk",
+        "infer-difference": 73,
+        "infer-boundary": 64,
+        "infer-feedback": 68,
+        "infer-dissipation": 44,
+        "infer-memory": 58,
+      },
+    },
+    {
+      id: "rule-formation",
+      label: "规则沉淀",
+      description: "反馈、边界和记忆同时站住，接近可重复压缩的稳定关系。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.infer,
+        "infer-domain": "galaxy",
+        "infer-difference": 88,
+        "infer-boundary": 82,
+        "infer-feedback": 86,
+        "infer-dissipation": 47,
+        "infer-memory": 83,
+      },
+    },
+    {
+      id: "ai-next-layer",
+      label: "AI 下一层",
+      description: "切到 AI 场景，观察长期记忆、验证链和现实接地怎样把系统推高一层。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.infer,
+        "infer-domain": "ai",
+        "infer-difference": 84,
+        "infer-boundary": 71,
+        "infer-feedback": 88,
+        "infer-dissipation": 42,
+        "infer-memory": 79,
+      },
+    },
+  ],
+};
 
 const state = {
   payload: null,
   filteredItems: [],
   activeId: null,
   activeLabPage: null,
+  labParams: {},
+  labActionTimer: null,
   drawerOpen: false,
   tocOpen: false,
   mobileFontPanelOpen: false,
@@ -173,17 +417,51 @@ function normalizeLabPage(page) {
   return LAB_PAGES[page] ? page : "learn";
 }
 
+function sanitizeRangeParamValue(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return clamp(Math.round(parsed), 0, 100);
+}
+
+function resolveLabParams(page, rawParams = {}) {
+  const activePage = normalizeLabPage(page);
+  const defaults = LAB_CONTROL_DEFAULTS[activePage];
+
+  if (!defaults) return {};
+
+  return Object.fromEntries(
+    Object.entries(defaults).map(([key, fallback]) => {
+      if (typeof fallback === "number") {
+        return [key, sanitizeRangeParamValue(rawParams[key], fallback)];
+      }
+
+      if (key === "infer-domain") {
+        return [key, LAB_INFER_DOMAINS.includes(rawParams[key]) ? rawParams[key] : fallback];
+      }
+
+      return [key, rawParams[key] ?? fallback];
+    }),
+  );
+}
+
 function getHashRoute() {
-  const hash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+  const rawHash = window.location.hash.replace(/^#/, "");
+  const queryIndex = rawHash.indexOf("?");
+  const path = queryIndex === -1 ? rawHash : rawHash.slice(0, queryIndex);
+  const params = queryIndex === -1
+    ? {}
+    : Object.fromEntries(new URLSearchParams(rawHash.slice(queryIndex + 1)).entries());
+  const hash = decodeURIComponent(path);
+
   if (!hash) return { type: "home" };
   if (hash.startsWith("doc/")) {
     return { type: "doc", id: hash.slice(4) };
   }
   if (hash === "lab") {
-    return { type: "lab", page: "learn" };
+    return { type: "lab", page: "learn", params: {} };
   }
   if (hash.startsWith("lab/")) {
-    return { type: "lab", page: normalizeLabPage(hash.slice(4)) };
+    return { type: "lab", page: normalizeLabPage(hash.slice(4)), params };
   }
   return { type: "home" };
 }
@@ -192,8 +470,35 @@ function setHashForDoc(id) {
   window.location.hash = `doc/${encodeURIComponent(id)}`;
 }
 
-function setHashForLab(page = "learn") {
-  window.location.hash = `lab/${encodeURIComponent(normalizeLabPage(page))}`;
+function buildLabHash(page = "learn", params = null) {
+  const activePage = normalizeLabPage(page);
+  const baseHash = `lab/${encodeURIComponent(activePage)}`;
+
+  if (!params) return baseHash;
+
+  const defaults = LAB_CONTROL_DEFAULTS[activePage];
+  const resolved = resolveLabParams(activePage, params);
+
+  if (!defaults) return baseHash;
+
+  const search = new URLSearchParams();
+  Object.entries(resolved).forEach(([key, value]) => {
+    if (String(value) !== String(defaults[key])) {
+      search.set(key, String(value));
+    }
+  });
+
+  const query = search.toString();
+  return query ? `${baseHash}?${query}` : baseHash;
+}
+
+function setHashForLab(page = "learn", params = null, { replace = false } = {}) {
+  const hash = buildLabHash(page, params);
+  if (replace) {
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${hash}`);
+    return;
+  }
+  window.location.hash = hash;
 }
 
 function closePanels() {
@@ -493,10 +798,175 @@ function renderLabTabs(page) {
   });
 }
 
+function setLabControlValues(values) {
+  Object.entries(values).forEach(([id, value]) => {
+    const control = dom.labContent.querySelector(`#${id}`);
+    if (!control) return;
+    control.value = String(value);
+  });
+}
+
+function getLabControlSnapshot(controlIds) {
+  return Object.fromEntries(
+    controlIds
+      .map((id) => {
+        const control = dom.labContent.querySelector(`#${id}`);
+        if (!control) return null;
+        return [
+          id,
+          control.tagName === "SELECT"
+            ? control.value
+            : sanitizeRangeParamValue(control.value, 0),
+        ];
+      })
+      .filter(Boolean),
+  );
+}
+
+function setLabActionStatus(message, tone = "info") {
+  const status = dom.labContent.querySelector("#lab-action-status");
+  if (!status) return;
+
+  status.textContent = message;
+  status.dataset.tone = tone;
+
+  if (state.labActionTimer) {
+    window.clearTimeout(state.labActionTimer);
+  }
+
+  state.labActionTimer = window.setTimeout(() => {
+    if (status.isConnected) {
+      status.textContent = "";
+      delete status.dataset.tone;
+    }
+    state.labActionTimer = null;
+  }, 2400);
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    return copied;
+  } catch {
+    return false;
+  }
+}
+
+function renderLabArchitectureSection(page) {
+  const meta = LAB_PAGE_ARCHITECTURE[page];
+  const extensions = LAB_EXTENSION_LAYERS[page] || [];
+
+  return `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong">
+        <p class="eyebrow">Lab Architecture</p>
+        <h3>${meta.title}</h3>
+        <p>${meta.copy}</p>
+        <div class="lab-stack-grid">
+          ${LAB_ARCHITECTURE_LAYERS.map((layer, index) => `
+            <div class="lab-stack-card${layer.pages.includes(page) ? " is-active" : ""}">
+              <small>${String(index + 1).padStart(2, "0")}</small>
+              <strong>${layer.title}</strong>
+              <p>${layer.copy}</p>
+            </div>
+          `).join("")}
+        </div>
+        <p class="lab-section-lead">${meta.focus}</p>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Expansion Layer</p>
+        <h3>${meta.hookTitle}</h3>
+        <div class="lab-extension-grid">
+          ${extensions.map((item) => `
+            <div class="lab-extension-card">
+              <strong>${item.title}</strong>
+              <p>${item.copy}</p>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    </section>
+  `;
+}
+
+function renderLabToolkitCard(page, title, description) {
+  const presets = LAB_PRESETS[page] || [];
+
+  return `
+    <article class="lab-card">
+      <p class="eyebrow">Scenario Presets</p>
+      <h3>${title}</h3>
+      <p class="lab-section-copy">${description}</p>
+      <div class="lab-preset-grid">
+        ${presets.map((preset) => `
+          <button
+            class="lab-preset-button"
+            type="button"
+            data-lab-page="${page}"
+            data-lab-preset="${preset.id}"
+            data-lab-preset-label="${preset.label}"
+            title="${preset.description}"
+          >
+            <strong>${preset.label}</strong>
+            <span>${preset.description}</span>
+          </button>
+        `).join("")}
+      </div>
+      <div class="lab-inline-actions">
+        <button class="reader-button" type="button" data-lab-action="share">复制当前实验链接</button>
+        <button class="reader-button" type="button" data-lab-action="reset" data-lab-page="${page}">恢复默认参数</button>
+      </div>
+      <p id="lab-action-status" class="lab-action-status" aria-live="polite"></p>
+    </article>
+  `;
+}
+
+function bindLabToolkit(page, onApplyValues) {
+  const presetMap = new Map((LAB_PRESETS[page] || []).map((preset) => [preset.id, preset]));
+
+  dom.labContent.querySelectorAll(`[data-lab-page="${page}"][data-lab-preset]`).forEach((button) => {
+    button.addEventListener("click", () => {
+      const preset = presetMap.get(button.dataset.labPreset);
+      if (!preset) return;
+      onApplyValues(preset.values);
+      setLabActionStatus(`已切换到“${preset.label}”。`, "success");
+    });
+  });
+
+  dom.labContent.querySelector('[data-lab-action="share"]')?.addEventListener("click", async () => {
+    const copied = await copyTextToClipboard(window.location.href);
+    setLabActionStatus(
+      copied ? "已复制当前实验链接。" : "当前环境不支持自动复制，请手动复制地址栏。",
+      copied ? "success" : "warning",
+    );
+  });
+
+  dom.labContent.querySelector(`[data-lab-action="reset"][data-lab-page="${page}"]`)?.addEventListener("click", () => {
+    onApplyValues(LAB_CONTROL_DEFAULTS[page]);
+    setLabActionStatus("已恢复默认参数。", "info");
+  });
+}
+
 function renderLabLearn() {
   dom.labNote.textContent =
     "学习页强调主线与实验问题的对应关系，先弄清每个模拟器到底在检验哪种变量耦合，再进入参数比较。";
   dom.labContent.innerHTML = `
+    ${renderLabArchitectureSection("learn")}
+
     <section class="lab-grid lab-grid-two">
       <article class="lab-card lab-card-strong">
         <p class="eyebrow">Core Chain</p>
@@ -587,6 +1057,26 @@ function renderLabValidate() {
   dom.labNote.textContent =
     "检验页当前使用教学型代理指标，不替代真实流体求解、N 体模拟或观测拟合；它的作用是先看理论会优先要求你测什么。";
   dom.labContent.innerHTML = `
+    ${renderLabArchitectureSection("validate")}
+
+    <section class="lab-grid lab-grid-two">
+      ${renderLabToolkitCard(
+        "validate",
+        "用预设场景快速找解释力切换点",
+        "这一步不是代替正式扫描，而是先把“哪些量一动就会改写判断”直观地挑出来，便于后面接真实模拟。",
+      )}
+
+      <article class="lab-card">
+        <p class="eyebrow">Reading Strategy</p>
+        <h3>怎样把这页继续扩成更正式的检验台</h3>
+        <div class="lab-mini-points">
+          <span>先用预设快速找到哪一组参数最容易造成解释力翻转。</span>
+          <span>再把那组参数附近做密一点的扫描，逼近真正的切换边界。</span>
+          <span>最后再决定是否值得接真实求解器、观测模板或导出图表。</span>
+        </div>
+      </article>
+    </section>
+
     <section class="lab-grid">
       <article class="lab-card simulation-card">
         <div class="simulation-head">
@@ -754,6 +1244,9 @@ function renderLabValidate() {
     </section>
   `;
 
+  const controlIds = Object.keys(LAB_CONTROL_DEFAULTS.validate);
+  setLabControlValues(state.labParams);
+
   const updateFluidSimulation = () => {
     const gradient = getRatio("fluid-gradient");
     const rotation = getRatio("fluid-rotation");
@@ -918,26 +1411,45 @@ function renderLabValidate() {
     `;
   };
 
+  const syncValidateState = (replaceHash = true) => {
+    updateFluidSimulation();
+    updateDiskSimulation();
+    updateGalaxySimulation();
+
+    state.labParams = resolveLabParams("validate", getLabControlSnapshot(controlIds));
+    if (replaceHash) {
+      setHashForLab("validate", state.labParams, { replace: true });
+    }
+  };
+
   dom.labContent
     .querySelectorAll("input[type='range']")
     .forEach((input) =>
       input.addEventListener("input", () => {
-        updateFluidSimulation();
-        updateDiskSimulation();
-        updateGalaxySimulation();
+        syncValidateState();
       }),
     );
 
-  updateFluidSimulation();
-  updateDiskSimulation();
-  updateGalaxySimulation();
+  bindLabToolkit("validate", (values) => {
+    setLabControlValues(resolveLabParams("validate", values));
+    syncValidateState();
+  });
+  syncValidateState(false);
 }
 
 function renderLabInfer() {
   dom.labNote.textContent =
     "推演页不是替你宣布结论，而是帮助你判断：当前条件更像一次事件、短命结构、准稳态，还是已经接近规则沉淀。";
   dom.labContent.innerHTML = `
+    ${renderLabArchitectureSection("infer")}
+
     <section class="lab-grid lab-grid-two">
+      ${renderLabToolkitCard(
+        "infer",
+        "先切预设，再看系统究竟会停在哪一层",
+        "推演页更适合拿来比较不同层级状态：它不直接替你做结论，而是帮你把最短板、最该测的量和下一步动作压出来。",
+      )}
+
       <article class="lab-card">
         <p class="eyebrow">Inference Setup</p>
         <h3>研究推演器</h3>
@@ -973,7 +1485,9 @@ function renderLabInfer() {
           </label>
         </div>
       </article>
+    </section>
 
+    <section class="lab-grid lab-grid-two">
       <article class="lab-card">
         <p class="eyebrow">Emergence Track</p>
         <h3>当前更可能停在哪一层</h3>
@@ -987,6 +1501,16 @@ function renderLabInfer() {
           <span>规则沉淀倾向</span>
           <strong id="infer-score-value"></strong>
           <div class="lab-meter"><span id="infer-score-fill"></span></div>
+        </div>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Decision Gate</p>
+        <h3>怎样把推演继续接到下一步工作</h3>
+        <div class="lab-mini-points">
+          <span>如果最短板一直是边界，就优先补约束条件，而不是继续堆强度。</span>
+          <span>如果最短板一直是记忆，就说明系统还没把结构真正继承下来。</span>
+          <span>如果 AI 场景里反馈最强但仍不过层，通常意味着验证链还没接上现实。</span>
         </div>
       </article>
     </section>
@@ -1022,6 +1546,9 @@ function renderLabInfer() {
       </article>
     </section>
   `;
+
+  const controlIds = Object.keys(LAB_CONTROL_DEFAULTS.infer);
+  setLabControlValues(state.labParams);
 
   const domainProfiles = {
     fluid: {
@@ -1117,11 +1644,23 @@ function renderLabInfer() {
       `这次推演主要根据差结构强度、边界清晰度、反馈闭环、耗散平衡和记忆连续性五项共同计算。当“有差”还不能被边界收住、被反馈回灌、被记忆继承时，现象就更像短事件；当这些条件同时站住，结构才会向稳态与规则推进。`;
   };
 
+  const syncInferState = (replaceHash = true) => {
+    updateInference();
+    state.labParams = resolveLabParams("infer", getLabControlSnapshot(controlIds));
+    if (replaceHash) {
+      setHashForLab("infer", state.labParams, { replace: true });
+    }
+  };
+
   dom.labContent
     .querySelectorAll("input, select")
-    .forEach((input) => input.addEventListener("input", updateInference));
+    .forEach((input) => input.addEventListener("input", () => syncInferState()));
 
-  updateInference();
+  bindLabToolkit("infer", (values) => {
+    setLabControlValues(resolveLabParams("infer", values));
+    syncInferState();
+  });
+  syncInferState(false);
 }
 
 function renderLabPage(page) {
@@ -1170,6 +1709,7 @@ async function renderLab(page) {
   state.activeId = null;
   state.currentPrevId = null;
   state.currentNextId = null;
+  state.labParams = resolveLabParams(activePage, state.labParams);
   document.title = `${state.payload.site.title} · ${LAB_PAGES[activePage].title}`;
   document.body.classList.remove("is-reading");
   dom.viewTitle.textContent = "理论实验台";
@@ -1422,6 +1962,7 @@ async function route() {
     return;
   }
   if (routeState.type === "lab") {
+    state.labParams = resolveLabParams(routeState.page, routeState.params);
     await renderLab(routeState.page);
     return;
   }
