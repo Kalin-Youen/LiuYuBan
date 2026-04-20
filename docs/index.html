@@ -65,6 +65,7 @@
 
         <div class="header-actions">
           <button id="toc-button" class="reader-button" type="button">本章</button>
+          <button id="lab-button" class="reader-button" type="button">实验台</button>
           <button id="theme-button" class="reader-button" type="button">主题</button>
           <div class="font-controls" aria-label="字体大小">
             <button id="font-down-button" class="reader-button" type="button" aria-label="减小字体">A-</button>
@@ -88,6 +89,7 @@
 
             <div class="hero-actions">
               <button id="start-reading-button" class="pill-button" type="button">开始阅读</button>
+              <button id="open-lab-button" class="pill-button" type="button">进入实验台</button>
               <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">打开目录</button>
             </div>
           </div>
@@ -105,7 +107,20 @@
               <h3>像连载一样更</h3>
               <p>以后你继续更新 Markdown 文稿，网站就能跟着同步更新，不需要重新手工排版。</p>
             </article>
+            <article class="home-card">
+              <h3>像实验一样验</h3>
+              <p>把展望里的模拟实验做成交互分页，让理论学习、效验和推演可以在同一站内完成。</p>
+            </article>
           </div>
+
+          <section class="systems-section">
+            <div class="section-heading">
+              <p class="eyebrow">High Efficiency</p>
+              <h3>高效入口</h3>
+              <p class="section-copy">把主书稿、白话卷、AI 协作卷和术语边界分开进入，让阅读、反馈和系统规划都更低阻力。</p>
+            </div>
+            <div id="system-links" class="systems-grid"></div>
+          </section>
 
           <section class="bookshelf-section">
             <div class="section-heading">
@@ -114,6 +129,55 @@
             </div>
             <div id="quick-links" class="book-shelf"></div>
           </section>
+
+          <section class="bookshelf-section lab-launch-section">
+            <div class="section-heading">
+              <p class="eyebrow">Theory Lab</p>
+              <h3>把模拟实验做成可交互分页</h3>
+              <p class="section-copy">先做教学型实验台，把变量敏感性、理论检验方向和研究推演放进站内统一浏览。</p>
+            </div>
+            <div class="lab-entry-grid">
+              <a class="lab-entry-card" href="#lab/learn">
+                <span class="lab-entry-tag">学习</span>
+                <h4>理论学习页</h4>
+                <p>把落差、边界、通量、反馈、稳态、结构、规则压成一条连续可读的学习路径。</p>
+              </a>
+              <a class="lab-entry-card" href="#lab/validate">
+                <span class="lab-entry-tag">检验</span>
+                <h4>交互检验页</h4>
+                <p>围绕旋转流体、原行星盘和星系角动量分布做教学型参数比较与解释对照。</p>
+              </a>
+              <a class="lab-entry-card" href="#lab/infer">
+                <span class="lab-entry-tag">推演</span>
+                <h4>研究推演页</h4>
+                <p>从差结构条件出发，推演什么时候只是事件，什么时候能沉淀成结构与规则。</p>
+              </a>
+            </div>
+          </section>
+        </section>
+
+        <section id="lab-view" class="lab-view hidden">
+          <div class="lab-shell">
+            <div class="hero-card lab-hero-card">
+              <p id="lab-eyebrow" class="eyebrow">Theory Lab</p>
+              <h2 id="lab-title">理论实验台</h2>
+              <p id="lab-intro" class="hero-text"></p>
+              <div id="lab-tabs" class="lab-tabs" role="tablist" aria-label="实验台分页">
+                <button id="lab-tab-learn" class="pill-button lab-tab" type="button" data-lab-page="learn">理论学习</button>
+                <button id="lab-tab-validate" class="pill-button lab-tab" type="button" data-lab-page="validate">交互检验</button>
+                <button id="lab-tab-infer" class="pill-button lab-tab" type="button" data-lab-page="infer">推演台</button>
+              </div>
+            </div>
+
+            <div class="lab-note-card">
+              <p class="eyebrow">Method Note</p>
+              <p id="lab-note">
+                当前页面属于理论学习型交互器，用于帮助理解变量关系、检验方向与推演路径，不替代正式数值模拟、实验装置或观测拟合。
+              </p>
+            </div>
+
+            <div id="lab-content" class="lab-content"></div>
+          </div>
         </section>
 
         <section id="doc-view" class="doc-view hidden">
@@ -137,6 +201,14 @@
                   <p id="comments-note">
                     这里将接入适合中国大陆访问的评论系统。你只需要创建腾讯云云开发环境并提供 envId，就能启用游客评论。
                   </p>
+                  <div class="feedback-guide">
+                    <h4>什么反馈最有价值</h4>
+                    <ul class="feedback-list">
+                      <li>哪一段最容易进入，哪一段最容易无感。</li>
+                      <li>哪里需要补桥、补白话、补术语或降强度。</li>
+                      <li>哪些内容应升为主线，哪些内容更适合转入专题或备忘录。</li>
+                    </ul>
+                  </div>
                 </div>
                 <div id="comments-mount" class="comments-mount">
                   <div class="comments-placeholder">

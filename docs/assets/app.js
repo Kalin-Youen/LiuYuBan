@@ -13,11 +13,29 @@ const THEME_LABELS = {
   sepia: "暖棕",
   night: "夜读",
 };
+const LAB_PAGES = {
+  learn: {
+    title: "理论学习页",
+    intro:
+      "把展望里的实验想法先压成一条可读的学习链，先看每个实验究竟想检验什么，再看变量应该怎么读。",
+  },
+  validate: {
+    title: "交互检验页",
+    intro:
+      "这里用教学型交互器比较变量敏感性与解释力，不替代正式数值模拟，但可以先看哪些量最值得优先测。",
+  },
+  infer: {
+    title: "研究推演页",
+    intro:
+      "从差结构条件出发，推演什么时候只会形成事件，什么时候能沉淀为结构、稳态甚至规则。",
+  },
+};
 
 const state = {
   payload: null,
   filteredItems: [],
   activeId: null,
+  activeLabPage: null,
   drawerOpen: false,
   tocOpen: false,
   mobileFontPanelOpen: false,
@@ -39,10 +57,17 @@ const dom = {
   viewTitle: document.getElementById("view-title"),
   homeButton: document.getElementById("home-button"),
   homeView: document.getElementById("home-view"),
+  labView: document.getElementById("lab-view"),
   docView: document.getElementById("doc-view"),
   heroTitle: document.getElementById("hero-title"),
   heroText: document.getElementById("hero-text"),
+  systemLinks: document.getElementById("system-links"),
   quickLinks: document.getElementById("quick-links"),
+  labTitle: document.getElementById("lab-title"),
+  labIntro: document.getElementById("lab-intro"),
+  labTabs: document.getElementById("lab-tabs"),
+  labContent: document.getElementById("lab-content"),
+  labNote: document.getElementById("lab-note"),
   docBreadcrumb: document.getElementById("doc-breadcrumb"),
   docTitle: document.getElementById("doc-title"),
   docUpdated: document.getElementById("doc-updated"),
@@ -52,11 +77,13 @@ const dom = {
   docPagination: document.getElementById("doc-pagination"),
   catalogButton: document.getElementById("catalog-button"),
   tocButton: document.getElementById("toc-button"),
+  labButton: document.getElementById("lab-button"),
   themeButton: document.getElementById("theme-button"),
   fontDownButton: document.getElementById("font-down-button"),
   fontUpButton: document.getElementById("font-up-button"),
   fontSizeIndicator: document.getElementById("font-size-indicator"),
   startReadingButton: document.getElementById("start-reading-button"),
+  openLabButton: document.getElementById("open-lab-button"),
   openCatalogButton: document.getElementById("open-catalog-button"),
   mobileHomeButton: document.getElementById("mobile-home-button"),
   mobileCatalogButton: document.getElementById("mobile-catalog-button"),
@@ -119,6 +146,10 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function clamp01(value) {
+  return clamp(value, 0, 1);
+}
+
 function formatDate(isoString) {
   if (!isoString) return "未知";
   const date = new Date(isoString);
@@ -138,14 +169,31 @@ function relativeTime(isoString) {
   return `更新于 ${formatDate(isoString)}`;
 }
 
-function getDocIdFromHash() {
+function normalizeLabPage(page) {
+  return LAB_PAGES[page] ? page : "learn";
+}
+
+function getHashRoute() {
   const hash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
-  if (!hash.startsWith("doc/")) return null;
-  return hash.slice(4);
+  if (!hash) return { type: "home" };
+  if (hash.startsWith("doc/")) {
+    return { type: "doc", id: hash.slice(4) };
+  }
+  if (hash === "lab") {
+    return { type: "lab", page: "learn" };
+  }
+  if (hash.startsWith("lab/")) {
+    return { type: "lab", page: normalizeLabPage(hash.slice(4)) };
+  }
+  return { type: "home" };
 }
 
 function setHashForDoc(id) {
   window.location.hash = `doc/${encodeURIComponent(id)}`;
+}
+
+function setHashForLab(page = "learn") {
+  window.location.hash = `lab/${encodeURIComponent(normalizeLabPage(page))}`;
 }
 
 function closePanels() {
@@ -275,6 +323,59 @@ function buildQuickLinks() {
   });
 }
 
+function getSectionEntry(sectionId) {
+  const items = state.payload.items.filter((item) => item.sectionId === sectionId);
+
+  if (sectionId === "book") {
+    return (
+      items.find((item) => item.title.includes("第1章")) ||
+      items.find((item) => item.title.includes("绪论")) ||
+      items[0] ||
+      null
+    );
+  }
+
+  if (sectionId === "plain-book") {
+    return (
+      items.find((item) => item.title.includes("卷首")) ||
+      items[0] ||
+      null
+    );
+  }
+
+  if (sectionId === "ai-book") {
+    return (
+      items.find((item) => item.title.includes("卷首")) ||
+      items[0] ||
+      null
+    );
+  }
+
+  return items[0] || null;
+}
+
+function buildSystemLinks() {
+  const sectionOrder = ["book", "plain-book", "ai-book", "terms"];
+  dom.systemLinks.innerHTML = "";
+
+  sectionOrder.forEach((sectionId) => {
+    const section = state.payload.sections.find((item) => item.id === sectionId);
+    const entry = getSectionEntry(sectionId);
+
+    if (!section || !entry) return;
+
+    const link = document.createElement("a");
+    link.className = "system-card";
+    link.href = `#doc/${encodeURIComponent(entry.id)}`;
+    link.innerHTML = `
+      <p class="system-label">${section.title}</p>
+      <h4>${entry.title}</h4>
+      <p>${entry.excerpt || entry.sectionTitle}</p>
+    `;
+    dom.systemLinks.appendChild(link);
+  });
+}
+
 function matchesSearch(item, keyword) {
   if (!keyword) return true;
   const haystack = `${item.title} ${item.excerpt} ${item.sectionTitle}`.toLowerCase();
@@ -337,8 +438,715 @@ function buildNav() {
   }
 }
 
+function syncViewButtons() {
+  dom.labButton.classList.toggle("is-active", Boolean(state.activeLabPage));
+}
+
+function setRangeOutput(id, label) {
+  const output = dom.labContent.querySelector(`[data-range-output="${id}"]`);
+  if (output) {
+    output.textContent = label;
+  }
+}
+
+function setMeter(id, value) {
+  const fill = dom.labContent.querySelector(`#${id}-fill`);
+  const text = dom.labContent.querySelector(`#${id}-value`);
+  const percent = Math.round(clamp01(value) * 100);
+
+  if (fill) fill.style.width = `${percent}%`;
+  if (text) text.textContent = `${percent}%`;
+}
+
+function getRatio(id) {
+  const input = dom.labContent.querySelector(`#${id}`);
+  return clamp01(Number(input?.value || 0) / 100);
+}
+
+function normalizeDistribution(values) {
+  const safe = values.map((value) => Math.max(0.001, value));
+  const total = safe.reduce((sum, value) => sum + value, 0);
+  return safe.map((value) => value / total);
+}
+
+function distributionDistance(a, b) {
+  return a.reduce((sum, value, index) => sum + Math.abs(value - b[index]), 0);
+}
+
+function renderDistributionSeries(prefix, values) {
+  const labels = ["low", "mid", "high"];
+  labels.forEach((label, index) => {
+    const bar = dom.labContent.querySelector(`#${prefix}-${label}`);
+    const text = dom.labContent.querySelector(`#${prefix}-${label}-value`);
+    const percent = Math.round(values[index] * 100);
+
+    if (bar) bar.style.height = `${Math.max(8, percent)}%`;
+    if (text) text.textContent = `${percent}%`;
+  });
+}
+
+function renderLabTabs(page) {
+  dom.labTabs.querySelectorAll("[data-lab-page]").forEach((button) => {
+    const active = button.dataset.labPage === page;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+}
+
+function renderLabLearn() {
+  dom.labNote.textContent =
+    "学习页强调主线与实验问题的对应关系，先弄清每个模拟器到底在检验哪种变量耦合，再进入参数比较。";
+  dom.labContent.innerHTML = `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong">
+        <p class="eyebrow">Core Chain</p>
+        <h3>把实验目标压回主轴</h3>
+        <div class="lab-flow">
+          <span>落差</span>
+          <span>边界</span>
+          <span>通量</span>
+          <span>反馈</span>
+          <span>稳态</span>
+          <span>结构</span>
+          <span>规则</span>
+        </div>
+        <p>
+          这三个实验之所以值得做，不是因为它们都带“旋转”或都很炫，而是因为它们都卡在同一个问题上：
+          非均匀性到底只是局部扰动，还是会在边界、反馈与耗散中站成可重复的结构？
+        </p>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">How To Use</p>
+        <h3>先学什么，再验什么</h3>
+        <ul class="lab-bullet-list">
+          <li>先看每个系统的关键落差是什么，而不是先盯结果图样。</li>
+          <li>再看边界、耗散、耦合路径有没有把这些差异维持住。</li>
+          <li>最后比较：描述簇语言是否比单一涡量、剪切或均匀背景假设更解释得通。</li>
+        </ul>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-lab-nav="validate">去做交互检验</button>
+          <button class="reader-button" type="button" data-lab-nav="infer">去做研究推演</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="lab-grid lab-grid-three">
+      <article class="lab-card">
+        <p class="eyebrow">Experiment A</p>
+        <h3>旋转流体实验</h3>
+        <p>观察在受控非均匀外场与边界约束下，涡旋是更受单纯剪切支配，还是更受“落差 + 边界 + 耗散”联合控制。</p>
+        <div class="lab-mini-points">
+          <span>看什么：涡核偏移、边界回流、结构持续度</span>
+          <span>为什么重要：它最适合把描述簇和传统涡量语言放在同一台架上比</span>
+        </div>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Experiment B</p>
+        <h3>原行星盘模拟</h3>
+        <p>考察非均匀引力场中的潮汐力矩、盘面不对称和耗散平衡如何共同影响角动量积累。</p>
+        <div class="lab-mini-points">
+          <span>看什么：潮汐力矩指数、角动量通量、盘面偏心与螺旋臂强度</span>
+          <span>为什么重要：它把“稳态落差如何累积成规则性输运”写得更清楚</span>
+        </div>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Experiment C</p>
+        <h3>星系角动量分布</h3>
+        <p>检验大尺度环境各向异性、潮汐对齐与并合噪声，是否足以改变最终自旋分布并优于简单基线模型。</p>
+        <div class="lab-mini-points">
+          <span>看什么：低 / 中 / 高自旋占比、环境对齐、与观测模板的一致度</span>
+          <span>为什么重要：它把结构形成语言推进到宇宙学统计层</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card">
+        <p class="eyebrow">Key Reading</p>
+        <h3>做这些交互前，脑子里最好先放三句话</h3>
+        <ol class="lab-number-list">
+          <li>单有落差，不一定留下结构；被维持的落差，才开始留下结构。</li>
+          <li>单有结构，不一定形成规则；可重复的稳态结构，才开始沉淀成规则。</li>
+          <li>想检验理论，不只是看结果像不像，还要看它要求优先测哪些变量。</li>
+        </ol>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Lab Scope</p>
+        <h3>这个实验台现在能做什么</h3>
+        <p>当前版本先做“教学型效验”：帮助你快速看出变量敏感性、解释差异和下一步采样方向。等后面需要，我们还可以继续接入更正式的数值求解器、数据文件导入和图表导出。</p>
+      </article>
+    </section>
+  `;
+}
+
+function renderLabValidate() {
+  dom.labNote.textContent =
+    "检验页当前使用教学型代理指标，不替代真实流体求解、N 体模拟或观测拟合；它的作用是先看理论会优先要求你测什么。";
+  dom.labContent.innerHTML = `
+    <section class="lab-grid">
+      <article class="lab-card simulation-card">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Validate A</p>
+            <h3>旋转流体实验</h3>
+          </div>
+          <span class="simulation-badge">描述簇 vs 涡量/剪切</span>
+        </div>
+        <div class="lab-controls">
+          <label class="lab-range">
+            <span>外场非均匀度 <strong data-range-output="fluid-gradient"></strong></span>
+            <input id="fluid-gradient" type="range" min="0" max="100" value="72" />
+          </label>
+          <label class="lab-range">
+            <span>旋转强度 <strong data-range-output="fluid-rotation"></strong></span>
+            <input id="fluid-rotation" type="range" min="0" max="100" value="58" />
+          </label>
+          <label class="lab-range">
+            <span>边界约束清晰度 <strong data-range-output="fluid-boundary"></strong></span>
+            <input id="fluid-boundary" type="range" min="0" max="100" value="63" />
+          </label>
+          <label class="lab-range">
+            <span>耗散抹平强度 <strong data-range-output="fluid-dissipation"></strong></span>
+            <input id="fluid-dissipation" type="range" min="0" max="100" value="34" />
+          </label>
+        </div>
+        <div class="lab-metrics">
+          <div class="lab-metric">
+            <span>描述簇解释力</span>
+            <strong id="fluid-cluster-value"></strong>
+            <div class="lab-meter"><span id="fluid-cluster-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>传统涡量 / 剪切解释力</span>
+            <strong id="fluid-traditional-value"></strong>
+            <div class="lab-meter"><span id="fluid-traditional-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>涡旋形成指数</span>
+            <strong id="fluid-vortex-value"></strong>
+            <div class="lab-meter"><span id="fluid-vortex-fill"></span></div>
+          </div>
+        </div>
+        <div id="fluid-summary" class="lab-result-card"></div>
+      </article>
+
+      <article class="lab-card simulation-card">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Validate B</p>
+            <h3>原行星盘模拟</h3>
+          </div>
+          <span class="simulation-badge">潮汐力矩与角动量积累</span>
+        </div>
+        <div class="lab-controls">
+          <label class="lab-range">
+            <span>非均匀引力场强度 <strong data-range-output="disk-tidal"></strong></span>
+            <input id="disk-tidal" type="range" min="0" max="100" value="68" />
+          </label>
+          <label class="lab-range">
+            <span>盘面不对称度 <strong data-range-output="disk-asymmetry"></strong></span>
+            <input id="disk-asymmetry" type="range" min="0" max="100" value="54" />
+          </label>
+          <label class="lab-range">
+            <span>耗散抹平强度 <strong data-range-output="disk-dissipation"></strong></span>
+            <input id="disk-dissipation" type="range" min="0" max="100" value="29" />
+          </label>
+          <label class="lab-range">
+            <span>积累时长 <strong data-range-output="disk-duration"></strong></span>
+            <input id="disk-duration" type="range" min="0" max="100" value="61" />
+          </label>
+        </div>
+        <div class="lab-metrics">
+          <div class="lab-metric">
+            <span>潮汐力矩指数</span>
+            <strong id="disk-torque-value"></strong>
+            <div class="lab-meter"><span id="disk-torque-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>传统基线解释力</span>
+            <strong id="disk-baseline-value"></strong>
+            <div class="lab-meter"><span id="disk-baseline-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>角动量积累倾向</span>
+            <strong id="disk-angmom-value"></strong>
+            <div class="lab-meter"><span id="disk-angmom-fill"></span></div>
+          </div>
+        </div>
+        <div id="disk-summary" class="lab-result-card"></div>
+      </article>
+
+      <article class="lab-card simulation-card">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Validate C</p>
+            <h3>星系角动量分布</h3>
+          </div>
+          <span class="simulation-badge">潮汐对齐 vs 教学观测模板</span>
+        </div>
+        <div class="lab-controls">
+          <label class="lab-range">
+            <span>环境各向异性 <strong data-range-output="galaxy-anisotropy"></strong></span>
+            <input id="galaxy-anisotropy" type="range" min="0" max="100" value="64" />
+          </label>
+          <label class="lab-range">
+            <span>潮汐对齐强度 <strong data-range-output="galaxy-alignment"></strong></span>
+            <input id="galaxy-alignment" type="range" min="0" max="100" value="57" />
+          </label>
+          <label class="lab-range">
+            <span>并合噪声 <strong data-range-output="galaxy-merger"></strong></span>
+            <input id="galaxy-merger" type="range" min="0" max="100" value="33" />
+          </label>
+          <label class="lab-range">
+            <span>教学观测模板偏向高自旋 <strong data-range-output="galaxy-observed"></strong></span>
+            <input id="galaxy-observed" type="range" min="0" max="100" value="52" />
+          </label>
+        </div>
+        <div class="lab-metrics">
+          <div class="lab-metric">
+            <span>扩展潮汐理论一致度</span>
+            <strong id="galaxy-model-fit-value"></strong>
+            <div class="lab-meter"><span id="galaxy-model-fit-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>简单基线一致度</span>
+            <strong id="galaxy-baseline-fit-value"></strong>
+            <div class="lab-meter"><span id="galaxy-baseline-fit-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>对齐敏感度</span>
+            <strong id="galaxy-alignment-index-value"></strong>
+            <div class="lab-meter"><span id="galaxy-alignment-index-fill"></span></div>
+          </div>
+        </div>
+        <div class="dist-shell">
+          <div class="dist-group">
+            <p>扩展潮汐理论</p>
+            <div class="dist-bars">
+              <div class="dist-bar-wrap"><span id="galaxy-model-low" class="dist-bar"></span><small id="galaxy-model-low-value"></small><em>低</em></div>
+              <div class="dist-bar-wrap"><span id="galaxy-model-mid" class="dist-bar"></span><small id="galaxy-model-mid-value"></small><em>中</em></div>
+              <div class="dist-bar-wrap"><span id="galaxy-model-high" class="dist-bar"></span><small id="galaxy-model-high-value"></small><em>高</em></div>
+            </div>
+          </div>
+          <div class="dist-group">
+            <p>教学观测模板</p>
+            <div class="dist-bars">
+              <div class="dist-bar-wrap"><span id="galaxy-observed-low" class="dist-bar dist-bar-alt"></span><small id="galaxy-observed-low-value"></small><em>低</em></div>
+              <div class="dist-bar-wrap"><span id="galaxy-observed-mid" class="dist-bar dist-bar-alt"></span><small id="galaxy-observed-mid-value"></small><em>中</em></div>
+              <div class="dist-bar-wrap"><span id="galaxy-observed-high" class="dist-bar dist-bar-alt"></span><small id="galaxy-observed-high-value"></small><em>高</em></div>
+            </div>
+          </div>
+          <div class="dist-group">
+            <p>简单基线</p>
+            <div class="dist-bars">
+              <div class="dist-bar-wrap"><span id="galaxy-baseline-low" class="dist-bar dist-bar-faint"></span><small id="galaxy-baseline-low-value"></small><em>低</em></div>
+              <div class="dist-bar-wrap"><span id="galaxy-baseline-mid" class="dist-bar dist-bar-faint"></span><small id="galaxy-baseline-mid-value"></small><em>中</em></div>
+              <div class="dist-bar-wrap"><span id="galaxy-baseline-high" class="dist-bar dist-bar-faint"></span><small id="galaxy-baseline-high-value"></small><em>高</em></div>
+            </div>
+          </div>
+        </div>
+        <div id="galaxy-summary" class="lab-result-card"></div>
+      </article>
+    </section>
+  `;
+
+  const updateFluidSimulation = () => {
+    const gradient = getRatio("fluid-gradient");
+    const rotation = getRatio("fluid-rotation");
+    const boundary = getRatio("fluid-boundary");
+    const dissipation = getRatio("fluid-dissipation");
+
+    setRangeOutput("fluid-gradient", `${Math.round(gradient * 100)}%`);
+    setRangeOutput("fluid-rotation", `${Math.round(rotation * 100)}%`);
+    setRangeOutput("fluid-boundary", `${Math.round(boundary * 100)}%`);
+    setRangeOutput("fluid-dissipation", `${Math.round(dissipation * 100)}%`);
+
+    const cluster = clamp01(
+      0.34 * gradient +
+      0.24 * rotation +
+      0.18 * boundary +
+      0.12 * (1 - dissipation) +
+      0.20 * gradient * boundary,
+    );
+    const traditional = clamp01(
+      0.52 * rotation +
+      0.22 * (1 - dissipation) +
+      0.16 * boundary +
+      0.10 * (1 - gradient),
+    );
+    const vortex = clamp01(
+      0.45 * cluster + 0.20 * rotation + 0.20 * boundary + 0.15 * (1 - dissipation),
+    );
+
+    setMeter("fluid-cluster", cluster);
+    setMeter("fluid-traditional", traditional);
+    setMeter("fluid-vortex", vortex);
+
+    const delta = cluster - traditional;
+    const dominant =
+      gradient * boundary > rotation
+        ? "当前更像是“非均匀外场 + 边界耦合”在主导涡旋站稳。"
+        : "当前旋转与剪切的解释力仍然占优。";
+    const observation =
+      gradient > boundary
+        ? "优先观察涡核是否沿外场梯度方向发生系统性偏移。"
+        : "优先观察边界附近是否出现回流带与局域涡核锁定。";
+
+    dom.labContent.querySelector("#fluid-summary").innerHTML = `
+      <h4>当前判断</h4>
+      <p>${dominant}</p>
+      <p>${
+        delta > 0.08
+          ? "在这组参数下，描述簇语言明显优于单看涡量/剪切。"
+          : delta < -0.05
+            ? "在这组参数下，传统旋转-剪切解释已足够强。"
+            : "在这组参数下，两种解释都需要，差别主要体现在边界与维持机制。"
+      }</p>
+      <p class="result-note">${observation}</p>
+    `;
+  };
+
+  const updateDiskSimulation = () => {
+    const tidal = getRatio("disk-tidal");
+    const asymmetry = getRatio("disk-asymmetry");
+    const dissipation = getRatio("disk-dissipation");
+    const duration = getRatio("disk-duration");
+
+    setRangeOutput("disk-tidal", `${Math.round(tidal * 100)}%`);
+    setRangeOutput("disk-asymmetry", `${Math.round(asymmetry * 100)}%`);
+    setRangeOutput("disk-dissipation", `${Math.round(dissipation * 100)}%`);
+    setRangeOutput("disk-duration", `${Math.round(duration * 100)}%`);
+
+    const torque = clamp01(
+      0.32 * tidal +
+      0.28 * asymmetry +
+      0.16 * duration +
+      0.16 * (1 - dissipation) +
+      0.16 * tidal * asymmetry,
+    );
+    const baseline = clamp01(
+      0.50 * tidal +
+      0.20 * duration +
+      0.18 * (1 - dissipation) +
+      0.12 * (1 - asymmetry),
+    );
+    const angmom = clamp01(
+      0.55 * torque + 0.20 * duration + 0.15 * asymmetry + 0.10 * (1 - dissipation),
+    );
+
+    setMeter("disk-torque", torque);
+    setMeter("disk-baseline", baseline);
+    setMeter("disk-angmom", angmom);
+
+    dom.labContent.querySelector("#disk-summary").innerHTML = `
+      <h4>当前判断</h4>
+      <p>${
+        torque > baseline
+          ? "非均匀引力场与盘面不对称的耦合，开始比简单基线更能解释角动量积累。"
+          : "当前参数下，传统基线仍能解释大部分变化，潮汐力矩增益还不够明显。"
+      }</p>
+      <p>${
+        duration > 0.6
+          ? "如果继续拉长积累时长，应重点跟踪通量是否真正累积而非只是在局部摆动。"
+          : "如果想让理论差异更显著，优先提高时长或不对称度，而不是只加总强度。"
+      }</p>
+      <p class="result-note">${
+        asymmetry > tidal
+          ? "优先看盘面偏心、环结构偏移和螺旋臂不对称。"
+          : "优先看潮汐力矩随半径变化的分布与角动量输运通道。"
+      }</p>
+    `;
+  };
+
+  const updateGalaxySimulation = () => {
+    const anisotropy = getRatio("galaxy-anisotropy");
+    const alignment = getRatio("galaxy-alignment");
+    const merger = getRatio("galaxy-merger");
+    const observedBias = getRatio("galaxy-observed");
+
+    setRangeOutput("galaxy-anisotropy", `${Math.round(anisotropy * 100)}%`);
+    setRangeOutput("galaxy-alignment", `${Math.round(alignment * 100)}%`);
+    setRangeOutput("galaxy-merger", `${Math.round(merger * 100)}%`);
+    setRangeOutput("galaxy-observed", `${Math.round(observedBias * 100)}%`);
+
+    const model = normalizeDistribution([
+      0.37 - 0.18 * anisotropy - 0.10 * alignment + 0.22 * merger,
+      0.38 + 0.02 * (1 - merger) - 0.04 * anisotropy,
+      0.25 + 0.18 * anisotropy + 0.14 * alignment - 0.18 * merger,
+    ]);
+    const baseline = normalizeDistribution([
+      0.35 - 0.08 * anisotropy + 0.24 * merger,
+      0.42,
+      0.23 + 0.08 * anisotropy - 0.18 * merger,
+    ]);
+    const observed = normalizeDistribution([
+      0.34 - 0.18 * observedBias + 0.12 * merger,
+      0.36 + 0.04 * (1 - merger),
+      0.30 + 0.18 * observedBias - 0.10 * merger,
+    ]);
+
+    const modelFit = clamp01(1 - distributionDistance(model, observed) / 2);
+    const baselineFit = clamp01(1 - distributionDistance(baseline, observed) / 2);
+    const alignmentIndex = clamp01(0.55 * anisotropy + 0.35 * alignment - 0.25 * merger + 0.2);
+
+    setMeter("galaxy-model-fit", modelFit);
+    setMeter("galaxy-baseline-fit", baselineFit);
+    setMeter("galaxy-alignment-index", alignmentIndex);
+
+    renderDistributionSeries("galaxy-model", model);
+    renderDistributionSeries("galaxy-observed", observed);
+    renderDistributionSeries("galaxy-baseline", baseline);
+
+    dom.labContent.querySelector("#galaxy-summary").innerHTML = `
+      <h4>当前判断</h4>
+      <p>${
+        modelFit > baselineFit + 0.05
+          ? "扩展潮汐解释对当前教学观测模板的拟合更优，说明环境各向异性和对齐项值得被单独追踪。"
+          : modelFit + 0.05 < baselineFit
+            ? "当前模板下简单基线仍更贴近，说明并合噪声可能遮蔽了潮汐对齐信号。"
+            : "两种解释接近，真正区分它们的关键会落在更细的环境选择与观测分组上。"
+      }</p>
+      <p class="result-note">${
+        anisotropy > merger
+          ? "优先看自旋向量与大尺度丝状结构 / 潮汐张量主轴的对齐。"
+          : "优先把并合历史和环境分开统计，否则高层落差会被噪声洗掉。"
+      }</p>
+    `;
+  };
+
+  dom.labContent
+    .querySelectorAll("input[type='range']")
+    .forEach((input) =>
+      input.addEventListener("input", () => {
+        updateFluidSimulation();
+        updateDiskSimulation();
+        updateGalaxySimulation();
+      }),
+    );
+
+  updateFluidSimulation();
+  updateDiskSimulation();
+  updateGalaxySimulation();
+}
+
+function renderLabInfer() {
+  dom.labNote.textContent =
+    "推演页不是替你宣布结论，而是帮助你判断：当前条件更像一次事件、短命结构、准稳态，还是已经接近规则沉淀。";
+  dom.labContent.innerHTML = `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card">
+        <p class="eyebrow">Inference Setup</p>
+        <h3>研究推演器</h3>
+        <label class="lab-select">
+          <span>系统类型</span>
+          <select id="infer-domain">
+            <option value="fluid">旋转流体</option>
+            <option value="disk">原行星盘</option>
+            <option value="galaxy">星系角动量</option>
+            <option value="ai">AI / 大模型系统</option>
+          </select>
+        </label>
+        <div class="lab-controls">
+          <label class="lab-range">
+            <span>差结构强度 <strong data-range-output="infer-difference"></strong></span>
+            <input id="infer-difference" type="range" min="0" max="100" value="70" />
+          </label>
+          <label class="lab-range">
+            <span>边界清晰度 <strong data-range-output="infer-boundary"></strong></span>
+            <input id="infer-boundary" type="range" min="0" max="100" value="58" />
+          </label>
+          <label class="lab-range">
+            <span>反馈闭环强度 <strong data-range-output="infer-feedback"></strong></span>
+            <input id="infer-feedback" type="range" min="0" max="100" value="62" />
+          </label>
+          <label class="lab-range">
+            <span>耗散平衡度 <strong data-range-output="infer-dissipation"></strong></span>
+            <input id="infer-dissipation" type="range" min="0" max="100" value="46" />
+          </label>
+          <label class="lab-range">
+            <span>记忆 / 继承连续性 <strong data-range-output="infer-memory"></strong></span>
+            <input id="infer-memory" type="range" min="0" max="100" value="55" />
+          </label>
+        </div>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Emergence Track</p>
+        <h3>当前更可能停在哪一层</h3>
+        <div class="stage-track" id="infer-stage-track">
+          <div class="stage-node" data-stage="0"><strong>事件</strong><span>有差但留不住</span></div>
+          <div class="stage-node" data-stage="1"><strong>短命结构</strong><span>能显现但不稳</span></div>
+          <div class="stage-node" data-stage="2"><strong>准稳态</strong><span>能维持一段时间</span></div>
+          <div class="stage-node" data-stage="3"><strong>规则沉淀</strong><span>可重复、可压缩</span></div>
+        </div>
+        <div class="lab-metric">
+          <span>规则沉淀倾向</span>
+          <strong id="infer-score-value"></strong>
+          <div class="lab-meter"><span id="infer-score-fill"></span></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="lab-grid lab-grid-three">
+      <article class="lab-card">
+        <p class="eyebrow">Prediction</p>
+        <h3>当前更像什么</h3>
+        <p id="infer-stage-text" class="lab-lead"></p>
+      </article>
+      <article class="lab-card">
+        <p class="eyebrow">Observable</p>
+        <h3>最值得优先测什么</h3>
+        <p id="infer-observable" class="lab-lead"></p>
+      </article>
+      <article class="lab-card">
+        <p class="eyebrow">Bottleneck</p>
+        <h3>最可能卡在哪里</h3>
+        <p id="infer-bottleneck" class="lab-lead"></p>
+      </article>
+    </section>
+
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card">
+        <p class="eyebrow">Next Step</p>
+        <h3>建议下一步</h3>
+        <p id="infer-next-step"></p>
+      </article>
+      <article class="lab-card">
+        <p class="eyebrow">Why</p>
+        <h3>这一判断是怎么来的</h3>
+        <p id="infer-explain"></p>
+      </article>
+    </section>
+  `;
+
+  const domainProfiles = {
+    fluid: {
+      observables: [
+        "优先看速度场中的涡核偏移与边界回流带是否共定位。",
+        "优先看边界附近的结构寿命，而不只是瞬时涡量峰值。",
+      ],
+      next: "把容器边界、外场梯度和耗散参数拆开扫一遍，再看哪一项真正控制了涡旋能否站住。",
+    },
+    disk: {
+      observables: [
+        "优先看潮汐力矩随半径变化的分布，而不是只看总角动量。",
+        "优先看盘面不对称与螺旋臂强度是否同步增强。",
+      ],
+      next: "把盘面不对称度与积累时长做联合参数扫描，检验角动量输运究竟是瞬时扰动还是可持续通量。",
+    },
+    galaxy: {
+      observables: [
+        "优先看自旋向量与大尺度环境主轴的对齐关系。",
+        "优先把并合历史与环境各向异性分层统计，避免噪声把趋势洗平。",
+      ],
+      next: "先做环境分箱与观测模板对照，再判断是否值得把潮汐对齐项正式加入拟合模型。",
+    },
+    ai: {
+      observables: [
+        "优先看长时记忆、工具调用和验证接口是否形成闭环，而不只是看回答是否流畅。",
+        "优先看 logit 差、检索命中和外部反馈能否持续回灌到系统行为中。",
+      ],
+      next: "如果想跨到下一层，就不要只加参数量，而应补长期记忆、现实接地、权限控制与验证链。",
+    },
+  };
+
+  const updateInference = () => {
+    const domain = dom.labContent.querySelector("#infer-domain").value;
+    const difference = getRatio("infer-difference");
+    const boundary = getRatio("infer-boundary");
+    const feedback = getRatio("infer-feedback");
+    const dissipation = getRatio("infer-dissipation");
+    const memory = getRatio("infer-memory");
+    const balance = clamp01(1 - Math.abs(dissipation - 0.45) * 2);
+
+    setRangeOutput("infer-difference", `${Math.round(difference * 100)}%`);
+    setRangeOutput("infer-boundary", `${Math.round(boundary * 100)}%`);
+    setRangeOutput("infer-feedback", `${Math.round(feedback * 100)}%`);
+    setRangeOutput("infer-dissipation", `${Math.round(dissipation * 100)}%`);
+    setRangeOutput("infer-memory", `${Math.round(memory * 100)}%`);
+
+    const emergence = clamp01(
+      0.24 * difference +
+      0.22 * boundary +
+      0.24 * feedback +
+      0.18 * memory +
+      0.12 * balance,
+    );
+
+    setMeter("infer-score", emergence);
+
+    const stageIndex =
+      emergence < 0.28 ? 0 :
+      emergence < 0.52 ? 1 :
+      emergence < 0.76 ? 2 : 3;
+
+    dom.labContent.querySelectorAll(".stage-node").forEach((node) => {
+      node.classList.toggle("is-active", Number(node.dataset.stage) <= stageIndex);
+      node.classList.toggle("is-current", Number(node.dataset.stage) === stageIndex);
+    });
+
+    const weakest = [
+      ["差结构强度", difference],
+      ["边界清晰度", boundary],
+      ["反馈闭环", feedback],
+      ["记忆 / 继承连续性", memory],
+      ["耗散平衡", balance],
+    ].sort((a, b) => a[1] - b[1])[0];
+
+    const stageText = [
+      "当前更像一次事件：差异已经出现，但还不足以留下可维持的组织形态。",
+      "当前更像短寿命结构：能显现出局部图样，但还缺少足够的维持条件。",
+      "当前更像准稳态：已经具备一段时间内可重复维持的潜力，但还未稳到可压缩成规则。",
+      "当前已经逼近规则沉淀：如果继续保持这些条件，就有机会把结构压成可重复、可迁移的稳定关系。",
+    ][stageIndex];
+
+    const profile = domainProfiles[domain];
+    const observation =
+      emergence > 0.6 ? profile.observables[0] : profile.observables[1];
+
+    dom.labContent.querySelector("#infer-stage-text").textContent = stageText;
+    dom.labContent.querySelector("#infer-observable").textContent = observation;
+    dom.labContent.querySelector("#infer-bottleneck").textContent =
+      `当前最短板是“${weakest[0]}”。如果这项不补强，系统大概率会在更高层之前先失稳或回落。`;
+    dom.labContent.querySelector("#infer-next-step").textContent = profile.next;
+    dom.labContent.querySelector("#infer-explain").textContent =
+      `这次推演主要根据差结构强度、边界清晰度、反馈闭环、耗散平衡和记忆连续性五项共同计算。当“有差”还不能被边界收住、被反馈回灌、被记忆继承时，现象就更像短事件；当这些条件同时站住，结构才会向稳态与规则推进。`;
+  };
+
+  dom.labContent
+    .querySelectorAll("input, select")
+    .forEach((input) => input.addEventListener("input", updateInference));
+
+  updateInference();
+}
+
+function renderLabPage(page) {
+  const activePage = normalizeLabPage(page);
+  state.activeLabPage = activePage;
+  dom.labTitle.textContent = LAB_PAGES[activePage].title;
+  dom.labIntro.textContent = LAB_PAGES[activePage].intro;
+  renderLabTabs(activePage);
+
+  if (activePage === "learn") {
+    renderLabLearn();
+  } else if (activePage === "validate") {
+    renderLabValidate();
+  } else {
+    renderLabInfer();
+  }
+
+  dom.labContent.querySelectorAll("[data-lab-nav]").forEach((button) => {
+    button.addEventListener("click", () => setHashForLab(button.dataset.labNav));
+  });
+}
+
 function renderHome() {
   state.activeId = null;
+  state.activeLabPage = null;
   state.currentPrevId = null;
   state.currentNextId = null;
 
@@ -346,12 +1154,36 @@ function renderHome() {
   document.body.classList.remove("is-reading");
   dom.viewTitle.textContent = "书架";
   dom.homeView.classList.remove("hidden");
+  dom.labView.classList.add("hidden");
   dom.docView.classList.add("hidden");
+  dom.readerProgressBar.style.transform = "scaleX(0)";
+  dom.tocButton.disabled = true;
+  updateChapterButtons(null, null);
+  syncViewButtons();
+  closePanels();
+  buildNav();
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+async function renderLab(page) {
+  const activePage = normalizeLabPage(page);
+  state.activeId = null;
+  state.currentPrevId = null;
+  state.currentNextId = null;
+  document.title = `${state.payload.site.title} · ${LAB_PAGES[activePage].title}`;
+  document.body.classList.remove("is-reading");
+  dom.viewTitle.textContent = "理论实验台";
+  dom.homeView.classList.add("hidden");
+  dom.docView.classList.add("hidden");
+  dom.labView.classList.remove("hidden");
   dom.readerProgressBar.style.transform = "scaleX(0)";
   dom.tocButton.disabled = true;
   updateChapterButtons(null, null);
   closePanels();
   buildNav();
+  renderLabPage(activePage);
+  syncViewButtons();
+  await typesetElement(dom.labContent);
   window.scrollTo({ top: 0, behavior: "auto" });
 }
 
@@ -474,7 +1306,7 @@ async function renderComments(item) {
   }
 
   dom.commentsNote.textContent =
-    "评论区已接入 Twikoo。当前每个章节会使用独立评论线程，适合书稿式连续阅读。";
+    "评论区已接入 Twikoo。当前每个章节会使用独立评论线程，适合按章节收集阅读反馈、主线修订意见与结构调整建议。";
 
   try {
     await mountTwikoo(item, comments);
@@ -508,8 +1340,12 @@ function renderPagination(item) {
 }
 
 async function typesetMath() {
-  if (window.MathJax?.typesetPromise) {
-    await window.MathJax.typesetPromise([dom.docContent]);
+  await typesetElement(dom.docContent);
+}
+
+async function typesetElement(element) {
+  if (window.MathJax?.typesetPromise && element) {
+    await window.MathJax.typesetPromise([element]);
   }
 }
 
@@ -535,13 +1371,16 @@ async function renderDoc(id) {
   }
 
   state.activeId = item.id;
+  state.activeLabPage = null;
   document.body.classList.add("is-reading");
   dom.homeView.classList.add("hidden");
+  dom.labView.classList.add("hidden");
   dom.docView.classList.remove("hidden");
   dom.viewTitle.textContent = item.title;
   dom.tocButton.disabled = false;
 
   buildNav();
+  syncViewButtons();
   closePanels();
 
   dom.docBreadcrumb.textContent = item.sectionTitle;
@@ -577,12 +1416,16 @@ function updateShell() {
 }
 
 async function route() {
-  const id = getDocIdFromHash();
-  if (!id) {
+  const routeState = getHashRoute();
+  if (routeState.type === "home") {
     renderHome();
     return;
   }
-  await renderDoc(id);
+  if (routeState.type === "lab") {
+    await renderLab(routeState.page);
+    return;
+  }
+  await renderDoc(routeState.id);
 }
 
 function bindEvents() {
@@ -597,6 +1440,10 @@ function bindEvents() {
     setMobileFontPanelOpen(false);
     setDrawerOpen(false);
     setTocOpen(!state.tocOpen);
+  });
+  dom.labButton.addEventListener("click", () => {
+    closePanels();
+    setHashForLab(state.activeLabPage || "learn");
   });
   dom.themeButton.addEventListener("click", cycleTheme);
   dom.fontDownButton.addEventListener("click", () => adjustFont(-1));
@@ -613,6 +1460,7 @@ function bindEvents() {
     const item = getPrimaryStartItem();
     if (item) setHashForDoc(item.id);
   });
+  dom.openLabButton.addEventListener("click", () => setHashForLab("learn"));
   dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
 
   dom.mobileHomeButton.addEventListener("click", () => {
@@ -644,6 +1492,12 @@ function bindEvents() {
   });
 
   dom.pageOverlay.addEventListener("click", closePanels);
+
+  dom.labTabs?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-lab-page]");
+    if (!button) return;
+    setHashForLab(button.dataset.labPage);
+  });
 
   window.addEventListener("hashchange", () => {
     route().catch(console.error);
@@ -686,6 +1540,7 @@ async function init() {
   updateShell();
   applyPreferences();
   buildQuickLinks();
+  buildSystemLinks();
   buildNav();
   bindEvents();
   await route();
