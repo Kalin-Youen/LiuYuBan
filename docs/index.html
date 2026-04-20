@@ -82,50 +82,63 @@
 
       <main class="reader-main">
         <section id="home-view" class="home-view">
-          <div class="hero-card">
-            <p class="eyebrow">Project Manifest</p>
-            <h2 id="hero-title"></h2>
-            <p id="hero-text" class="hero-text"></p>
+          <div class="hero-card hero-card-featured">
+            <div class="hero-layout">
+              <div class="hero-copy-block">
+                <p class="eyebrow">Recommended First Volume</p>
+                <h2 id="hero-title"></h2>
+                <p id="hero-text" class="hero-text"></p>
 
-            <div class="hero-actions">
-              <button id="start-reading-button" class="pill-button" type="button">开始阅读</button>
-              <button id="open-lab-button" class="pill-button" type="button">进入实验台</button>
-              <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">打开目录</button>
+                <div class="hero-actions">
+                  <button id="start-reading-button" class="pill-button" type="button">先读白话卷</button>
+                  <button id="open-lab-button" class="pill-button" type="button">进入主书稿</button>
+                  <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">打开分卷目录</button>
+                </div>
+              </div>
+
+              <aside class="hero-spotlight" aria-label="推荐入口">
+                <p class="eyebrow">直观理解卷</p>
+                <h3 id="featured-volume-title"></h3>
+                <p id="featured-volume-copy" class="hero-spotlight-copy"></p>
+                <div id="featured-volume-meta" class="spotlight-meta"></div>
+                <div id="featured-volume-links" class="spotlight-links"></div>
+              </aside>
             </div>
           </div>
 
           <div class="home-panels">
             <article class="home-card">
-              <h3>像小说一样读</h3>
-              <p>正文会以沉浸式版面展示，章节切换、目录、主题和字号都围绕长文阅读来设计。</p>
+              <h3>先从白话卷入场</h3>
+              <p>第一次进站先读直观理解卷，先把主线读通，再按兴趣切到主书稿、总述或术语边界。</p>
             </article>
             <article class="home-card">
-              <h3>像书架一样找</h3>
-              <p>所有理论总述、书稿正文与术语补充都可以从目录抽屉里快速进入，也可以直接搜索。</p>
+              <h3>像分卷小说一样切</h3>
+              <p>目录不再只是文档列表，而是按卷册分开：白话卷、主书稿、总述、术语边界和 AI 协作卷各走各的入口。</p>
             </article>
             <article class="home-card">
-              <h3>像连载一样更</h3>
-              <p>以后你继续更新 Markdown 文稿，网站就能跟着同步更新，不需要重新手工排版。</p>
+              <h3>像长篇连载一样追</h3>
+              <p>章节顺序、上下章翻页和卷内阅读会优先保持连贯，让读者更像在追一套持续生长的书，而不是翻零散材料。</p>
             </article>
             <article class="home-card">
-              <h3>像实验一样验</h3>
-              <p>把展望里的模拟实验做成交互分页，让理论学习、效验和推演可以在同一站内完成。</p>
+              <h3>像书后附录一样扩</h3>
+              <p>实验台、专题和协作卷仍然保留，但它们会被放到首读之后的位置，不抢白话卷的入口注意力。</p>
             </article>
           </div>
 
           <section class="systems-section">
             <div class="section-heading">
-              <p class="eyebrow">High Efficiency</p>
-              <h3>高效入口</h3>
-              <p class="section-copy">把主书稿、白话卷、AI 协作卷和术语边界分开进入，让阅读、反馈和系统规划都更低阻力。</p>
+              <p class="eyebrow">Volume Shelf</p>
+              <h3>分卷阅读入口</h3>
+              <p class="section-copy">把不同卷册排成一排可直接进入的阅读入口，让首页更像小说阅读软件的卷架，而不是普通文档首页。</p>
             </div>
             <div id="system-links" class="systems-grid"></div>
           </section>
 
           <section class="bookshelf-section">
             <div class="section-heading">
-              <p class="eyebrow">Quick Start</p>
-              <h3>从这些章节开始</h3>
+              <p class="eyebrow">Plain Language First</p>
+              <h3>白话卷先读这些</h3>
+              <p class="section-copy">如果你是第一次进入这套理论，最适合先从这几篇开始，把直觉、边界和主线先读顺。</p>
             </div>
             <div id="quick-links" class="book-shelf"></div>
           </section>

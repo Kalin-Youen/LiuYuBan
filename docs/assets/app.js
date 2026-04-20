@@ -13,6 +13,39 @@ const THEME_LABELS = {
   sepia: "暖棕",
   night: "夜读",
 };
+const HOME_SECTION_ORDER = ["plain-book", "book", "overview", "terms", "ai-book"];
+const SECTION_PRESENTATION = {
+  "plain-book": {
+    badge: "推荐先读",
+    eyebrow: "直观理解卷",
+    hook: "先把主线读成一条能直接走进去的线。",
+    description: "第一次进入本站，优先从白话卷开始。先建立直觉，再决定什么时候切到主书稿。",
+  },
+  book: {
+    badge: "主线正文",
+    eyebrow: "理论骨架卷",
+    hook: "从绪论、正文到专题与附录，完整展开论证。",
+    description: "当你想看更严密、更完整的版本，或者准备进入细部推导和接口扩展时，从这里进入。",
+  },
+  overview: {
+    badge: "总述入口",
+    eyebrow: "总览与校准",
+    hook: "先看当前最稳的收束、边界与自我校验。",
+    description: "适合在读完白话卷后回头校准全局主轴，快速确认理论当前站得最稳的表达。",
+  },
+  terms: {
+    badge: "术语边界",
+    eyebrow: "概念拆解卷",
+    hook: "把最容易打架的词先拆清楚。",
+    description: "当你被术语、边界、强命题或跨层接口卡住时，从这里翻最省时间。",
+  },
+  "ai-book": {
+    badge: "协作系统",
+    eyebrow: "AI 协作卷",
+    hook: "给协作系统、版本治理与残差回写使用的卷册。",
+    description: "它不是第一次进入时的首读入口，更像主线稳定后供协作、扩写和版本治理使用的后端卷册。",
+  },
+};
 const LAB_PAGES = {
   learn: {
     title: "理论学习页",
@@ -307,6 +340,10 @@ const dom = {
   heroText: document.getElementById("hero-text"),
   systemLinks: document.getElementById("system-links"),
   quickLinks: document.getElementById("quick-links"),
+  featuredVolumeTitle: document.getElementById("featured-volume-title"),
+  featuredVolumeCopy: document.getElementById("featured-volume-copy"),
+  featuredVolumeMeta: document.getElementById("featured-volume-meta"),
+  featuredVolumeLinks: document.getElementById("featured-volume-links"),
   labTitle: document.getElementById("lab-title"),
   labIntro: document.getElementById("lab-intro"),
   labTabs: document.getElementById("lab-tabs"),
@@ -541,14 +578,54 @@ function findItemById(id) {
   return state.payload.items.find((item) => item.id === id) || null;
 }
 
+function getSectionPresentation(sectionId) {
+  return SECTION_PRESENTATION[sectionId] || {};
+}
+
+function getSectionItems(sectionId) {
+  return state.payload.items
+    .filter((item) => item.sectionId === sectionId)
+    .sort((a, b) => a.order - b.order);
+}
+
+function getReadableSectionItems(sectionId) {
+  const items = getSectionItems(sectionId);
+  const filtered = items.filter((item) => !item.title.includes("备忘录"));
+  return filtered.length ? filtered : items;
+}
+
+function getOrderedSections() {
+  const rank = new Map(HOME_SECTION_ORDER.map((id, index) => [id, index]));
+  return [...state.payload.sections].sort((left, right) => {
+    const leftRank = rank.has(left.id) ? rank.get(left.id) : Number.MAX_SAFE_INTEGER;
+    const rightRank = rank.has(right.id) ? rank.get(right.id) : Number.MAX_SAFE_INTEGER;
+    if (leftRank !== rightRank) return leftRank - rightRank;
+    return left.title.localeCompare(right.title, "zh-CN");
+  });
+}
+
+function getReadingSequence() {
+  return getOrderedSections().flatMap((section) => getSectionItems(section.id));
+}
+
+function formatVolumeEntryIndex(item, index) {
+  if (item.title.includes("卷首")) return "卷首";
+  const chapterMatch = item.title.match(/第(\d+)章/);
+  if (chapterMatch) return chapterMatch[1].padStart(2, "0");
+  const appendixMatch = item.title.match(/附录([A-Z])/i);
+  if (appendixMatch) return `附${appendixMatch[1].toUpperCase()}`;
+  return String(index + 1).padStart(2, "0");
+}
+
 function getCommentsConfig() {
   return state.payload.site.comments || {};
 }
 
 function getPrimaryStartItem() {
   return (
-    state.payload.items.find((item) => item.sectionId === "book") ||
-    state.payload.items[0] ||
+    getSectionEntry("plain-book") ||
+    getSectionEntry("book") ||
+    getReadingSequence()[0] ||
     null
   );
 }
@@ -607,8 +684,7 @@ function resetFontSize() {
 }
 
 function buildQuickLinks() {
-  const items = state.payload.items
-    .filter((item) => item.sectionId === "book")
+  const items = getReadableSectionItems("plain-book")
     .slice(0, 6);
 
   dom.quickLinks.innerHTML = "";
@@ -618,8 +694,9 @@ function buildQuickLinks() {
     link.className = "book-card";
     link.href = `#doc/${encodeURIComponent(item.id)}`;
     link.innerHTML = `
-      <div class="book-card-index">${String(index + 1).padStart(2, "0")}</div>
+      <div class="book-card-index">${formatVolumeEntryIndex(item, index)}</div>
       <div class="book-card-copy">
+        <p class="book-card-meta">白话卷</p>
         <h4>${item.title}</h4>
         <p>${item.excerpt || item.sectionTitle}</p>
       </div>
@@ -629,7 +706,7 @@ function buildQuickLinks() {
 }
 
 function getSectionEntry(sectionId) {
-  const items = state.payload.items.filter((item) => item.sectionId === sectionId);
+  const items = getSectionItems(sectionId);
 
   if (sectionId === "book") {
     return (
@@ -659,23 +736,74 @@ function getSectionEntry(sectionId) {
   return items[0] || null;
 }
 
+function buildFeaturedVolume() {
+  const items = getReadableSectionItems("plain-book");
+  const firstReadable = getSectionEntry("plain-book");
+
+  dom.featuredVolumeTitle.textContent = "白话卷 · 直观理解卷";
+  dom.featuredVolumeCopy.textContent =
+    "最适合作为第一次进入本站的入口。先把这套理论读成能直接理解、直接跟上的版本，再回头切换到主书稿。";
+
+  dom.featuredVolumeMeta.innerHTML = "";
+  [
+    "推荐首读",
+    `${items.length} 篇可连读`,
+    firstReadable ? `起点：${firstReadable.title}` : "可直接开始",
+  ].forEach((label) => {
+    const chip = document.createElement("span");
+    chip.className = "spotlight-chip";
+    chip.textContent = label;
+    dom.featuredVolumeMeta.appendChild(chip);
+  });
+
+  dom.featuredVolumeLinks.innerHTML = "";
+
+  items.slice(0, 4).forEach((item, index) => {
+    const link = document.createElement("a");
+    link.className = "spotlight-link";
+    link.href = `#doc/${encodeURIComponent(item.id)}`;
+    link.innerHTML = `
+      <span class="spotlight-link-index">${formatVolumeEntryIndex(item, index)}</span>
+      <span class="spotlight-link-copy">
+        <strong>${item.title}</strong>
+        <em>${item.excerpt || item.sectionTitle}</em>
+      </span>
+    `;
+    dom.featuredVolumeLinks.appendChild(link);
+  });
+}
+
 function buildSystemLinks() {
-  const sectionOrder = ["book", "plain-book", "ai-book", "terms"];
   dom.systemLinks.innerHTML = "";
 
-  sectionOrder.forEach((sectionId) => {
-    const section = state.payload.sections.find((item) => item.id === sectionId);
+  getOrderedSections().forEach((section) => {
+    const sectionId = section.id;
     const entry = getSectionEntry(sectionId);
+    const presentation = getSectionPresentation(sectionId);
+    const readableCount = getReadableSectionItems(sectionId).length;
 
-    if (!section || !entry) return;
+    if (!entry) return;
 
     const link = document.createElement("a");
     link.className = "system-card";
+    if (sectionId === "plain-book") {
+      link.classList.add("is-featured");
+    }
     link.href = `#doc/${encodeURIComponent(entry.id)}`;
     link.innerHTML = `
-      <p class="system-label">${section.title}</p>
-      <h4>${entry.title}</h4>
-      <p>${entry.excerpt || entry.sectionTitle}</p>
+      <div class="system-card-cover">
+        <span class="system-card-badge">${presentation.badge || section.title}</span>
+        <h4>${section.title}</h4>
+        <p class="system-card-hook">${presentation.hook || entry.title}</p>
+      </div>
+      <div class="system-card-body">
+        <div class="system-card-meta">
+          <p class="system-label">${presentation.eyebrow || "卷册入口"}</p>
+          <span class="system-count">${readableCount} 篇</span>
+        </div>
+        <strong class="system-entry">${entry.title}</strong>
+        <p>${presentation.description || entry.excerpt || entry.sectionTitle}</p>
+      </div>
     `;
     dom.systemLinks.appendChild(link);
   });
@@ -694,16 +822,17 @@ function buildNav() {
 
   dom.navSections.innerHTML = "";
 
-  state.payload.sections.forEach((section) => {
-    const sectionItems = section.items
-      .map((id) => findItemById(id))
-      .filter(Boolean)
+  getOrderedSections().forEach((section) => {
+    const sectionItems = getSectionItems(section.id)
       .filter((item) => filteredIds.has(item.id));
 
     if (!sectionItems.length) return;
 
     const group = document.createElement("section");
     group.className = "nav-group";
+    if (section.id === "plain-book") {
+      group.classList.add("is-featured");
+    }
 
     const title = document.createElement("h3");
     title.className = "nav-group-title";
@@ -717,14 +846,12 @@ function buildNav() {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "nav-item";
+      button.title = item.title;
       if (item.id === state.activeId) {
         button.classList.add("is-active");
       }
 
-      button.innerHTML = `
-        <strong>${item.title}</strong>
-        <span>${item.excerpt || item.sectionTitle}</span>
-      `;
+      button.innerHTML = `<strong>${item.title}</strong>`;
 
       button.addEventListener("click", () => {
         closePanels();
@@ -1691,7 +1818,7 @@ function renderHome() {
 
   document.title = `${state.payload.site.title} · 在线书稿`;
   document.body.classList.remove("is-reading");
-  dom.viewTitle.textContent = "书架";
+  dom.viewTitle.textContent = "分卷书架";
   dom.homeView.classList.remove("hidden");
   dom.labView.classList.add("hidden");
   dom.docView.classList.add("hidden");
@@ -1860,9 +1987,10 @@ async function renderComments(item) {
 }
 
 function renderPagination(item) {
-  const currentIndex = state.payload.items.findIndex((entry) => entry.id === item.id);
-  const prev = state.payload.items[currentIndex - 1] || null;
-  const next = state.payload.items[currentIndex + 1] || null;
+  const sequence = getReadingSequence();
+  const currentIndex = sequence.findIndex((entry) => entry.id === item.id);
+  const prev = sequence[currentIndex - 1] || null;
+  const next = sequence[currentIndex + 1] || null;
 
   updateChapterButtons(prev, next);
   dom.docPagination.innerHTML = "";
@@ -2001,7 +2129,10 @@ function bindEvents() {
     const item = getPrimaryStartItem();
     if (item) setHashForDoc(item.id);
   });
-  dom.openLabButton.addEventListener("click", () => setHashForLab("learn"));
+  dom.openLabButton.addEventListener("click", () => {
+    const item = getSectionEntry("book");
+    if (item) setHashForDoc(item.id);
+  });
   dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
 
   dom.mobileHomeButton.addEventListener("click", () => {
@@ -2079,6 +2210,7 @@ async function init() {
 
   state.payload = await response.json();
   updateShell();
+  buildFeaturedVolume();
   applyPreferences();
   buildQuickLinks();
   buildSystemLinks();
