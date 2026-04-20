@@ -590,7 +590,7 @@ function getSectionItems(sectionId) {
 
 function getReadableSectionItems(sectionId) {
   const items = getSectionItems(sectionId);
-  const filtered = items.filter((item) => !item.title.includes("备忘录"));
+  const filtered = items.filter((item) => !getDisplayTitle(item).includes("备忘录"));
   return filtered.length ? filtered : items;
 }
 
@@ -608,11 +608,41 @@ function getReadingSequence() {
   return getOrderedSections().flatMap((section) => getSectionItems(section.id));
 }
 
+function getDisplayTitle(item) {
+  if (!item) return "";
+  const firstSubheading = item.headings?.find((heading) => heading.level >= 2);
+  if (item.title === item.sectionTitle && firstSubheading?.label) {
+    return firstSubheading.label;
+  }
+  return item.title;
+}
+
+function getRenderedDocHtml(item) {
+  if (!item?.html) return "";
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = item.html;
+
+  const firstElement = wrapper.firstElementChild;
+  const removableTitles = new Set([item.title, item.sectionTitle, getDisplayTitle(item)].filter(Boolean));
+
+  if (
+    firstElement &&
+    firstElement.tagName === "H1" &&
+    removableTitles.has(firstElement.textContent.trim())
+  ) {
+    firstElement.remove();
+  }
+
+  return wrapper.innerHTML;
+}
+
 function formatVolumeEntryIndex(item, index) {
-  if (item.title.includes("卷首")) return "卷首";
-  const chapterMatch = item.title.match(/第(\d+)章/);
+  const displayTitle = getDisplayTitle(item);
+  if (displayTitle.includes("卷首")) return "卷首";
+  const chapterMatch = displayTitle.match(/第(\d+)章/);
   if (chapterMatch) return chapterMatch[1].padStart(2, "0");
-  const appendixMatch = item.title.match(/附录([A-Z])/i);
+  const appendixMatch = displayTitle.match(/附录([A-Z])/i);
   if (appendixMatch) return `附${appendixMatch[1].toUpperCase()}`;
   return String(index + 1).padStart(2, "0");
 }
@@ -697,7 +727,7 @@ function buildQuickLinks() {
       <div class="book-card-index">${formatVolumeEntryIndex(item, index)}</div>
       <div class="book-card-copy">
         <p class="book-card-meta">白话卷</p>
-        <h4>${item.title}</h4>
+        <h4>${getDisplayTitle(item)}</h4>
         <p>${item.excerpt || item.sectionTitle}</p>
       </div>
     `;
@@ -710,8 +740,8 @@ function getSectionEntry(sectionId) {
 
   if (sectionId === "book") {
     return (
-      items.find((item) => item.title.includes("第1章")) ||
-      items.find((item) => item.title.includes("绪论")) ||
+      items.find((item) => getDisplayTitle(item).includes("第1章")) ||
+      items.find((item) => getDisplayTitle(item).includes("绪论")) ||
       items[0] ||
       null
     );
@@ -719,7 +749,7 @@ function getSectionEntry(sectionId) {
 
   if (sectionId === "plain-book") {
     return (
-      items.find((item) => item.title.includes("卷首")) ||
+      items.find((item) => getDisplayTitle(item).includes("卷首")) ||
       items[0] ||
       null
     );
@@ -727,7 +757,7 @@ function getSectionEntry(sectionId) {
 
   if (sectionId === "ai-book") {
     return (
-      items.find((item) => item.title.includes("卷首")) ||
+      items.find((item) => getDisplayTitle(item).includes("卷首")) ||
       items[0] ||
       null
     );
@@ -748,7 +778,7 @@ function buildFeaturedVolume() {
   [
     "推荐首读",
     `${items.length} 篇可连读`,
-    firstReadable ? `起点：${firstReadable.title}` : "可直接开始",
+    firstReadable ? `起点：${getDisplayTitle(firstReadable)}` : "可直接开始",
   ].forEach((label) => {
     const chip = document.createElement("span");
     chip.className = "spotlight-chip";
@@ -765,7 +795,7 @@ function buildFeaturedVolume() {
     link.innerHTML = `
       <span class="spotlight-link-index">${formatVolumeEntryIndex(item, index)}</span>
       <span class="spotlight-link-copy">
-        <strong>${item.title}</strong>
+        <strong>${getDisplayTitle(item)}</strong>
         <em>${item.excerpt || item.sectionTitle}</em>
       </span>
     `;
@@ -794,14 +824,14 @@ function buildSystemLinks() {
       <div class="system-card-cover">
         <span class="system-card-badge">${presentation.badge || section.title}</span>
         <h4>${section.title}</h4>
-        <p class="system-card-hook">${presentation.hook || entry.title}</p>
+        <p class="system-card-hook">${presentation.hook || getDisplayTitle(entry)}</p>
       </div>
       <div class="system-card-body">
         <div class="system-card-meta">
           <p class="system-label">${presentation.eyebrow || "卷册入口"}</p>
           <span class="system-count">${readableCount} 篇</span>
         </div>
-        <strong class="system-entry">${entry.title}</strong>
+        <strong class="system-entry">${getDisplayTitle(entry)}</strong>
         <p>${presentation.description || entry.excerpt || entry.sectionTitle}</p>
       </div>
     `;
@@ -811,7 +841,7 @@ function buildSystemLinks() {
 
 function matchesSearch(item, keyword) {
   if (!keyword) return true;
-  const haystack = `${item.title} ${item.excerpt} ${item.sectionTitle}`.toLowerCase();
+  const haystack = `${item.title} ${getDisplayTitle(item)} ${item.excerpt} ${item.sectionTitle}`.toLowerCase();
   return haystack.includes(keyword.toLowerCase());
 }
 
@@ -846,12 +876,12 @@ function buildNav() {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "nav-item";
-      button.title = item.title;
+      button.title = getDisplayTitle(item);
       if (item.id === state.activeId) {
         button.classList.add("is-active");
       }
 
-      button.innerHTML = `<strong>${item.title}</strong>`;
+      button.innerHTML = `<strong>${getDisplayTitle(item)}</strong>`;
 
       button.addEventListener("click", () => {
         closePanels();
@@ -1997,10 +2027,10 @@ function renderPagination(item) {
 
   const cards = [
     prev
-      ? `<a class="pager-card" href="#doc/${encodeURIComponent(prev.id)}"><small>上一章</small><strong>${prev.title}</strong></a>`
+      ? `<a class="pager-card" href="#doc/${encodeURIComponent(prev.id)}"><small>上一章</small><strong>${getDisplayTitle(prev)}</strong></a>`
       : `<div class="pager-card"><small>上一章</small><strong>已经到头了</strong></div>`,
     next
-      ? `<a class="pager-card" href="#doc/${encodeURIComponent(next.id)}"><small>下一章</small><strong>${next.title}</strong></a>`
+      ? `<a class="pager-card" href="#doc/${encodeURIComponent(next.id)}"><small>下一章</small><strong>${getDisplayTitle(next)}</strong></a>`
       : `<div class="pager-card"><small>下一章</small><strong>已经到底了</strong></div>`,
   ];
 
@@ -2044,7 +2074,7 @@ async function renderDoc(id) {
   dom.homeView.classList.add("hidden");
   dom.labView.classList.add("hidden");
   dom.docView.classList.remove("hidden");
-  dom.viewTitle.textContent = item.title;
+  dom.viewTitle.textContent = getDisplayTitle(item);
   dom.tocButton.disabled = false;
 
   buildNav();
@@ -2052,10 +2082,10 @@ async function renderDoc(id) {
   closePanels();
 
   dom.docBreadcrumb.textContent = item.sectionTitle;
-  dom.docTitle.textContent = item.title;
+  dom.docTitle.textContent = getDisplayTitle(item);
   dom.docUpdated.textContent = relativeTime(item.updatedAt);
   dom.docSource.textContent = `源文件：${item.sourcePath}`;
-  dom.docContent.innerHTML = item.html;
+  dom.docContent.innerHTML = getRenderedDocHtml(item);
   await renderComments(item);
 
   renderToc(item);
