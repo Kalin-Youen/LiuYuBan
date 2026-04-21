@@ -148,6 +148,25 @@ const GRAPH_LEGEND = Object.freeze([
     copy: "这层节点已经被提出，但还没真正进入站内章节体系，适合作为下一轮扩写与补桥候选。",
   },
 ]);
+const GRAPH_FAMILY_PALETTE = Object.freeze({
+  "mother-1": { accent: "#a65d31", soft: "rgba(166, 93, 49, 0.12)", line: "rgba(166, 93, 49, 0.3)" },
+  "mother-2": { accent: "#b34b3a", soft: "rgba(179, 75, 58, 0.12)", line: "rgba(179, 75, 58, 0.3)" },
+  "mother-3": { accent: "#8c6a24", soft: "rgba(140, 106, 36, 0.12)", line: "rgba(140, 106, 36, 0.3)" },
+  "mother-4": { accent: "#2e6c89", soft: "rgba(46, 108, 137, 0.12)", line: "rgba(46, 108, 137, 0.3)" },
+  "mother-5": { accent: "#2d7a70", soft: "rgba(45, 122, 112, 0.12)", line: "rgba(45, 122, 112, 0.3)" },
+  "mother-6": { accent: "#8e4664", soft: "rgba(142, 70, 100, 0.12)", line: "rgba(142, 70, 100, 0.3)" },
+  bridge: { accent: "#5c6578", soft: "rgba(92, 101, 120, 0.12)", line: "rgba(92, 101, 120, 0.3)" },
+});
+const GRAPH_MAP_LAYOUT = Object.freeze({
+  paddingX: 34,
+  paddingY: 26,
+  groupWidth: 254,
+  groupGap: 28,
+  mother: { width: 196, height: 72, y: 52 },
+  core: { width: 112, height: 92, startY: 166, colGap: 12, rowGap: 14 },
+  interface: { width: 220, height: 74, startY: 544, gap: 12 },
+  secondary: { width: 220, height: 74, gap: 12 },
+});
 const LAB_PAGES = {
   learn: {
     title: "理论学习页",
@@ -1139,6 +1158,284 @@ function getGraphFocusFamilyIds(node) {
   (node?.relatedIds || []).forEach((id) => collect(findGraphNodeById(id)));
   if (node?.parentId) collect(findGraphNodeById(node.parentId));
   return familyIds;
+}
+
+function getGraphFamilyPalette(familyId) {
+  return GRAPH_FAMILY_PALETTE[familyId] || GRAPH_FAMILY_PALETTE.bridge;
+}
+
+function wrapGraphLabel(label, maxChars = 8, maxLines = 2) {
+  if (!label) return [];
+
+  const compact = label
+    .replace(/网$/, "")
+    .replace(/\s+/g, "")
+    .replace(/[（(].+?[）)]/g, "");
+  const lines = [];
+
+  for (let index = 0; index < compact.length && lines.length < maxLines; index += maxChars) {
+    const chunk = compact.slice(index, index + maxChars);
+    if (chunk) lines.push(chunk);
+  }
+
+  if (compact.length > maxChars * maxLines && lines.length) {
+    const lastIndex = lines.length - 1;
+    lines[lastIndex] = `${lines[lastIndex].slice(0, Math.max(1, maxChars - 1))}…`;
+  }
+
+  return lines.length ? lines : [label];
+}
+
+function createSvgElement(tag, attributes = {}) {
+  const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attributes).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      element.setAttribute(key, String(value));
+    }
+  });
+  return element;
+}
+
+function appendSvgTextLines(parent, lines, {
+  x,
+  y,
+  lineHeight = 16,
+  textAnchor = "middle",
+  className = "",
+  fill = "currentColor",
+  fontSize = 14,
+  fontWeight = 500,
+} = {}) {
+  const text = createSvgElement("text", {
+    x,
+    y,
+    "text-anchor": textAnchor,
+    class: className,
+    fill,
+    "font-size": fontSize,
+    "font-weight": fontWeight,
+  });
+
+  lines.forEach((line, index) => {
+    const tspan = createSvgElement("tspan", {
+      x,
+      dy: index === 0 ? 0 : lineHeight,
+    });
+    tspan.textContent = line;
+    text.appendChild(tspan);
+  });
+
+  parent.appendChild(text);
+  return text;
+}
+
+function getGraphMapGroups(graph) {
+  const nodes = graph?.nodes || [];
+  const groups = (graph?.families || []).map((family) => ({
+    id: family.id,
+    label: family.label,
+    shortLabel: family.shortLabel || family.label,
+    motherId: family.id,
+    coreIds: family.coreIds || [],
+    interfaceIds: sortGraphNodes(nodes.filter(
+      (node) => node.kind === "interface" && node.familyId === family.id,
+    )).map((node) => node.id),
+    secondaryIds: sortGraphNodes(nodes.filter(
+      (node) => node.kind === "secondary" && node.familyId === family.id,
+    )).map((node) => node.id),
+  }));
+
+  const bridgeNodes = {
+    interfaceIds: sortGraphNodes(nodes.filter(
+      (node) => node.kind === "interface" && node.familyId === "bridge",
+    )).map((node) => node.id),
+    secondaryIds: sortGraphNodes(nodes.filter(
+      (node) => node.kind === "secondary" && node.familyId === "bridge",
+    )).map((node) => node.id),
+  };
+
+  if (bridgeNodes.interfaceIds.length || bridgeNodes.secondaryIds.length) {
+    groups.push({
+      id: "bridge",
+      label: "跨层接口带",
+      shortLabel: "跨层接口",
+      motherId: null,
+      coreIds: [],
+      interfaceIds: bridgeNodes.interfaceIds,
+      secondaryIds: bridgeNodes.secondaryIds,
+    });
+  }
+
+  return groups;
+}
+
+function buildGraphMapLayout(graph) {
+  const groups = getGraphMapGroups(graph);
+  const config = GRAPH_MAP_LAYOUT;
+  const boxes = new Map();
+  const familyFrames = [];
+  let maxBottom = config.paddingY + 720;
+
+  groups.forEach((group, groupIndex) => {
+    const frameX = config.paddingX + groupIndex * (config.groupWidth + config.groupGap);
+    const frameY = config.paddingY;
+    const innerX = frameX + 17;
+    const palette = getGraphFamilyPalette(group.id);
+    let groupBottom = frameY + 120;
+
+    if (group.motherId) {
+      const motherX = frameX + (config.groupWidth - config.mother.width) / 2;
+      boxes.set(group.motherId, {
+        x: motherX,
+        y: config.mother.y,
+        width: config.mother.width,
+        height: config.mother.height,
+      });
+      groupBottom = Math.max(groupBottom, config.mother.y + config.mother.height + 24);
+    }
+
+    group.coreIds.forEach((nodeId, index) => {
+      const column = index % 2;
+      const row = Math.floor(index / 2);
+      const x = innerX + column * (config.core.width + config.core.colGap);
+      const y = config.core.startY + row * (config.core.height + config.core.rowGap);
+      boxes.set(nodeId, { x, y, width: config.core.width, height: config.core.height });
+      groupBottom = Math.max(groupBottom, y + config.core.height + 16);
+    });
+
+    group.interfaceIds.forEach((nodeId, index) => {
+      const x = frameX + (config.groupWidth - config.interface.width) / 2;
+      const y = config.interface.startY + index * (config.interface.height + config.interface.gap);
+      boxes.set(nodeId, { x, y, width: config.interface.width, height: config.interface.height });
+      groupBottom = Math.max(groupBottom, y + config.interface.height + 16);
+    });
+
+    const secondaryStartY = Math.max(
+      config.interface.startY + group.interfaceIds.length * (config.interface.height + config.interface.gap) + 34,
+      config.interface.startY + 110,
+    );
+
+    group.secondaryIds.forEach((nodeId, index) => {
+      const x = frameX + (config.groupWidth - config.secondary.width) / 2;
+      const y = secondaryStartY + index * (config.secondary.height + config.secondary.gap);
+      boxes.set(nodeId, { x, y, width: config.secondary.width, height: config.secondary.height });
+      groupBottom = Math.max(groupBottom, y + config.secondary.height + 16);
+    });
+
+    familyFrames.push({
+      ...group,
+      x: frameX,
+      y: frameY,
+      width: config.groupWidth,
+      height: groupBottom - frameY + 20,
+      palette,
+    });
+    maxBottom = Math.max(maxBottom, groupBottom + 30);
+  });
+
+  const width = config.paddingX * 2
+    + groups.length * config.groupWidth
+    + Math.max(0, groups.length - 1) * config.groupGap;
+  const height = maxBottom + config.paddingY;
+
+  return { boxes, familyFrames, width, height };
+}
+
+function getGraphEdgePoints(sourceBox, targetBox) {
+  const sourceCenterX = sourceBox.x + sourceBox.width / 2;
+  const sourceCenterY = sourceBox.y + sourceBox.height / 2;
+  const targetCenterX = targetBox.x + targetBox.width / 2;
+  const targetCenterY = targetBox.y + targetBox.height / 2;
+  const horizontalGap = Math.abs(sourceCenterX - targetCenterX);
+
+  if (horizontalGap > 50) {
+    const sourceRight = sourceCenterX < targetCenterX;
+    return {
+      from: {
+        x: sourceRight ? sourceBox.x + sourceBox.width : sourceBox.x,
+        y: sourceCenterY,
+      },
+      to: {
+        x: sourceRight ? targetBox.x : targetBox.x + targetBox.width,
+        y: targetCenterY,
+      },
+      mode: "horizontal",
+    };
+  }
+
+  return {
+    from: {
+      x: sourceCenterX,
+      y: sourceCenterY < targetCenterY ? sourceBox.y + sourceBox.height : sourceBox.y,
+    },
+    to: {
+      x: targetCenterX,
+      y: sourceCenterY < targetCenterY ? targetBox.y : targetBox.y + targetBox.height,
+    },
+    mode: "vertical",
+  };
+}
+
+function makeGraphEdgePath(sourceBox, targetBox) {
+  const points = getGraphEdgePoints(sourceBox, targetBox);
+
+  if (points.mode === "horizontal") {
+    const deltaX = (points.to.x - points.from.x) * 0.48;
+    return `M ${points.from.x} ${points.from.y} C ${points.from.x + deltaX} ${points.from.y}, ${points.to.x - deltaX} ${points.to.y}, ${points.to.x} ${points.to.y}`;
+  }
+
+  const deltaY = (points.to.y - points.from.y) * 0.42;
+  return `M ${points.from.x} ${points.from.y} C ${points.from.x} ${points.from.y + deltaY}, ${points.to.x} ${points.to.y - deltaY}, ${points.to.x} ${points.to.y}`;
+}
+
+function getGraphNodeVisualMeta(node) {
+  if (node.kind === "mother") {
+    return {
+      label: node.shortLabel || node.label,
+      code: "母网",
+      lines: wrapGraphLabel(node.shortLabel || node.label, 7, 2),
+      labelY: 34,
+      metaY: 58,
+    };
+  }
+
+  if (node.kind === "core") {
+    return {
+      label: node.shortLabel || node.label,
+      code: node.code || "核心网",
+      lines: wrapGraphLabel(node.shortLabel || node.label, 6, 2),
+      labelY: 38,
+      metaY: 72,
+    };
+  }
+
+  if (node.kind === "interface") {
+    return {
+      label: node.shortLabel || node.label,
+      code: node.code || "接口",
+      lines: wrapGraphLabel(node.shortLabel || node.label, 10, 2),
+      labelY: 30,
+      metaY: 58,
+    };
+  }
+
+  return {
+    label: node.shortLabel || node.label,
+    code: node.code || "二级网",
+    lines: wrapGraphLabel(node.shortLabel || node.label, 10, 2),
+    labelY: 30,
+    metaY: 58,
+  };
+}
+
+function buildGraphNodeStatusLabel(node) {
+  if (node.discussedChapterCount > 0) {
+    return `${node.discussedChapterCount} 篇已展开`;
+  }
+  if (node.chapterCount > 0) {
+    return `${node.chapterCount} 篇已标注`;
+  }
+  return "候选待写";
 }
 
 function getSectionPresentation(sectionId) {
@@ -4942,52 +5239,201 @@ function renderGraphClusters(selectedNode) {
   const selectedIds = getGraphContextIdSet(selectedNode);
   const focusFamilyIds = getGraphFocusFamilyIds(selectedNode);
 
-  dom.graphClusters.innerHTML = "";
+  if (!graph?.nodes?.length) {
+    dom.graphClusters.innerHTML = `<p class="empty-state">知识图谱数据正在生成中。</p>`;
+    return;
+  }
 
-  (graph?.families || []).forEach((family) => {
-    const mother = findGraphNodeById(family.id);
-    if (!mother) return;
+  const layout = buildGraphMapLayout(graph);
+  const nodesById = new Map(graph.nodes.map((node) => [node.id, node]));
+  const shell = document.createElement("div");
+  shell.className = "graph-map-shell";
 
-    const cluster = document.createElement("article");
-    cluster.className = "graph-cluster";
-    cluster.dataset.family = mother.id;
+  const hint = document.createElement("div");
+  hint.className = "graph-map-hint";
+  hint.innerHTML = `
+    <span>可视化图谱</span>
+    <p>点击任意节点查看章节映射。桌面端可直接浏览整张图，移动端可以左右滚动查看跨层连线。</p>
+  `;
+  shell.appendChild(hint);
 
-    if (focusFamilyIds.has(mother.id)) {
-      cluster.classList.add("is-focus");
-    }
+  const scroll = document.createElement("div");
+  scroll.className = "graph-map-scroll";
 
-    const header = document.createElement("div");
-    header.className = "graph-cluster-head";
-    header.appendChild(createGraphNodeButton(mother, {
-      variant: "mother",
-      isSelected: selectedNode.id === mother.id,
-      isRelated: selectedNode.id !== mother.id && selectedIds.has(mother.id),
-    }));
+  const svg = createSvgElement("svg", {
+    class: "graph-map-svg",
+    viewBox: `0 0 ${layout.width} ${layout.height}`,
+    "aria-label": "差结构学习法知识图谱关系图",
+    role: "img",
+  });
 
-    const summary = document.createElement("div");
-    summary.className = "graph-cluster-summary";
-    summary.innerHTML = `
-      <span>${mother.childIds?.length || 0} 个核心网</span>
-      <span>${mother.discussedChapterCount || 0} 篇正文/专题</span>
-    `;
-    header.appendChild(summary);
-    cluster.appendChild(header);
+  const defs = createSvgElement("defs");
+  const shadow = createSvgElement("filter", {
+    id: "graph-node-shadow",
+    x: "-20%",
+    y: "-20%",
+    width: "140%",
+    height: "160%",
+  });
+  shadow.appendChild(createSvgElement("feDropShadow", {
+    dx: "0",
+    dy: "10",
+    stdDeviation: "12",
+    "flood-color": "#4a3022",
+    "flood-opacity": "0.16",
+  }));
+  defs.appendChild(shadow);
+  svg.appendChild(defs);
 
-    const coreGrid = document.createElement("div");
-    coreGrid.className = "graph-core-grid";
-    (family.coreIds || []).forEach((coreId) => {
-      const core = findGraphNodeById(coreId);
-      if (!core) return;
-      coreGrid.appendChild(createGraphNodeButton(core, {
-        variant: "core",
-        isSelected: selectedNode.id === core.id,
-        isRelated: selectedNode.id !== core.id && selectedIds.has(core.id),
-      }));
+  const backgrounds = createSvgElement("g", { class: "graph-map-backgrounds" });
+  layout.familyFrames.forEach((frame) => {
+    const panel = createSvgElement("rect", {
+      x: frame.x,
+      y: frame.y,
+      width: frame.width,
+      height: frame.height,
+      rx: 28,
+      fill: frame.palette.soft,
+      stroke: focusFamilyIds.has(frame.id) ? frame.palette.accent : "rgba(125, 105, 86, 0.16)",
+      "stroke-width": focusFamilyIds.has(frame.id) ? 2.4 : 1.2,
+    });
+    backgrounds.appendChild(panel);
+
+    appendSvgTextLines(backgrounds, [frame.shortLabel], {
+      x: frame.x + 18,
+      y: frame.y + 24,
+      textAnchor: "start",
+      fill: frame.palette.accent,
+      fontSize: 12,
+      fontWeight: 700,
+      className: "graph-map-family-label",
+    });
+  });
+  svg.appendChild(backgrounds);
+
+  const edgeLayer = createSvgElement("g", { class: "graph-map-edges" });
+  (graph.edges || []).forEach((edge) => {
+    const sourceBox = layout.boxes.get(edge.source);
+    const targetBox = layout.boxes.get(edge.target);
+    if (!sourceBox || !targetBox) return;
+
+    const sourceNode = nodesById.get(edge.source);
+    const targetNode = nodesById.get(edge.target);
+    const familyId = sourceNode?.familyId === "bridge"
+      ? targetNode?.familyId || "bridge"
+      : sourceNode?.familyId || targetNode?.familyId || "bridge";
+    const palette = getGraphFamilyPalette(familyId);
+    const highlight = selectedIds.has(edge.source) && selectedIds.has(edge.target);
+    const path = createSvgElement("path", {
+      d: makeGraphEdgePath(sourceBox, targetBox),
+      fill: "none",
+      stroke: palette.line,
+      "stroke-width": highlight ? 2.6 : 1.3,
+      "stroke-opacity": highlight ? 0.92 : 0.28,
+      class: `graph-map-edge${highlight ? " is-highlight" : ""}`,
+    });
+    edgeLayer.appendChild(path);
+  });
+  svg.appendChild(edgeLayer);
+
+  const nodeLayer = createSvgElement("g", { class: "graph-map-nodes" });
+  sortGraphNodes(graph.nodes).forEach((node) => {
+    const box = layout.boxes.get(node.id);
+    if (!box) return;
+
+    const palette = getGraphFamilyPalette(node.familyId || node.id);
+    const selected = node.id === selectedNode.id;
+    const related = !selected && selectedIds.has(node.id);
+    const group = createSvgElement("g", {
+      class: `graph-map-node graph-map-node-${node.kind} is-${node.status}${selected ? " is-selected" : ""}${related ? " is-related" : ""}`,
+      tabindex: "0",
+      role: "button",
+      "aria-label": `${getGraphKindLabel(node.kind)} ${node.label}`,
+    });
+    group.style.cursor = "pointer";
+
+    const fill = node.status === "candidate"
+      ? "rgba(255,255,255,0.78)"
+      : node.status === "mapped"
+        ? "rgba(255,255,255,0.88)"
+        : "rgba(255,255,255,0.96)";
+    const rect = createSvgElement("rect", {
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      rx: node.kind === "mother" ? 24 : 18,
+      fill,
+      stroke: palette.accent,
+      "stroke-width": selected ? 3 : related ? 2.2 : 1.4,
+      "stroke-dasharray": node.status === "candidate" ? "6 4" : null,
+      filter: selected ? "url(#graph-node-shadow)" : null,
+      opacity: selected ? 1 : related ? 0.96 : node.status === "candidate" ? 0.9 : 0.94,
+    });
+    group.appendChild(rect);
+
+    const statusDot = createSvgElement("circle", {
+      cx: box.x + box.width - 14,
+      cy: box.y + 14,
+      r: 4.6,
+      fill: node.status === "lit" ? palette.accent : node.status === "mapped" ? "#2e6c89" : "#7a7f8d",
+    });
+    group.appendChild(statusDot);
+
+    const visual = getGraphNodeVisualMeta(node);
+    appendSvgTextLines(group, [visual.code], {
+      x: box.x + box.width / 2,
+      y: box.y + 16,
+      textAnchor: "middle",
+      fill: palette.accent,
+      fontSize: node.kind === "mother" ? 11 : 10,
+      fontWeight: 700,
+      className: "graph-map-node-code",
+    });
+    appendSvgTextLines(group, visual.lines, {
+      x: box.x + box.width / 2,
+      y: box.y + visual.labelY,
+      textAnchor: "middle",
+      fill: "#2b241d",
+      fontSize: node.kind === "mother" ? 16 : node.kind === "core" ? 13 : 12,
+      fontWeight: node.kind === "mother" ? 700 : 600,
+      lineHeight: node.kind === "mother" ? 18 : 16,
+      className: "graph-map-node-label",
+    });
+    appendSvgTextLines(group, [buildGraphNodeStatusLabel(node)], {
+      x: box.x + box.width / 2,
+      y: box.y + visual.metaY,
+      textAnchor: "middle",
+      fill: "#6b5e51",
+      fontSize: 10,
+      fontWeight: 500,
+      className: "graph-map-node-meta",
     });
 
-    cluster.appendChild(coreGrid);
-    dom.graphClusters.appendChild(cluster);
+    const activate = () => setHashForGraph(node.id);
+    group.addEventListener("click", activate);
+    group.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        activate();
+      }
+    });
+    nodeLayer.appendChild(group);
   });
+  svg.appendChild(nodeLayer);
+
+  scroll.appendChild(svg);
+  shell.appendChild(scroll);
+  dom.graphClusters.innerHTML = "";
+  dom.graphClusters.appendChild(shell);
+
+  const selectedBox = layout.boxes.get(selectedNode.id);
+  if (selectedBox) {
+    requestAnimationFrame(() => {
+      const targetLeft = Math.max(0, selectedBox.x - scroll.clientWidth * 0.35);
+      scroll.scrollTo({ left: targetLeft, behavior: "auto" });
+    });
+  }
 }
 
 function renderGraphDetail(selectedNode) {

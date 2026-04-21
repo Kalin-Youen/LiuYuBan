@@ -901,6 +901,93 @@ input {
   gap: 12px;
 }
 
+.graph-map-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.graph-map-hint {
+  display: grid;
+  gap: 6px;
+  padding: 14px 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(139, 63, 52, 0.12);
+  background: linear-gradient(180deg, rgba(255, 251, 246, 0.9), rgba(246, 250, 252, 0.92));
+}
+
+.graph-map-hint span {
+  color: var(--accent);
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.graph-map-hint p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.74;
+}
+
+.graph-map-scroll {
+  overflow: auto;
+  border-radius: 24px;
+  border: 1px solid rgba(139, 63, 52, 0.12);
+  background:
+    radial-gradient(circle at top left, rgba(172, 91, 46, 0.08), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(46, 108, 137, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 252, 248, 0.94), rgba(247, 249, 251, 0.96));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
+}
+
+.graph-map-svg {
+  display: block;
+  width: 100%;
+  min-width: 1700px;
+  height: auto;
+}
+
+.graph-map-edge {
+  transition: stroke-opacity 160ms ease, stroke-width 160ms ease;
+}
+
+.graph-map-edge.is-highlight {
+  filter: drop-shadow(0 0 10px rgba(74, 48, 34, 0.08));
+}
+
+.graph-map-node {
+  outline: none;
+}
+
+.graph-map-node:focus rect,
+.graph-map-node:hover rect {
+  transform: translateY(-1px);
+}
+
+.graph-map-node rect {
+  transition: transform 160ms ease, opacity 160ms ease, stroke-width 160ms ease;
+  transform-origin: center;
+}
+
+.graph-map-node:hover rect {
+  transform: translateY(-2px);
+}
+
+.graph-map-node.is-selected rect {
+  transform: translateY(-2px);
+}
+
+.graph-map-family-label,
+.graph-map-node-code,
+.graph-map-node-label,
+.graph-map-node-meta {
+  pointer-events: none;
+  user-select: none;
+}
+
+.graph-map-node-label {
+  font-family: var(--serif);
+}
+
 .graph-note-card {
   display: grid;
   gap: 14px;
