@@ -72,6 +72,7 @@
 
         <div class="header-actions">
           <button id="toc-button" class="reader-button" type="button">本章</button>
+          <button id="graph-button" class="reader-button" type="button">图谱</button>
           <button id="lab-button" class="reader-button" type="button">实验台</button>
           <button id="theme-button" class="reader-button" type="button">主题</button>
           <div class="font-controls" aria-label="字体大小">
@@ -98,6 +99,7 @@
 
                 <div class="hero-actions">
                   <button id="start-reading-button" class="pill-button" type="button">先读白话卷</button>
+                  <button id="open-graph-button" class="pill-button" type="button">打开知识图谱</button>
                   <button id="open-lab-button" class="pill-button" type="button">看10条轻内容</button>
                   <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">查看全部入口</button>
                 </div>
@@ -146,6 +148,32 @@
               <p class="section-copy">每条都能单独成文、单独转发，也能连起来组成完整的新读者入口。</p>
             </div>
             <div id="light-series-links" class="book-shelf"></div>
+          </section>
+
+          <section class="bookshelf-section graph-launch-section">
+            <div class="section-heading">
+              <p class="eyebrow">Knowledge Graph</p>
+              <h3>先从图谱看六个母网、三十六个核心网和候选二级网</h3>
+              <p class="section-copy">
+                这里不是普通目录，而是把目前已经谈到的节点、还停留在图谱层的节点、以及准备继续扩写的候选层一起点亮。
+                你可以先点节点，再顺着章节直接跳进去读。
+              </p>
+            </div>
+            <div class="graph-launch-shell">
+              <article class="graph-launch-card">
+                <p class="eyebrow">Visible Entry</p>
+                <h4>知识图谱入口</h4>
+                <p>
+                  节点颜色代表它目前在站内的展开程度：
+                  已展开的节点会更亮，只在图谱或附录中出现的节点会偏暗，尚未进入正文的候选节点会保留成待点亮状态。
+                </p>
+                <div class="hero-actions graph-launch-actions">
+                  <button id="open-graph-launch-button" class="pill-button" type="button">进入知识图谱</button>
+                  <a class="pill-button pill-button-ghost" href="#graph/core-02">先看“落差”主轴</a>
+                </div>
+              </article>
+              <div id="graph-preview-grid" class="graph-preview-grid"></div>
+            </div>
           </section>
 
           <div class="home-panels">
@@ -214,6 +242,41 @@
               </a>
             </div>
           </section>
+        </section>
+
+        <section id="graph-view" class="graph-view hidden">
+          <div class="graph-shell">
+            <div class="hero-card graph-hero-card">
+              <p class="eyebrow">Knowledge Graph</p>
+              <h2 id="graph-title">层级知识图谱</h2>
+              <p id="graph-intro" class="hero-text">
+                把六个母网、三十六个核心网、十二个接口和三十六个二级候选网放到同一页里，先看它们现在亮到了哪，再决定往哪一章继续读。
+              </p>
+              <div id="graph-stats" class="graph-stats"></div>
+            </div>
+
+            <div class="graph-note-card">
+              <div class="section-heading graph-heading-inline">
+                <p class="eyebrow">Legend</p>
+                <h3>点亮状态怎么看</h3>
+                <p class="section-copy">点击任意节点，右侧会立刻列出它已经落到哪些章节、以及还能往哪层继续长。</p>
+              </div>
+              <div id="graph-legend" class="graph-legend"></div>
+            </div>
+
+            <div class="graph-layout">
+              <section class="graph-board-card">
+                <div class="section-heading graph-heading-inline">
+                  <p class="eyebrow">Layered Nets</p>
+                  <h3>六个母网与已谈论节点</h3>
+                  <p class="section-copy">图谱按母网分组展开。母网负责总览，核心网负责阅读入口，接口与二级网则作为下一层候选继续延伸。</p>
+                </div>
+                <div id="graph-clusters" class="graph-clusters"></div>
+              </section>
+
+              <aside id="graph-detail" class="graph-detail-card"></aside>
+            </div>
+          </div>
         </section>
 
         <section id="lab-view" class="lab-view hidden">

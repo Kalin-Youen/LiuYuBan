@@ -319,6 +319,10 @@ input {
 .pill-button,
 .mobile-tool,
 .toc-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   border: 1px solid var(--paper-line);
   background: var(--button);
   color: var(--text);
@@ -784,6 +788,533 @@ input {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
+}
+
+.graph-view {
+  width: 100%;
+}
+
+.graph-shell {
+  width: var(--reader-width);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.graph-launch-shell,
+.graph-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.graph-launch-shell {
+  grid-template-columns: minmax(280px, 0.94fr) minmax(0, 1.06fr);
+  align-items: stretch;
+}
+
+.graph-layout {
+  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+  align-items: start;
+}
+
+.graph-hero-card,
+.graph-note-card,
+.graph-board-card,
+.graph-detail-card,
+.graph-launch-card {
+  border: 1px solid var(--paper-line);
+  border-radius: 24px;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.graph-hero-card,
+.graph-note-card,
+.graph-board-card,
+.graph-detail-card,
+.graph-launch-card {
+  padding: 22px 20px;
+}
+
+.graph-hero-card {
+  background:
+    radial-gradient(circle at top right, rgba(39, 96, 125, 0.12), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(172, 91, 46, 0.1), transparent 28%),
+    linear-gradient(135deg, rgba(255, 251, 246, 0.92), rgba(245, 249, 252, 0.96)),
+    var(--panel-strong);
+}
+
+.graph-launch-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  background:
+    radial-gradient(circle at top left, rgba(172, 91, 46, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(255, 255, 255, 0.88));
+}
+
+.graph-launch-card h4,
+.graph-detail-head h3,
+.graph-detail-section h4 {
+  margin: 0;
+  font-family: var(--serif);
+}
+
+.graph-launch-card p,
+.graph-detail-copy,
+.graph-preview-card p,
+.graph-legend-card p,
+.graph-chapter-card p,
+.graph-detail-section-head p {
+  margin: 0;
+  line-height: 1.78;
+  color: var(--text-soft);
+}
+
+.graph-launch-actions {
+  margin-top: 4px;
+}
+
+.graph-preview-grid,
+.graph-legend,
+.graph-clusters,
+.graph-candidate-list {
+  display: grid;
+  gap: 12px;
+}
+
+.graph-preview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.graph-legend {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.graph-clusters {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.graph-board-card {
+  display: grid;
+  gap: 12px;
+}
+
+.graph-note-card {
+  display: grid;
+  gap: 14px;
+}
+
+.graph-heading-inline {
+  margin-bottom: 0;
+}
+
+.graph-stats,
+.graph-chip-row,
+.graph-cluster-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.graph-stat-chip,
+.graph-chip,
+.graph-cluster-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--paper-line);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.graph-stat-chip strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.graph-stat-chip em {
+  font-style: normal;
+  color: var(--text-soft);
+}
+
+.graph-chip {
+  color: var(--text);
+}
+
+.graph-chip.is-lit {
+  border-color: rgba(172, 91, 46, 0.28);
+  background: rgba(172, 91, 46, 0.12);
+  color: var(--accent);
+}
+
+.graph-chip.is-mapped {
+  border-color: rgba(39, 96, 125, 0.22);
+  background: rgba(39, 96, 125, 0.1);
+}
+
+.graph-chip.is-candidate {
+  border-style: dashed;
+  background: rgba(120, 126, 145, 0.08);
+}
+
+.graph-legend-card,
+.graph-preview-card,
+.graph-chapter-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--paper-line);
+  background: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
+}
+
+.graph-legend-card,
+.graph-chapter-card {
+  padding: 14px;
+}
+
+.graph-preview-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px 15px 14px;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.graph-preview-card:hover,
+.graph-chapter-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(139, 63, 52, 0.24);
+}
+
+.graph-preview-card.is-candidate {
+  border-style: dashed;
+  opacity: 0.88;
+}
+
+.graph-preview-card.is-mapped {
+  background: rgba(248, 251, 252, 0.82);
+}
+
+.graph-preview-card strong {
+  font-family: var(--serif);
+  font-size: 1.08rem;
+}
+
+.graph-preview-card em {
+  font-style: normal;
+  color: var(--accent);
+  font-size: 0.82rem;
+}
+
+.graph-preview-meta,
+.graph-node-code {
+  font-size: 0.72rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.graph-legend-card {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.graph-legend-card strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.graph-legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  margin-top: 5px;
+  background: rgba(139, 63, 52, 0.2);
+  box-shadow: 0 0 0 8px rgba(139, 63, 52, 0.08);
+}
+
+.graph-legend-card.is-lit .graph-legend-dot {
+  background: rgba(172, 91, 46, 0.94);
+  box-shadow: 0 0 0 8px rgba(172, 91, 46, 0.16);
+}
+
+.graph-legend-card.is-mapped .graph-legend-dot {
+  background: rgba(39, 96, 125, 0.9);
+  box-shadow: 0 0 0 8px rgba(39, 96, 125, 0.14);
+}
+
+.graph-legend-card.is-candidate .graph-legend-dot {
+  background: rgba(116, 122, 142, 0.72);
+  box-shadow: 0 0 0 8px rgba(116, 122, 142, 0.12);
+}
+
+.graph-cluster,
+.graph-detail-head {
+  --graph-accent: #8b3f34;
+  --graph-accent-rgb: 139, 63, 52;
+}
+
+.graph-cluster,
+.graph-preview-card,
+.graph-node,
+.graph-detail-head {
+  --graph-accent: #8b3f34;
+  --graph-accent-rgb: 139, 63, 52;
+}
+
+.graph-cluster[data-family="mother-1"],
+.graph-preview-card[data-family="mother-1"],
+.graph-node[data-family="mother-1"],
+.graph-detail-head[data-family="mother-1"] {
+  --graph-accent: #a65d31;
+  --graph-accent-rgb: 166, 93, 49;
+}
+
+.graph-cluster[data-family="mother-2"],
+.graph-preview-card[data-family="mother-2"],
+.graph-node[data-family="mother-2"],
+.graph-detail-head[data-family="mother-2"] {
+  --graph-accent: #b34b3a;
+  --graph-accent-rgb: 179, 75, 58;
+}
+
+.graph-cluster[data-family="mother-3"],
+.graph-preview-card[data-family="mother-3"],
+.graph-node[data-family="mother-3"],
+.graph-detail-head[data-family="mother-3"] {
+  --graph-accent: #8c6a24;
+  --graph-accent-rgb: 140, 106, 36;
+}
+
+.graph-cluster[data-family="mother-4"],
+.graph-preview-card[data-family="mother-4"],
+.graph-node[data-family="mother-4"],
+.graph-detail-head[data-family="mother-4"] {
+  --graph-accent: #2e6c89;
+  --graph-accent-rgb: 46, 108, 137;
+}
+
+.graph-cluster[data-family="mother-5"],
+.graph-preview-card[data-family="mother-5"],
+.graph-node[data-family="mother-5"],
+.graph-detail-head[data-family="mother-5"] {
+  --graph-accent: #2d7a70;
+  --graph-accent-rgb: 45, 122, 112;
+}
+
+.graph-cluster[data-family="mother-6"],
+.graph-preview-card[data-family="mother-6"],
+.graph-node[data-family="mother-6"],
+.graph-detail-head[data-family="mother-6"] {
+  --graph-accent: #8e4664;
+  --graph-accent-rgb: 142, 70, 100;
+}
+
+.graph-cluster[data-family="bridge"],
+.graph-preview-card[data-family="bridge"],
+.graph-node[data-family="bridge"],
+.graph-detail-head[data-family="bridge"] {
+  --graph-accent: #5c6578;
+  --graph-accent-rgb: 92, 101, 120;
+}
+
+.graph-cluster {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(var(--graph-accent-rgb), 0.2);
+  background:
+    radial-gradient(circle at top right, rgba(var(--graph-accent-rgb), 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(251, 248, 244, 0.9));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48);
+}
+
+.graph-cluster.is-focus {
+  border-color: rgba(var(--graph-accent-rgb), 0.34);
+  box-shadow:
+    0 24px 56px rgba(74, 48, 34, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.graph-cluster-head {
+  display: grid;
+  gap: 12px;
+}
+
+.graph-core-grid,
+.graph-chapter-list {
+  display: grid;
+  gap: 10px;
+}
+
+.graph-core-grid {
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.graph-core-grid::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: -10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--graph-accent-rgb), 0.24), transparent);
+}
+
+.graph-node {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 14px 14px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--graph-accent-rgb), 0.14);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.graph-node::after,
+.graph-preview-card::after,
+.graph-detail-head::after {
+  content: "";
+  position: absolute;
+  inset: auto -12% -28% -12%;
+  height: 64%;
+  background: radial-gradient(
+    circle,
+    rgba(var(--graph-accent-rgb), calc(0.08 + var(--graph-signal, 0.16) * 0.24)),
+    transparent 68%
+  );
+  pointer-events: none;
+}
+
+.graph-node:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--graph-accent-rgb), 0.28);
+}
+
+.graph-node.is-selected {
+  transform: translateY(-2px);
+  border-color: rgba(var(--graph-accent-rgb), 0.4);
+  box-shadow: 0 18px 40px rgba(var(--graph-accent-rgb), 0.16);
+}
+
+.graph-node.is-related {
+  border-color: rgba(var(--graph-accent-rgb), 0.3);
+}
+
+.graph-node.is-lit {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(var(--graph-accent-rgb), 0.07)),
+    rgba(255, 255, 255, 0.82);
+}
+
+.graph-node.is-mapped {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(var(--graph-accent-rgb), 0.04)),
+    rgba(255, 255, 255, 0.76);
+}
+
+.graph-node.is-candidate {
+  border-style: dashed;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(var(--graph-accent-rgb), 0.02)),
+    rgba(252, 252, 253, 0.74);
+  opacity: 0.88;
+}
+
+.graph-node strong {
+  position: relative;
+  z-index: 1;
+  font-family: var(--serif);
+  line-height: 1.28;
+}
+
+.graph-node-meta {
+  position: relative;
+  z-index: 1;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+}
+
+.graph-node-mother {
+  padding: 18px 18px 16px;
+}
+
+.graph-node-mother strong {
+  font-size: 1.16rem;
+}
+
+.graph-node-candidate strong {
+  font-size: 0.98rem;
+}
+
+.graph-detail-card {
+  position: sticky;
+  top: calc(var(--header-height) + 22px);
+  display: grid;
+  gap: 16px;
+}
+
+.graph-detail-head {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(var(--graph-accent-rgb), 0.18);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(var(--graph-accent-rgb), 0.08)),
+    rgba(255, 255, 255, 0.88);
+}
+
+.graph-detail-section {
+  display: grid;
+  gap: 12px;
+}
+
+.graph-detail-section-head {
+  display: grid;
+  gap: 6px;
+}
+
+.graph-chapter-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.graph-chapter-card small {
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.graph-chapter-card strong {
+  font-family: var(--serif);
+  font-size: 1rem;
+}
+
+.graph-candidate-list .graph-node {
+  min-height: 0;
 }
 
 .system-card {
@@ -2117,6 +2648,12 @@ input {
   .lab-grid-two,
   .lab-grid-three,
   .lab-entry-grid,
+  .graph-layout,
+  .graph-launch-shell,
+  .graph-preview-grid,
+  .graph-legend,
+  .graph-clusters,
+  .graph-core-grid,
   .lab-controls,
   .lab-metrics,
   .brain-vat-metrics,
@@ -2138,6 +2675,10 @@ input {
   .playground-toolbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .graph-detail-card {
+    position: static;
   }
 
   .play-scoreboard {
@@ -2178,7 +2719,8 @@ input {
     align-items: stretch;
   }
 
-  .hero-actions .pill-button {
+  .hero-actions .pill-button,
+  .hero-actions a.pill-button {
     width: 100%;
   }
 
@@ -2193,7 +2735,12 @@ input {
 
   .lab-card,
   .lab-note-card,
-  .lab-entry-card {
+  .lab-entry-card,
+  .graph-hero-card,
+  .graph-note-card,
+  .graph-board-card,
+  .graph-detail-card,
+  .graph-launch-card {
     padding: 18px 16px;
   }
 

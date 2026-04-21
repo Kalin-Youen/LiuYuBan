@@ -120,6 +120,34 @@ const SECTION_PRESENTATION = {
     description: "它不是第一次进入时的首读入口，更像主线稳定后供协作、扩写和版本治理使用的后端卷册。",
   },
 };
+const GRAPH_STATUS_LABELS = {
+  lit: "已展开",
+  mapped: "已标注",
+  candidate: "候选",
+};
+const GRAPH_KIND_LABELS = {
+  mother: "母网",
+  core: "核心网",
+  interface: "重点接口",
+  secondary: "二级网",
+};
+const GRAPH_LEGEND = Object.freeze([
+  {
+    status: "lit",
+    title: "已展开",
+    copy: "这个节点已经在正文、白话卷、专题或协作卷里被明确谈到，点开可以直接继续读。",
+  },
+  {
+    status: "mapped",
+    title: "已标注",
+    copy: "目前主要停留在图谱、附录或总纲中，说明它已经被登记，但还没有充分展开成主阅读入口。",
+  },
+  {
+    status: "candidate",
+    title: "候选",
+    copy: "这层节点已经被提出，但还没真正进入站内章节体系，适合作为下一轮扩写与补桥候选。",
+  },
+]);
 const LAB_PAGES = {
   learn: {
     title: "理论学习页",
@@ -677,6 +705,7 @@ const state = {
   payload: null,
   filteredItems: [],
   activeId: null,
+  activeGraphNodeId: null,
   activeLabPage: null,
   labParams: {},
   labActionTimer: null,
@@ -701,7 +730,9 @@ const dom = {
   searchInput: document.getElementById("search-input"),
   viewTitle: document.getElementById("view-title"),
   homeButton: document.getElementById("home-button"),
+  graphButton: document.getElementById("graph-button"),
   homeView: document.getElementById("home-view"),
+  graphView: document.getElementById("graph-view"),
   labView: document.getElementById("lab-view"),
   docView: document.getElementById("doc-view"),
   heroTitle: document.getElementById("hero-title"),
@@ -716,6 +747,13 @@ const dom = {
   featuredVolumeCopy: document.getElementById("featured-volume-copy"),
   featuredVolumeMeta: document.getElementById("featured-volume-meta"),
   featuredVolumeLinks: document.getElementById("featured-volume-links"),
+  graphTitle: document.getElementById("graph-title"),
+  graphIntro: document.getElementById("graph-intro"),
+  graphStats: document.getElementById("graph-stats"),
+  graphLegend: document.getElementById("graph-legend"),
+  graphClusters: document.getElementById("graph-clusters"),
+  graphDetail: document.getElementById("graph-detail"),
+  graphPreviewGrid: document.getElementById("graph-preview-grid"),
   labTitle: document.getElementById("lab-title"),
   labIntro: document.getElementById("lab-intro"),
   labTabs: document.getElementById("lab-tabs"),
@@ -736,6 +774,8 @@ const dom = {
   fontUpButton: document.getElementById("font-up-button"),
   fontSizeIndicator: document.getElementById("font-size-indicator"),
   startReadingButton: document.getElementById("start-reading-button"),
+  openGraphButton: document.getElementById("open-graph-button"),
+  openGraphLaunchButton: document.getElementById("open-graph-launch-button"),
   openLabButton: document.getElementById("open-lab-button"),
   openCatalogButton: document.getElementById("open-catalog-button"),
   mobileHomeButton: document.getElementById("mobile-home-button"),
@@ -866,6 +906,12 @@ function getHashRoute() {
   if (hash.startsWith("doc/")) {
     return { type: "doc", id: hash.slice(4) };
   }
+  if (hash === "graph") {
+    return { type: "graph", nodeId: null };
+  }
+  if (hash.startsWith("graph/")) {
+    return { type: "graph", nodeId: hash.slice(6) };
+  }
   if (hash === "lab") {
     return { type: "lab", page: "learn", params: {} };
   }
@@ -877,6 +923,19 @@ function getHashRoute() {
 
 function setHashForDoc(id) {
   window.location.hash = `doc/${encodeURIComponent(id)}`;
+}
+
+function buildGraphHash(nodeId = null) {
+  return nodeId ? `graph/${encodeURIComponent(nodeId)}` : "graph";
+}
+
+function setHashForGraph(nodeId = null, { replace = false } = {}) {
+  const hash = buildGraphHash(nodeId);
+  if (replace) {
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${hash}`);
+    return;
+  }
+  window.location.hash = hash;
 }
 
 function buildLabHash(page = "learn", params = null) {
@@ -948,6 +1007,138 @@ function syncOverlay() {
 
 function findItemById(id) {
   return state.payload.items.find((item) => item.id === id) || null;
+}
+
+function getKnowledgeGraph() {
+  return state.payload?.knowledgeGraph || null;
+}
+
+function getGraphNodes(kind = null) {
+  const graph = getKnowledgeGraph();
+  if (!graph?.nodes) return [];
+  return kind ? graph.nodes.filter((node) => node.kind === kind) : graph.nodes;
+}
+
+function findGraphNodeById(nodeId) {
+  if (!nodeId) return null;
+  return getGraphNodes().find((node) => node.id === nodeId) || null;
+}
+
+function getGraphDefaultNode() {
+  const graph = getKnowledgeGraph();
+  return (
+    findGraphNodeById(graph?.defaultNodeId) ||
+    getGraphNodes("core")[0] ||
+    getGraphNodes("mother")[0] ||
+    null
+  );
+}
+
+function getGraphStatusLabel(status) {
+  return GRAPH_STATUS_LABELS[status] || "候选";
+}
+
+function getGraphKindLabel(kind) {
+  return GRAPH_KIND_LABELS[kind] || "节点";
+}
+
+function getGraphNodeCountLabel(node) {
+  if (!node) return "尚未建立章节入口";
+  if (node.discussedChapterCount > 0) {
+    return `${node.discussedChapterCount} 篇已展开`;
+  }
+  if (node.chapterCount > 0) {
+    return `${node.chapterCount} 篇已标注`;
+  }
+  return "等待正文点亮";
+}
+
+function sortGraphNodes(nodes) {
+  const kindRank = new Map([
+    ["mother", 0],
+    ["core", 1],
+    ["interface", 2],
+    ["secondary", 3],
+  ]);
+
+  return [...nodes].sort((left, right) => {
+    const kindDelta = (kindRank.get(left.kind) || 99) - (kindRank.get(right.kind) || 99);
+    if (kindDelta !== 0) return kindDelta;
+
+    const familyDelta = (left.familyOrder || 99) - (right.familyOrder || 99);
+    if (familyDelta !== 0) return familyDelta;
+
+    return (left.order || 0) - (right.order || 0);
+  });
+}
+
+function getGraphNodeItems(node, { limit = 8 } = {}) {
+  if (!node) return [];
+
+  const ids = node.discussedChapterIds?.length ? node.discussedChapterIds : node.chapterIds || [];
+  return ids
+    .map((itemId) => findItemById(itemId))
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
+function getGraphCandidateNodes(node) {
+  if (!node) return [];
+
+  let relatedIds = [];
+  if (node.kind === "mother") {
+    relatedIds = [...(node.childIds || []), ...(node.interfaceIds || [])];
+  } else if (node.kind === "core") {
+    relatedIds = [...(node.interfaceIds || []), ...(node.secondaryIds || [])];
+  } else if (node.kind === "interface") {
+    relatedIds = [...(node.secondaryIds || [])];
+  } else if (node.kind === "secondary") {
+    relatedIds = [...(node.relatedIds || [])];
+  }
+
+  const deduped = [...new Set(relatedIds)]
+    .map((nodeId) => findGraphNodeById(nodeId))
+    .filter(Boolean)
+    .filter((entry) => entry.id !== node.id);
+
+  return sortGraphNodes(deduped).slice(0, 12);
+}
+
+function getGraphCandidateHeading(node) {
+  if (!node) return "下一层候选";
+  if (node.kind === "mother") return "这一层已经长出的核心网与接口";
+  if (node.kind === "core") return "与它相连的接口和下一层候选";
+  if (node.kind === "interface") return "这个接口往下还能长出的二级网";
+  return "它依附的上层主轴";
+}
+
+function getGraphContextIdSet(node) {
+  const ids = new Set([node?.id]);
+  (node?.childIds || []).forEach((id) => ids.add(id));
+  (node?.interfaceIds || []).forEach((id) => ids.add(id));
+  (node?.secondaryIds || []).forEach((id) => ids.add(id));
+  (node?.relatedIds || []).forEach((id) => ids.add(id));
+  if (node?.parentId) ids.add(node.parentId);
+  if (node?.familyId) ids.add(node.familyId);
+  return ids;
+}
+
+function getGraphFocusFamilyIds(node) {
+  const familyIds = new Set();
+  const collect = (entry) => {
+    if (entry?.kind === "mother") {
+      familyIds.add(entry.id);
+      return;
+    }
+    if (entry?.familyId && entry.familyId !== "bridge") {
+      familyIds.add(entry.familyId);
+    }
+  };
+
+  collect(node);
+  (node?.relatedIds || []).forEach((id) => collect(findGraphNodeById(id)));
+  if (node?.parentId) collect(findGraphNodeById(node.parentId));
+  return familyIds;
 }
 
 function getSectionPresentation(sectionId) {
@@ -1380,6 +1571,7 @@ function buildNav() {
 }
 
 function syncViewButtons() {
+  dom.graphButton.classList.toggle("is-active", Boolean(state.activeGraphNodeId));
   dom.labButton.classList.toggle("is-active", Boolean(state.activeLabPage));
 }
 
@@ -4645,9 +4837,278 @@ function renderLabPage(page) {
   });
 }
 
+function buildGraphPreview() {
+  if (!dom.graphPreviewGrid) return;
+
+  const graph = getKnowledgeGraph();
+  const spotlightNodes = (graph?.spotlightIds || [])
+    .map((nodeId) => findGraphNodeById(nodeId))
+    .filter(Boolean);
+
+  dom.graphPreviewGrid.innerHTML = "";
+
+  if (!spotlightNodes.length) {
+    dom.graphPreviewGrid.innerHTML = `<p class="empty-state">知识图谱数据正在生成中。</p>`;
+    return;
+  }
+
+  spotlightNodes.forEach((node) => {
+    const link = document.createElement("a");
+    link.className = `graph-preview-card is-${node.status}`;
+    link.href = `#graph/${encodeURIComponent(node.id)}`;
+    link.dataset.family = node.familyId || "";
+    link.innerHTML = `
+      <span class="graph-preview-meta">${getGraphKindLabel(node.kind)} · ${node.code || node.shortCode || ""}</span>
+      <strong>${node.shortLabel || node.label}</strong>
+      <p>${node.description || "从这个节点开始，先看它已经落到哪些章节。"}</p>
+      <em>${getGraphNodeCountLabel(node)}</em>
+    `;
+    dom.graphPreviewGrid.appendChild(link);
+  });
+}
+
+function renderGraphLegend() {
+  if (!dom.graphLegend) return;
+
+  dom.graphLegend.innerHTML = GRAPH_LEGEND.map((entry) => `
+    <article class="graph-legend-card is-${entry.status}">
+      <span class="graph-legend-dot"></span>
+      <div>
+        <strong>${entry.title}</strong>
+        <p>${entry.copy}</p>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderGraphStats() {
+  if (!dom.graphStats) return;
+
+  const graph = getKnowledgeGraph();
+  if (!graph?.stats) {
+    dom.graphStats.innerHTML = "";
+    return;
+  }
+
+  const stats = [
+    { label: "母网", value: graph.stats.motherCount },
+    { label: "核心网", value: graph.stats.coreCount },
+    { label: "重点接口", value: graph.stats.interfaceCount },
+    { label: "候选二级网", value: graph.stats.secondaryCount },
+    { label: "已点亮节点", value: graph.stats.litNodeCount },
+  ];
+
+  dom.graphStats.innerHTML = stats.map((entry) => `
+    <span class="graph-stat-chip">
+      <strong>${entry.value}</strong>
+      <em>${entry.label}</em>
+    </span>
+  `).join("");
+}
+
+function createGraphNodeButton(node, {
+  variant = node.kind === "mother" ? "mother" : "core",
+  isSelected = false,
+  isRelated = false,
+} = {}) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `graph-node graph-node-${variant} is-${node.status}`;
+  button.dataset.nodeId = node.id;
+  button.dataset.kind = node.kind;
+  button.dataset.family = node.familyId || "";
+  button.style.setProperty("--graph-signal", String(Math.max(node.signal || 0.08, 0.08)));
+
+  if (isSelected) {
+    button.classList.add("is-selected");
+  } else if (isRelated) {
+    button.classList.add("is-related");
+  }
+
+  button.innerHTML = `
+    <span class="graph-node-code">${getGraphKindLabel(node.kind)}${node.code ? ` · ${node.code}` : ""}</span>
+    <strong>${node.shortLabel || node.label}</strong>
+    <span class="graph-node-meta">${getGraphNodeCountLabel(node)}</span>
+  `;
+
+  button.addEventListener("click", () => setHashForGraph(node.id));
+  return button;
+}
+
+function renderGraphClusters(selectedNode) {
+  if (!dom.graphClusters) return;
+
+  const graph = getKnowledgeGraph();
+  const selectedIds = getGraphContextIdSet(selectedNode);
+  const focusFamilyIds = getGraphFocusFamilyIds(selectedNode);
+
+  dom.graphClusters.innerHTML = "";
+
+  (graph?.families || []).forEach((family) => {
+    const mother = findGraphNodeById(family.id);
+    if (!mother) return;
+
+    const cluster = document.createElement("article");
+    cluster.className = "graph-cluster";
+    cluster.dataset.family = mother.id;
+
+    if (focusFamilyIds.has(mother.id)) {
+      cluster.classList.add("is-focus");
+    }
+
+    const header = document.createElement("div");
+    header.className = "graph-cluster-head";
+    header.appendChild(createGraphNodeButton(mother, {
+      variant: "mother",
+      isSelected: selectedNode.id === mother.id,
+      isRelated: selectedNode.id !== mother.id && selectedIds.has(mother.id),
+    }));
+
+    const summary = document.createElement("div");
+    summary.className = "graph-cluster-summary";
+    summary.innerHTML = `
+      <span>${mother.childIds?.length || 0} 个核心网</span>
+      <span>${mother.discussedChapterCount || 0} 篇正文/专题</span>
+    `;
+    header.appendChild(summary);
+    cluster.appendChild(header);
+
+    const coreGrid = document.createElement("div");
+    coreGrid.className = "graph-core-grid";
+    (family.coreIds || []).forEach((coreId) => {
+      const core = findGraphNodeById(coreId);
+      if (!core) return;
+      coreGrid.appendChild(createGraphNodeButton(core, {
+        variant: "core",
+        isSelected: selectedNode.id === core.id,
+        isRelated: selectedNode.id !== core.id && selectedIds.has(core.id),
+      }));
+    });
+
+    cluster.appendChild(coreGrid);
+    dom.graphClusters.appendChild(cluster);
+  });
+}
+
+function renderGraphDetail(selectedNode) {
+  if (!dom.graphDetail) return;
+
+  const chapterItems = getGraphNodeItems(selectedNode, { limit: 8 });
+  const candidateNodes = getGraphCandidateNodes(selectedNode);
+  const chapterHeading = selectedNode.discussedChapterCount > 0
+    ? "已经谈到它的章节"
+    : "当前最接近它的图谱入口";
+  const chapterCopy = selectedNode.discussedChapterCount > 0
+    ? "这些章节里已经把这个节点展开成了可阅读内容。"
+    : "它目前还主要停留在图谱或附录层，可以先从这些入口继续往里读。";
+
+  dom.graphDetail.innerHTML = `
+    <div class="graph-detail-head" data-family="${selectedNode.familyId || ""}">
+      <p class="eyebrow">${getGraphKindLabel(selectedNode.kind)}</p>
+      <h3>${selectedNode.label}</h3>
+      <p class="graph-detail-copy">${selectedNode.description || "这个节点已经被登记进图谱，但还需要继续补桥、扩写或回到正文中展开。"}</p>
+      <div class="graph-chip-row">
+        <span class="graph-chip is-${selectedNode.status}">${getGraphStatusLabel(selectedNode.status)}</span>
+        <span class="graph-chip">${selectedNode.code || "节点"}</span>
+        <span class="graph-chip">${selectedNode.familyLabel || "层级节点"}</span>
+        <span class="graph-chip">${getGraphNodeCountLabel(selectedNode)}</span>
+      </div>
+    </div>
+
+    <section class="graph-detail-section">
+      <div class="graph-detail-section-head">
+        <h4>${chapterHeading}</h4>
+        <p>${chapterCopy}</p>
+      </div>
+      <div class="graph-chapter-list" data-graph-chapters></div>
+    </section>
+
+    <section class="graph-detail-section">
+      <div class="graph-detail-section-head">
+        <h4>${getGraphCandidateHeading(selectedNode)}</h4>
+        <p>点击下面的节点，可以继续看它和当前主轴的关系，以及它对应的章节入口。</p>
+      </div>
+      <div class="graph-candidate-list" data-graph-candidates></div>
+    </section>
+  `;
+
+  const chapterList = dom.graphDetail.querySelector("[data-graph-chapters]");
+  const candidateList = dom.graphDetail.querySelector("[data-graph-candidates]");
+
+  if (!chapterItems.length) {
+    chapterList.innerHTML = `<p class="empty-state">这个节点暂时还没有可直接跳转的章节入口。</p>`;
+  } else {
+    chapterItems.forEach((item) => {
+      const link = document.createElement("a");
+      link.className = "graph-chapter-card";
+      link.href = `#doc/${encodeURIComponent(item.id)}`;
+      link.innerHTML = `
+        <small>${item.sectionTitle}</small>
+        <strong>${getDisplayTitle(item)}</strong>
+        <p>${item.excerpt || item.sectionTitle}</p>
+      `;
+      chapterList.appendChild(link);
+    });
+  }
+
+  if (!candidateNodes.length) {
+    candidateList.innerHTML = `<p class="empty-state">这一层目前还没有更下游的候选节点。</p>`;
+  } else {
+    const contextIds = getGraphContextIdSet(selectedNode);
+    candidateNodes.forEach((node) => {
+      candidateList.appendChild(createGraphNodeButton(node, {
+        variant: "candidate",
+        isSelected: node.id === selectedNode.id,
+        isRelated: node.id !== selectedNode.id && contextIds.has(node.id),
+      }));
+    });
+  }
+}
+
+async function renderGraph(nodeId) {
+  cleanupLabPlaygrounds();
+  const graph = getKnowledgeGraph();
+
+  const selectedNode = findGraphNodeById(nodeId) || getGraphDefaultNode();
+  if (!selectedNode) {
+    renderHome();
+    return;
+  }
+
+  state.activeId = null;
+  state.activeLabPage = null;
+  state.activeGraphNodeId = selectedNode.id;
+  state.currentPrevId = null;
+  state.currentNextId = null;
+
+  document.title = `${state.payload.site.title} · 知识图谱`;
+  document.body.classList.remove("is-reading");
+  dom.viewTitle.textContent = "知识图谱";
+  dom.homeView.classList.add("hidden");
+  dom.labView.classList.add("hidden");
+  dom.docView.classList.add("hidden");
+  dom.graphView.classList.remove("hidden");
+  dom.graphTitle.textContent = "层级知识图谱";
+  dom.graphIntro.textContent = graph?.stats
+    ? `当前图谱已经整理出 ${graph.stats.motherCount} 个母网、${graph.stats.coreCount} 个核心网、${graph.stats.interfaceCount} 个重点接口和 ${graph.stats.secondaryCount} 个候选二级网。先看哪些已经在章节里点亮，再决定从哪里继续读。`
+    : "把六个母网、三十六个核心网、接口和候选二级网放到同一页里，先看它们现在亮到了哪。";
+  dom.readerProgressBar.style.transform = "scaleX(0)";
+  dom.tocButton.disabled = true;
+  updateChapterButtons(null, null);
+  closePanels();
+  buildNav();
+  renderGraphStats();
+  renderGraphLegend();
+  renderGraphClusters(selectedNode);
+  renderGraphDetail(selectedNode);
+  syncViewButtons();
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
 function renderHome() {
   cleanupLabPlaygrounds();
   state.activeId = null;
+  state.activeGraphNodeId = null;
   state.activeLabPage = null;
   state.currentPrevId = null;
   state.currentNextId = null;
@@ -4656,6 +5117,7 @@ function renderHome() {
   document.body.classList.remove("is-reading");
   dom.viewTitle.textContent = "分卷书架";
   dom.homeView.classList.remove("hidden");
+  dom.graphView.classList.add("hidden");
   dom.labView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.readerProgressBar.style.transform = "scaleX(0)";
@@ -4671,6 +5133,7 @@ async function renderLab(page) {
   const activePage = normalizeLabPage(page);
   cleanupLabPlaygrounds();
   state.activeId = null;
+  state.activeGraphNodeId = null;
   state.currentPrevId = null;
   state.currentNextId = null;
   state.labParams = resolveLabParams(activePage, state.labParams);
@@ -4678,6 +5141,7 @@ async function renderLab(page) {
   document.body.classList.remove("is-reading");
   dom.viewTitle.textContent = "理论实验台";
   dom.homeView.classList.add("hidden");
+  dom.graphView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.labView.classList.remove("hidden");
   dom.readerProgressBar.style.transform = "scaleX(0)";
@@ -4897,9 +5361,11 @@ async function renderDoc(id) {
 
   cleanupLabPlaygrounds();
   state.activeId = item.id;
+  state.activeGraphNodeId = null;
   state.activeLabPage = null;
   document.body.classList.add("is-reading");
   dom.homeView.classList.add("hidden");
+  dom.graphView.classList.add("hidden");
   dom.labView.classList.add("hidden");
   dom.docView.classList.remove("hidden");
   dom.viewTitle.textContent = getDisplayTitle(item);
@@ -4953,6 +5419,10 @@ async function route() {
     renderHome();
     return;
   }
+  if (routeState.type === "graph") {
+    await renderGraph(routeState.nodeId);
+    return;
+  }
   if (routeState.type === "lab") {
     state.labParams = resolveLabParams(routeState.page, routeState.params);
     await renderLab(routeState.page);
@@ -4974,6 +5444,10 @@ function bindEvents() {
     setDrawerOpen(false);
     setTocOpen(!state.tocOpen);
   });
+  dom.graphButton.addEventListener("click", () => {
+    closePanels();
+    setHashForGraph(state.activeGraphNodeId || getGraphDefaultNode()?.id || null);
+  });
   dom.labButton.addEventListener("click", () => {
     closePanels();
     setHashForLab(state.activeLabPage || "learn");
@@ -4992,6 +5466,14 @@ function bindEvents() {
   dom.startReadingButton.addEventListener("click", () => {
     const item = getPrimaryStartItem();
     if (item) setHashForDoc(item.id);
+  });
+  dom.openGraphButton?.addEventListener("click", () => {
+    const defaultNode = getGraphDefaultNode();
+    setHashForGraph(defaultNode?.id || null);
+  });
+  dom.openGraphLaunchButton?.addEventListener("click", () => {
+    const defaultNode = getGraphDefaultNode();
+    setHashForGraph(defaultNode?.id || null);
   });
   dom.openLabButton.addEventListener("click", () => {
     const item = getSectionEntry("light-series") || getSectionEntry("book");
@@ -5076,6 +5558,7 @@ async function init() {
   updateShell();
   buildStarterLinks();
   buildFeaturedVolume();
+  buildGraphPreview();
   applyPreferences();
   buildLightSeriesLinks();
   buildQuickLinks();
