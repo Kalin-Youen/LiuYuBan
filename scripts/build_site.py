@@ -204,6 +204,8 @@ def build_payload(config: dict) -> dict:
             "title": config["siteTitle"],
             "tagline": config["siteTagline"],
             "description": config["siteDescription"],
+            "positioningStatement": config.get("positioningStatement", config["siteTagline"]),
+            "positioningSupport": config.get("positioningSupport", config["siteDescription"]),
             "author": config["author"],
             "repoUrl": config["repoUrl"],
             "siteUrl": config["siteUrl"],

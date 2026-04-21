@@ -13,7 +13,27 @@ const THEME_LABELS = {
   sepia: "暖棕",
   night: "夜读",
 };
-const HOME_SECTION_ORDER = ["plain-book", "book", "overview", "terms", "ai-book"];
+const HOME_SECTION_ORDER = ["light-series", "plain-book", "overview", "book", "terms", "ai-book"];
+const STARTER_GUIDE = Object.freeze([
+  {
+    sourcePath: "研究文稿/04_议论与说明/差结构学习法是什么_对外主句与入口说明.md",
+    eyebrow: "30 秒理解",
+    title: "先把主句说稳",
+    copy: "先用一句话弄清项目是什么、不是什么，再决定是否继续进入。",
+  },
+  {
+    sourcePath: "研究文稿/08_轻内容连载/01_世界先给人的不是物，而是不同.md",
+    eyebrow: "1 分钟进入",
+    title: "先用一条轻内容上手",
+    copy: "先体验这套方法怎样从“不同”开始，而不是一开始就撞进大词。",
+  },
+  {
+    sourcePath: "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
+    eyebrow: "10 分钟起步",
+    title: "再切到白话卷",
+    copy: "当你准备连续阅读时，让白话卷接住后续主线，而不是直接冲向整套书稿。",
+  },
+]);
 const PLAIN_TO_BOOK_VARIANT_PATHS = Object.freeze({
   "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md":
     "研究文稿/07_书稿/第1章_绪论.md",
@@ -63,6 +83,12 @@ const BOOK_TO_PLAIN_VARIANT_PATHS = Object.freeze({
     "研究文稿/07_书稿/白话卷/第3章_规则不是天上掉下来的而是站住的重复.md",
 });
 const SECTION_PRESENTATION = {
+  "light-series": {
+    badge: "适合转发",
+    eyebrow: "轻内容连载",
+    hook: "先把方法压成 10 条可以单发、可复述、能转发的入口。",
+    description: "如果你想先感受这套方法怎样进入日常判断，就先从十条轻内容开始。每条都可以单独读，也能连成一条新读者路径。",
+  },
   "plain-book": {
     badge: "推荐先读",
     eyebrow: "直观理解卷",
@@ -354,6 +380,267 @@ const LAB_PRESETS = {
   ],
 };
 
+const THOUGHT_COMPASS_AXES = [
+  { key: "thought-difference", label: "差异" },
+  { key: "thought-boundary", label: "边界" },
+  { key: "thought-feedback", label: "反馈" },
+  { key: "thought-validation", label: "验证" },
+  { key: "thought-overclaim", label: "绝对化风险" },
+];
+
+const THOUGHT_COMPASS_DEFAULTS = {
+  "thought-difference": 78,
+  "thought-boundary": 56,
+  "thought-feedback": 52,
+  "thought-validation": 48,
+  "thought-overclaim": 30,
+};
+
+const THOUGHT_COMPASS_PRESETS = [
+  {
+    id: "spark",
+    label: "灵感一句",
+    description: "差异很强，但边界、反馈和验证都还薄。",
+    values: {
+      "thought-difference": 84,
+      "thought-boundary": 26,
+      "thought-feedback": 22,
+      "thought-validation": 18,
+      "thought-overclaim": 64,
+    },
+  },
+  {
+    id: "structure",
+    label: "结构判断",
+    description: "开始补边界和反馈，已经能形成中层判断。",
+    values: {
+      "thought-difference": 76,
+      "thought-boundary": 64,
+      "thought-feedback": 58,
+      "thought-validation": 54,
+      "thought-overclaim": 26,
+    },
+  },
+  {
+    id: "rule",
+    label: "规则候选",
+    description: "验证密度和反馈闭环都比较够，接近可重复表达。",
+    values: {
+      "thought-difference": 69,
+      "thought-boundary": 78,
+      "thought-feedback": 72,
+      "thought-validation": 77,
+      "thought-overclaim": 18,
+    },
+  },
+  {
+    id: "grand-word",
+    label: "万能大词",
+    description: "词很大，但边界和验证都没有跟上，容易一问就塌。",
+    values: {
+      "thought-difference": 57,
+      "thought-boundary": 21,
+      "thought-feedback": 17,
+      "thought-validation": 12,
+      "thought-overclaim": 92,
+    },
+  },
+];
+
+const HIERARCHY_LIFT_LEVELS = [
+  {
+    key: "mind",
+    label: "颅内想法",
+    copy: "旧不稳定还主要停在个体感受和瞬时判断里。",
+  },
+  {
+    key: "draft",
+    label: "草稿外置",
+    copy: "已经写出来，但还没被别人稳定接住。",
+  },
+  {
+    key: "group",
+    label: "小群汇聚",
+    copy: "开始形成共享语言与局部共识。",
+  },
+  {
+    key: "tool",
+    label: "工具接口",
+    copy: "可以被 workflow、技能或平台反复调用。",
+  },
+  {
+    key: "rule",
+    label: "规则沉淀",
+    copy: "能跨人、跨时段、跨载体地稳定继承。",
+  },
+];
+
+const HIERARCHY_LIFT_DEFAULTS = {
+  "lift-instability": 74,
+  "lift-externalize": 58,
+  "lift-converge": 54,
+  "lift-inherit": 46,
+  "lift-interface": 40,
+  "lift-noise": 32,
+};
+
+const HIERARCHY_LIFT_PRESETS = [
+  {
+    id: "spark-only",
+    label: "灵感一闪",
+    description: "有势能，但还主要困在个人脑内。",
+    values: {
+      "lift-instability": 86,
+      "lift-externalize": 18,
+      "lift-converge": 14,
+      "lift-inherit": 12,
+      "lift-interface": 10,
+      "lift-noise": 30,
+    },
+  },
+  {
+    id: "drafting",
+    label: "草稿成型",
+    description: "开始外置，但还没有形成稳定汇聚。",
+    values: {
+      "lift-instability": 78,
+      "lift-externalize": 68,
+      "lift-converge": 34,
+      "lift-inherit": 24,
+      "lift-interface": 16,
+      "lift-noise": 28,
+    },
+  },
+  {
+    id: "group-loop",
+    label: "群聊汇聚",
+    description: "交流很多，但接口和继承还不够硬。",
+    values: {
+      "lift-instability": 72,
+      "lift-externalize": 74,
+      "lift-converge": 79,
+      "lift-inherit": 46,
+      "lift-interface": 30,
+      "lift-noise": 44,
+    },
+  },
+  {
+    id: "workflow",
+    label: "工具成型",
+    description: "外置、汇聚、接口开始同步，想法长成了可调用流程。",
+    values: {
+      "lift-instability": 68,
+      "lift-externalize": 82,
+      "lift-converge": 74,
+      "lift-inherit": 68,
+      "lift-interface": 78,
+      "lift-noise": 24,
+    },
+  },
+  {
+    id: "rule-layer",
+    label: "规则沉淀",
+    description: "旧不稳定被收进更高层，开始跨主体和跨时间保存。",
+    values: {
+      "lift-instability": 71,
+      "lift-externalize": 88,
+      "lift-converge": 84,
+      "lift-inherit": 86,
+      "lift-interface": 84,
+      "lift-noise": 18,
+    },
+  },
+];
+
+const PLAYGROUND_CANVAS = Object.freeze({
+  width: 420,
+  height: 260,
+});
+
+const FLOW_SNAKE_PARTICLE_COUNT = 11;
+const SWARM_DIFFERENCE_COUNT = 18;
+const SWARM_NOISE_COUNT = 10;
+const VAT_EXPERIMENT_ACTIONS = [
+  {
+    id: "repeat-stimulus",
+    label: "重复刺激",
+    hint: "同样条件下再来一次，看反馈是老实波动，还是被接口抹得过于平滑。",
+  },
+  {
+    id: "body-jolt",
+    label: "扰动身体",
+    hint: "故意制造动作偏差，测试世界给你的阻力到底来自外界还是界面补偿。",
+  },
+  {
+    id: "peer-check",
+    label: "问他者同证",
+    hint: "找另一个主体复核，看它是否真的保留自己的偏差和盲区。",
+  },
+  {
+    id: "input-cut",
+    label: "切断输入",
+    hint: "抽掉一部分感官输入，看系统是诚实留白，还是自动把空白补满。",
+  },
+  {
+    id: "memory-audit",
+    label: "回查记忆链",
+    hint: "沿着记忆回溯，检查细节是否能被外部钉住，还是在回忆时被顺滑改写。",
+  },
+  {
+    id: "trace-source",
+    label: "追问输入源",
+    hint: "不断追问感知来源，看系统会不会把问题重新绕回你的内部状态。",
+  },
+];
+
+const VAT_EXPERIMENT_SCENARIOS = [
+  {
+    id: "reality",
+    label: "外界回路",
+    reveal:
+      "这一轮的世界更接近外界回路：它不一定优雅，但会给你真实阻力、他者偏差和不被立即补满的缺口。",
+    profile: {
+      resistance: 0.84,
+      memory: 0.82,
+      peer: 0.79,
+      fill: 0.16,
+      mask: 0.18,
+      closure: 0.72,
+      latency: 0.34,
+    },
+  },
+  {
+    id: "vat",
+    label: "缸中接口",
+    reveal:
+      "这一轮更接近缸中接口：内部一致性很高，但外界阻力、他者独立和诚实留白都偏弱，系统更擅长把差异抹平。",
+    profile: {
+      resistance: 0.31,
+      memory: 0.4,
+      peer: 0.26,
+      fill: 0.85,
+      mask: 0.83,
+      closure: 0.9,
+      latency: 0.16,
+    },
+  },
+  {
+    id: "layered",
+    label: "混合层",
+    reveal:
+      "这一轮更接近混合层：你接触到的既有外界约束，也有强接口补偿，所以最难被一次性判断清楚。",
+    profile: {
+      resistance: 0.58,
+      memory: 0.57,
+      peer: 0.49,
+      fill: 0.55,
+      mask: 0.58,
+      closure: 0.67,
+      latency: 0.42,
+    },
+  },
+];
+
 const state = {
   payload: null,
   filteredItems: [],
@@ -361,6 +648,7 @@ const state = {
   activeLabPage: null,
   labParams: {},
   labActionTimer: null,
+  labPlaygroundCleanups: [],
   drawerOpen: false,
   tocOpen: false,
   mobileFontPanelOpen: false,
@@ -386,6 +674,10 @@ const dom = {
   docView: document.getElementById("doc-view"),
   heroTitle: document.getElementById("hero-title"),
   heroText: document.getElementById("hero-text"),
+  positioningStatement: document.getElementById("positioning-statement"),
+  positioningSupport: document.getElementById("positioning-support"),
+  starterLinks: document.getElementById("starter-links"),
+  lightSeriesLinks: document.getElementById("light-series-links"),
   systemLinks: document.getElementById("system-links"),
   quickLinks: document.getElementById("quick-links"),
   featuredVolumeTitle: document.getElementById("featured-volume-title"),
@@ -809,9 +1101,68 @@ function resetFontSize() {
   applyPreferences();
 }
 
+function formatSerialIndex(index) {
+  return String(index + 1).padStart(2, "0");
+}
+
+function buildStarterLinks() {
+  if (!dom.starterLinks) return;
+
+  dom.starterLinks.innerHTML = "";
+
+  STARTER_GUIDE.forEach((entry, index) => {
+    const item = findItemBySourcePath(entry.sourcePath);
+    if (!item) return;
+
+    const link = document.createElement("a");
+    link.className = "starter-card";
+    link.href = `#doc/${encodeURIComponent(item.id)}`;
+    link.innerHTML = `
+      <span class="starter-index">${formatSerialIndex(index)}</span>
+      <span class="starter-copy">
+        <span class="starter-eyebrow">${entry.eyebrow}</span>
+        <strong>${entry.title}</strong>
+        <p>${entry.copy}</p>
+        <em>进入：${getDisplayTitle(item)}</em>
+      </span>
+    `;
+    dom.starterLinks.appendChild(link);
+  });
+
+  if (!dom.starterLinks.childElementCount) {
+    dom.starterLinks.innerHTML = `<p class="empty-state">新读者入口正在整理中。</p>`;
+  }
+}
+
+function buildLightSeriesLinks() {
+  if (!dom.lightSeriesLinks) return;
+
+  const items = getReadableSectionItems("light-series").slice(0, 10);
+  dom.lightSeriesLinks.innerHTML = "";
+
+  items.forEach((item, index) => {
+    const link = document.createElement("a");
+    link.className = "book-card light-card";
+    link.href = `#doc/${encodeURIComponent(item.id)}`;
+    link.innerHTML = `
+      <div class="book-card-index">${formatSerialIndex(index)}</div>
+      <div class="book-card-copy">
+        <p class="book-card-meta">轻内容 ${formatSerialIndex(index)}</p>
+        <h4>${getDisplayTitle(item)}</h4>
+        <p>${item.excerpt || item.sectionTitle}</p>
+      </div>
+    `;
+    dom.lightSeriesLinks.appendChild(link);
+  });
+
+  if (!dom.lightSeriesLinks.childElementCount) {
+    dom.lightSeriesLinks.innerHTML = `<p class="empty-state">轻内容连载正在整理中。</p>`;
+  }
+}
+
 function buildQuickLinks() {
   const items = getReadableSectionItems("plain-book")
-    .slice(0, 6);
+    .slice(0, 4);
 
   dom.quickLinks.innerHTML = "";
 
@@ -1016,9 +1367,137 @@ function setMeter(id, value) {
   if (text) text.textContent = `${percent}%`;
 }
 
+function setPlaygroundMetric(id, ratio, label) {
+  const fill = dom.labContent.querySelector(`#${id}-fill`);
+  const text = dom.labContent.querySelector(`#${id}-value`);
+
+  if (fill) fill.style.width = `${Math.round(clamp01(ratio) * 100)}%`;
+  if (text) text.textContent = label;
+}
+
 function getRatio(id) {
   const input = dom.labContent.querySelector(`#${id}`);
   return clamp01(Number(input?.value || 0) / 100);
+}
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function distanceBetween(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function normalizeVector(vector, fallback = { x: 1, y: 0 }) {
+  const length = Math.hypot(vector.x, vector.y);
+  if (length < 0.0001) {
+    return { ...fallback };
+  }
+
+  return {
+    x: vector.x / length,
+    y: vector.y / length,
+  };
+}
+
+function drawVectorArrow(ctx, x, y, vector, length, color, alpha = 1) {
+  const direction = normalizeVector(vector);
+  const endX = x + direction.x * length;
+  const endY = y + direction.y * length;
+  const wingLength = length * 0.28;
+  const left = {
+    x: endX - direction.x * wingLength - direction.y * wingLength * 0.68,
+    y: endY - direction.y * wingLength + direction.x * wingLength * 0.68,
+  };
+  const right = {
+    x: endX - direction.x * wingLength + direction.y * wingLength * 0.68,
+    y: endY - direction.y * wingLength - direction.x * wingLength * 0.68,
+  };
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(endX, endY);
+  ctx.moveTo(left.x, left.y);
+  ctx.lineTo(endX, endY);
+  ctx.lineTo(right.x, right.y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function getCanvasPoint(canvas, event) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  return {
+    x: clamp((event.clientX - rect.left) * scaleX, 0, canvas.width),
+    y: clamp((event.clientY - rect.top) * scaleY, 0, canvas.height),
+  };
+}
+
+function bindPlaygroundPointer(canvas, onAim) {
+  let pointerDown = false;
+
+  const updateAim = (event) => {
+    onAim(getCanvasPoint(canvas, event), event);
+  };
+
+  const handlePointerDown = (event) => {
+    pointerDown = true;
+    canvas.setPointerCapture?.(event.pointerId);
+    updateAim(event);
+  };
+
+  const handlePointerMove = (event) => {
+    if (pointerDown || event.pointerType === "mouse") {
+      updateAim(event);
+    }
+  };
+
+  const handlePointerUp = () => {
+    pointerDown = false;
+  };
+
+  canvas.addEventListener("pointerdown", handlePointerDown);
+  canvas.addEventListener("pointermove", handlePointerMove);
+  canvas.addEventListener("pointerup", handlePointerUp);
+  canvas.addEventListener("pointercancel", handlePointerUp);
+  canvas.addEventListener("pointerleave", handlePointerUp);
+
+  return () => {
+    canvas.removeEventListener("pointerdown", handlePointerDown);
+    canvas.removeEventListener("pointermove", handlePointerMove);
+    canvas.removeEventListener("pointerup", handlePointerUp);
+    canvas.removeEventListener("pointercancel", handlePointerUp);
+    canvas.removeEventListener("pointerleave", handlePointerUp);
+  };
+}
+
+function startPlaygroundLoop(step) {
+  let animationFrame = 0;
+  let disposed = false;
+  let previousTime = performance.now();
+
+  const frame = (now) => {
+    if (disposed) return;
+
+    const dt = Math.min(0.035, Math.max(0.012, (now - previousTime) / 1000));
+    previousTime = now;
+    step(dt, now);
+    animationFrame = window.requestAnimationFrame(frame);
+  };
+
+  animationFrame = window.requestAnimationFrame(frame);
+
+  return () => {
+    disposed = true;
+    window.cancelAnimationFrame(animationFrame);
+  };
 }
 
 function normalizeDistribution(values) {
@@ -1094,6 +1573,23 @@ function setLabActionStatus(message, tone = "info") {
     }
     state.labActionTimer = null;
   }, 2400);
+}
+
+function registerLabPlaygroundCleanup(cleanup) {
+  if (typeof cleanup === "function") {
+    state.labPlaygroundCleanups.push(cleanup);
+  }
+}
+
+function cleanupLabPlaygrounds() {
+  state.labPlaygroundCleanups.forEach((cleanup) => {
+    try {
+      cleanup();
+    } catch (error) {
+      console.error(error);
+    }
+  });
+  state.labPlaygroundCleanups = [];
 }
 
 async function copyTextToClipboard(text) {
@@ -1214,9 +1710,1236 @@ function bindLabToolkit(page, onApplyValues) {
   });
 }
 
+function buildThoughtRadarPoints(values, radius, center) {
+  return values.map((value, index) => {
+    const angle = -Math.PI / 2 + (Math.PI * 2 * index) / values.length;
+    const x = center + Math.cos(angle) * radius * clamp01(value);
+    const y = center + Math.sin(angle) * radius * clamp01(value);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+}
+
+function buildThoughtRadarMarkup(values) {
+  const center = 120;
+  const radius = 82;
+  const rings = [0.25, 0.5, 0.75, 1];
+
+  const ringMarkup = rings.map((ratio) => `
+    <polygon
+      class="thought-radar-ring"
+      points="${buildThoughtRadarPoints(new Array(values.length).fill(ratio), radius, center)}"
+    />
+  `).join("");
+
+  const axisMarkup = values.map((axis, index) => {
+    const angle = -Math.PI / 2 + (Math.PI * 2 * index) / values.length;
+    const x = center + Math.cos(angle) * radius;
+    const y = center + Math.sin(angle) * radius;
+    const labelX = center + Math.cos(angle) * (radius + 22);
+    const labelY = center + Math.sin(angle) * (radius + 22);
+
+    return `
+      <line class="thought-radar-axis" x1="${center}" y1="${center}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" />
+      <text class="thought-radar-label" x="${labelX.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" dominant-baseline="middle">
+        ${axis.label}
+      </text>
+    `;
+  }).join("");
+
+  const shapePoints = buildThoughtRadarPoints(values.map((axis) => axis.value), radius, center);
+  const pointMarkup = values.map((axis, index) => {
+    const angle = -Math.PI / 2 + (Math.PI * 2 * index) / values.length;
+    const x = center + Math.cos(angle) * radius * clamp01(axis.value);
+    const y = center + Math.sin(angle) * radius * clamp01(axis.value);
+    return `<circle class="thought-radar-point" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.2"></circle>`;
+  }).join("");
+
+  return `
+    ${ringMarkup}
+    ${axisMarkup}
+    <polygon class="thought-radar-shape" points="${shapePoints}" />
+    ${pointMarkup}
+  `;
+}
+
+function renderThoughtCompassSection() {
+  return `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong">
+        <p class="eyebrow">Thought Visualizer</p>
+        <h3>思辨罗盘：把一句判断放进五个轴里看</h3>
+        <p class="lab-section-copy">
+          这个互动器不替你下结论，它只逼你把一句话摊开：它到底抓住了多少差异，补了多少边界，
+          接上了多少反馈，留下了多少验证，又有没有把自己说成万能大词。
+        </p>
+        <div class="lab-preset-grid thought-preset-grid">
+          ${THOUGHT_COMPASS_PRESETS.map((preset) => `
+            <button
+              class="lab-preset-button"
+              type="button"
+              data-thought-preset="${preset.id}"
+              title="${preset.description}"
+            >
+              <strong>${preset.label}</strong>
+              <span>${preset.description}</span>
+            </button>
+          `).join("")}
+        </div>
+        <div class="lab-controls">
+          ${THOUGHT_COMPASS_AXES.map((axis) => `
+            <label class="lab-range">
+              <span>${axis.label} <strong data-range-output="${axis.key}"></strong></span>
+              <input id="${axis.key}" type="range" min="0" max="100" value="${THOUGHT_COMPASS_DEFAULTS[axis.key]}" />
+            </label>
+          `).join("")}
+        </div>
+        <div class="lab-metrics">
+          <div class="lab-metric">
+            <span>方法贴合度</span>
+            <strong id="thought-method-value"></strong>
+            <div class="lab-meter"><span id="thought-method-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>结构站稳度</span>
+            <strong id="thought-stability-value"></strong>
+            <div class="lab-meter"><span id="thought-stability-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>绝对化风险</span>
+            <strong id="thought-risk-value"></strong>
+            <div class="lab-meter"><span id="thought-risk-fill"></span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="lab-card">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Visual Verdict</p>
+            <h3>当前这句话更像什么</h3>
+          </div>
+          <span class="simulation-badge">差异 · 边界 · 反馈 · 验证 · 风险</span>
+        </div>
+        <div class="thought-radar-shell">
+          <div class="thought-radar-stage">
+            <svg id="thought-radar" class="thought-radar" viewBox="0 0 240 240" role="img" aria-label="思辨罗盘可视化"></svg>
+          </div>
+          <div class="thought-radar-copy">
+            <p class="lab-section-copy">这不是“越大越好”的五边形。前四个角越大越稳，最后一个角越大越危险。</p>
+            <div id="thought-verdict" class="thought-verdict-grid"></div>
+          </div>
+        </div>
+        <div class="thought-gate-grid">
+          <div class="thought-gate" data-thought-gate="difference">
+            <strong>先认出不同</strong>
+            <span>没有差异，后面就只剩大词。</span>
+          </div>
+          <div class="thought-gate" data-thought-gate="boundary">
+            <strong>再补出边界</strong>
+            <span>没有边界，结构就站不起来。</span>
+          </div>
+          <div class="thought-gate" data-thought-gate="feedback">
+            <strong>接上反馈</strong>
+            <span>没有反馈，判断不会自我修正。</span>
+          </div>
+          <div class="thought-gate" data-thought-gate="validation">
+            <strong>留下验证</strong>
+            <span>没有验证，再顺也只是漂亮句子。</span>
+          </div>
+        </div>
+        <div id="thought-summary" class="lab-result-card"></div>
+      </article>
+    </section>
+  `;
+}
+
+function renderHierarchyLiftSection() {
+  return `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card">
+        <p class="eyebrow">Hierarchy Visualizer</p>
+        <h3>层级收纳器：看旧不稳定怎样变成新层势能</h3>
+        <p class="lab-section-copy">
+          这一组交互对应你的那句判断：层级不是在消除落差，而是在收纳落差。
+          你可以直接看一个想法怎样从个人不稳定，慢慢长成草稿、共识、工具接口，最后逼近规则。
+        </p>
+        <div class="lab-preset-grid thought-preset-grid">
+          ${HIERARCHY_LIFT_PRESETS.map((preset) => `
+            <button
+              class="lab-preset-button"
+              type="button"
+              data-lift-preset="${preset.id}"
+              title="${preset.description}"
+            >
+              <strong>${preset.label}</strong>
+              <span>${preset.description}</span>
+            </button>
+          `).join("")}
+        </div>
+        <div class="lab-controls">
+          <label class="lab-range">
+            <span>旧不稳定强度 <strong data-range-output="lift-instability"></strong></span>
+            <input id="lift-instability" type="range" min="0" max="100" value="${HIERARCHY_LIFT_DEFAULTS["lift-instability"]}" />
+          </label>
+          <label class="lab-range">
+            <span>外置程度 <strong data-range-output="lift-externalize"></strong></span>
+            <input id="lift-externalize" type="range" min="0" max="100" value="${HIERARCHY_LIFT_DEFAULTS["lift-externalize"]}" />
+          </label>
+          <label class="lab-range">
+            <span>汇聚程度 <strong data-range-output="lift-converge"></strong></span>
+            <input id="lift-converge" type="range" min="0" max="100" value="${HIERARCHY_LIFT_DEFAULTS["lift-converge"]}" />
+          </label>
+          <label class="lab-range">
+            <span>继承连续性 <strong data-range-output="lift-inherit"></strong></span>
+            <input id="lift-inherit" type="range" min="0" max="100" value="${HIERARCHY_LIFT_DEFAULTS["lift-inherit"]}" />
+          </label>
+          <label class="lab-range">
+            <span>接口清晰度 <strong data-range-output="lift-interface"></strong></span>
+            <input id="lift-interface" type="range" min="0" max="100" value="${HIERARCHY_LIFT_DEFAULTS["lift-interface"]}" />
+          </label>
+          <label class="lab-range">
+            <span>噪声冲击 <strong data-range-output="lift-noise"></strong></span>
+            <input id="lift-noise" type="range" min="0" max="100" value="${HIERARCHY_LIFT_DEFAULTS["lift-noise"]}" />
+          </label>
+        </div>
+      </article>
+
+      <article class="lab-card lab-card-strong">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Lift Track</p>
+            <h3>当前最可能停在哪一层</h3>
+          </div>
+          <span class="simulation-badge">外置 · 汇聚 · 继承 · 接口 · 抗噪</span>
+        </div>
+        <div id="lift-levels" class="layer-lift-shell">
+          ${HIERARCHY_LIFT_LEVELS.map((level) => `
+            <div class="layer-lift-node" data-lift-level="${level.key}">
+              <small>${level.label}</small>
+              <strong class="layer-lift-value" data-lift-value="${level.key}">0%</strong>
+              <div class="layer-lift-bar">
+                <span data-lift-fill="${level.key}"></span>
+              </div>
+              <p>${level.copy}</p>
+            </div>
+          `).join("")}
+        </div>
+        <div class="lab-metrics">
+          <div class="lab-metric">
+            <span>外置转译率</span>
+            <strong id="lift-translation-value"></strong>
+            <div class="lab-meter"><span id="lift-translation-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>继承保留率</span>
+            <strong id="lift-retention-value"></strong>
+            <div class="lab-meter"><span id="lift-retention-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>规则沉淀度</span>
+            <strong id="lift-rule-value"></strong>
+            <div class="lab-meter"><span id="lift-rule-fill"></span></div>
+          </div>
+        </div>
+        <div id="lift-summary" class="lab-result-card"></div>
+      </article>
+    </section>
+  `;
+}
+
+function initThoughtCompass() {
+  const presetMap = new Map(THOUGHT_COMPASS_PRESETS.map((preset) => [preset.id, preset.values]));
+
+  const setValues = (values) => {
+    Object.entries(values).forEach(([key, value]) => {
+      const input = dom.labContent.querySelector(`#${key}`);
+      if (input) {
+        input.value = String(value);
+      }
+    });
+  };
+
+  const updateThoughtCompass = () => {
+    const axisValues = THOUGHT_COMPASS_AXES.map((axis) => ({
+      ...axis,
+      value: getRatio(axis.key),
+    }));
+
+    axisValues.forEach((axis) => {
+      setRangeOutput(axis.key, `${Math.round(axis.value * 100)}%`);
+    });
+
+    const [difference, boundary, feedback, validation, overclaim] = axisValues.map((axis) => axis.value);
+    const method = clamp01(0.33 * difference + 0.22 * boundary + 0.2 * feedback + 0.25 * validation);
+    const stability = clamp01(0.24 * difference + 0.26 * boundary + 0.22 * feedback + 0.28 * validation);
+    const risk = clamp01(0.7 * overclaim + 0.18 * (1 - validation) + 0.12 * (1 - boundary));
+    const usable = clamp01((0.56 * stability + 0.44 * method) - risk * 0.38);
+
+    setMeter("thought-method", method);
+    setMeter("thought-stability", stability);
+    setMeter("thought-risk", risk);
+
+    const radar = dom.labContent.querySelector("#thought-radar");
+    if (radar) {
+      radar.innerHTML = buildThoughtRadarMarkup(axisValues);
+    }
+
+    const bottlenecks = [
+      ["边界", boundary],
+      ["反馈", feedback],
+      ["验证", validation],
+      ["克制", 1 - overclaim],
+    ].sort((a, b) => a[1] - b[1]);
+
+    const gateStates = [
+      { key: "difference", value: difference, summary: difference > 0.46 ? "已经抓到显著不同。" : "差异还太薄，先别急着上结论。" },
+      { key: "boundary", value: boundary, summary: boundary > 0.48 ? "边界开始清楚。" : "边界模糊，容易把背景起伏误当结构。" },
+      { key: "feedback", value: feedback, summary: feedback > 0.48 ? "反馈链已经开始闭合。" : "反馈太弱，判断还不会自我修正。" },
+      { key: "validation", value: validation, summary: validation > 0.48 ? "验证入口已经出现。" : "验证不足，语句还经不起反问。" },
+    ];
+
+    gateStates.forEach((gate) => {
+      const node = dom.labContent.querySelector(`[data-thought-gate="${gate.key}"]`);
+      if (!node) return;
+      node.dataset.state = gate.value > 0.48 ? "active" : "waiting";
+      node.querySelector("span").textContent = gate.summary;
+    });
+
+    let type = "灵感句";
+    let nextStep = "先补边界和验证，不要急着把它抬到终极高度。";
+    if (risk > 0.78 && validation < 0.4) {
+      type = "万能词警报";
+      nextStep = "先降强度，把“绝对解释”改回工作假设和可反问句。";
+    } else if (usable >= 0.72 && stability >= 0.72 && validation >= 0.68 && risk < 0.28) {
+      type = "规则候选";
+      nextStep = "已经接近可重复表达，下一步该补失败条件和适用边界。";
+    } else if (usable >= 0.46) {
+      type = "结构判断";
+      nextStep = "可以先当中层判断使用，但还要继续补反馈和验证密度。";
+    }
+
+    const verdict = dom.labContent.querySelector("#thought-verdict");
+    if (verdict) {
+      verdict.innerHTML = `
+        <span class="thought-chip">${type}</span>
+        <span class="thought-chip">最短板：${bottlenecks[0][0]}</span>
+        <span class="thought-chip ${risk > 0.62 ? "is-alert" : ""}">可用度：${Math.round(usable * 100)}%</span>
+      `;
+    }
+
+    const summary = dom.labContent.querySelector("#thought-summary");
+    if (summary) {
+      summary.innerHTML = `
+        <h4>当前判断</h4>
+        <p>
+          这句话当前更像<strong>${type}</strong>。
+          方法贴合度是 ${Math.round(method * 100)}%，结构站稳度是 ${Math.round(stability * 100)}%，
+          绝对化风险是 ${Math.round(risk * 100)}%。
+        </p>
+        <p>
+          现在最短板是“${bottlenecks[0][0]}”。${nextStep}
+        </p>
+      `;
+    }
+  };
+
+  dom.labContent.querySelectorAll("[data-thought-preset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const preset = presetMap.get(button.dataset.thoughtPreset);
+      if (!preset) return;
+      setValues(preset);
+      updateThoughtCompass();
+    });
+  });
+
+  THOUGHT_COMPASS_AXES.forEach((axis) => {
+    dom.labContent.querySelector(`#${axis.key}`)?.addEventListener("input", updateThoughtCompass);
+  });
+
+  setValues(THOUGHT_COMPASS_DEFAULTS);
+  updateThoughtCompass();
+}
+
+function initHierarchyLift() {
+  const presetMap = new Map(HIERARCHY_LIFT_PRESETS.map((preset) => [preset.id, preset.values]));
+
+  const setValues = (values) => {
+    Object.entries(values).forEach(([key, value]) => {
+      const input = dom.labContent.querySelector(`#${key}`);
+      if (input) {
+        input.value = String(value);
+      }
+    });
+  };
+
+  const updateHierarchyLift = () => {
+    const instability = getRatio("lift-instability");
+    const externalize = getRatio("lift-externalize");
+    const converge = getRatio("lift-converge");
+    const inherit = getRatio("lift-inherit");
+    const iface = getRatio("lift-interface");
+    const noise = getRatio("lift-noise");
+
+    [
+      "lift-instability",
+      "lift-externalize",
+      "lift-converge",
+      "lift-inherit",
+      "lift-interface",
+      "lift-noise",
+    ].forEach((id) => {
+      setRangeOutput(id, `${Math.round(getRatio(id) * 100)}%`);
+    });
+
+    const levels = {
+      mind: instability,
+      draft: clamp01(instability * (0.4 + externalize * 0.6) * (0.95 - noise * 0.18)),
+      group: 0,
+      tool: 0,
+      rule: 0,
+    };
+
+    levels.group = clamp01(levels.draft * (0.36 + converge * 0.54) * (0.96 - noise * 0.2));
+    levels.tool = clamp01(levels.group * (0.32 + inherit * 0.3 + iface * 0.28) * (0.98 - noise * 0.12));
+    levels.rule = clamp01(levels.tool * (0.3 + inherit * 0.34 + iface * 0.22 + converge * 0.12) * (0.99 - noise * 0.1));
+
+    const translation = clamp01(0.38 * externalize + 0.36 * converge + 0.26 * iface);
+    const retention = clamp01(0.46 * inherit + 0.24 * iface + 0.18 * converge + 0.12 * (1 - noise));
+    const ruleDepth = levels.rule;
+
+    setMeter("lift-translation", translation);
+    setMeter("lift-retention", retention);
+    setMeter("lift-rule", ruleDepth);
+
+    const orderedLevels = HIERARCHY_LIFT_LEVELS.map((level) => ({
+      ...level,
+      value: levels[level.key],
+    }));
+    const activeIndex = orderedLevels.reduce((bestIndex, level, index) => (
+      level.value >= 0.22 ? index : bestIndex
+    ), 0);
+
+    orderedLevels.forEach((level, index) => {
+      const node = dom.labContent.querySelector(`[data-lift-level="${level.key}"]`);
+      const fill = dom.labContent.querySelector(`[data-lift-fill="${level.key}"]`);
+      const valueText = dom.labContent.querySelector(`[data-lift-value="${level.key}"]`);
+      if (!node || !fill || !valueText) return;
+      valueText.textContent = `${Math.round(level.value * 100)}%`;
+      fill.style.height = `${Math.max(8, Math.round(level.value * 100))}%`;
+      node.classList.toggle("is-reached", level.value >= 0.22);
+      node.classList.toggle("is-current", index === activeIndex);
+    });
+
+    const bottlenecks = [
+      ["外置", externalize],
+      ["汇聚", converge],
+      ["继承", inherit],
+      ["接口", iface],
+      ["抗噪", 1 - noise],
+    ].sort((a, b) => a[1] - b[1]);
+
+    const stageLine = [
+      "旧不稳定还主要停在个体里，最需要的是把它先写出来。",
+      "已经外置成草稿，但还缺少稳定汇聚。",
+      "已经能被小群接住，下一步要让它脱离具体说话场景。",
+      "已经长成工具和 workflow，可以开始稳定回写。",
+      "已经接近规则沉淀，开始具有跨主体、跨时段的寿命。",
+    ][activeIndex];
+
+    const summary = dom.labContent.querySelector("#lift-summary");
+    if (summary) {
+      summary.innerHTML = `
+        <h4>当前停层</h4>
+        <p>
+          当前最可能停在<strong>${orderedLevels[activeIndex].label}</strong>层。
+          ${stageLine}
+        </p>
+        <p>
+          现在最大的瓶颈是“${bottlenecks[0][0]}”。如果想再上一层，
+          就别只继续堆不稳定本身，而要优先补这一项。
+        </p>
+      `;
+    }
+  };
+
+  dom.labContent.querySelectorAll("[data-lift-preset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const preset = presetMap.get(button.dataset.liftPreset);
+      if (!preset) return;
+      setValues(preset);
+      updateHierarchyLift();
+    });
+  });
+
+  [
+    "lift-instability",
+    "lift-externalize",
+    "lift-converge",
+    "lift-inherit",
+    "lift-interface",
+    "lift-noise",
+  ].forEach((id) => {
+    dom.labContent.querySelector(`#${id}`)?.addEventListener("input", updateHierarchyLift);
+  });
+
+  setValues(HIERARCHY_LIFT_DEFAULTS);
+  updateHierarchyLift();
+}
+
+function getSnakeFlowVector(x, y, width, height) {
+  return normalizeVector({
+    x: 0.88 + ((height * 0.48) - y) / height * 0.34,
+    y: ((height * 0.5) - y) / height * 1.12 + Math.sin((x / width) * Math.PI * 2) * 0.18,
+  });
+}
+
+function getSwarmFlowVector(x, y, width, height) {
+  const basinX = width * 0.68;
+  const basinY = height * 0.52;
+
+  return normalizeVector({
+    x: 0.24 + (basinX - x) / width * 1.42,
+    y: (basinY - y) / height * 1.08 + Math.cos(((x + y) / width) * Math.PI * 1.7) * 0.08,
+  });
+}
+
+function renderPlayableLabSection() {
+  return `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong" data-playground="snake">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Playable A</p>
+            <h3>差流游蛇：顺着流吃差异，尾迹会长成结构</h3>
+          </div>
+          <span class="simulation-badge">落差 · 流向 · 结构</span>
+        </div>
+        <p class="lab-section-copy">
+          这一块故意做得更像贪吃蛇。亮球是可吸收的差异，背景箭头是流向，
+          你留下的尾迹就是最直观的结构。只顾着吃会变长，但只有顺流和少断裂，尾迹才会真正站稳。
+        </p>
+        <div class="playground-shell">
+          <canvas
+            id="snake-canvas"
+            class="playground-canvas"
+            width="${PLAYGROUND_CANVAS.width}"
+            height="${PLAYGROUND_CANVAS.height}"
+            aria-label="差流游蛇交互画布"
+          ></canvas>
+        </div>
+        <div class="playground-toolbar">
+          <p class="playground-hint">移动指针、点击或拖动画面转向。亮球是落差，箭头是流向，发亮尾迹就是正在形成的结构。</p>
+          <button class="reader-button" type="button" data-playground-reset="snake">重新开局</button>
+        </div>
+        <div class="lab-mini-points">
+          <span>吃到落差球会增长</span>
+          <span>顺流会更快更稳</span>
+          <span>撞边界会让结构断裂</span>
+        </div>
+        <div class="lab-metrics">
+          <div class="lab-metric">
+            <span>吸收落差</span>
+            <strong id="snake-difference-value"></strong>
+            <div class="lab-meter"><span id="snake-difference-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>顺流率</span>
+            <strong id="snake-harmony-value"></strong>
+            <div class="lab-meter"><span id="snake-harmony-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>结构度</span>
+            <strong id="snake-structure-value"></strong>
+            <div class="lab-meter"><span id="snake-structure-fill"></span></div>
+          </div>
+        </div>
+        <div id="snake-summary" class="lab-result-card"></div>
+      </article>
+
+      <article class="lab-card" data-playground="swarm">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Playable B</p>
+            <h3>结构吞并场：先吞入差异，再把体量沉成稳定环</h3>
+          </div>
+          <span class="simulation-badge">吞并 · 汇聚 · 沉淀</span>
+        </div>
+        <p class="lab-section-copy">
+          这一块更接近球球大作战。你可以不断吞入差异，但“变大”不等于“形成结构”。
+          只有在流场里慢慢收束，吞进去的体量才会沉成卫星环，变成更稳定的结构。
+        </p>
+        <div class="playground-shell playground-shell-cool">
+          <canvas
+            id="swarm-canvas"
+            class="playground-canvas"
+            width="${PLAYGROUND_CANVAS.width}"
+            height="${PLAYGROUND_CANVAS.height}"
+            aria-label="结构吞并场交互画布"
+          ></canvas>
+        </div>
+        <div class="playground-toolbar">
+          <p class="playground-hint">拖动或点击画面改变聚集方向。金色粒子是差异，灰色噪声会打断沉淀，外圈卫星就是结构开始站稳。</p>
+          <button class="reader-button" type="button" data-playground-reset="swarm">重新开局</button>
+        </div>
+        <div class="lab-mini-points">
+          <span>吞差异只会先变大</span>
+          <span>顺着流聚集更易沉淀</span>
+          <span>卫星环代表结构稳定</span>
+        </div>
+        <div class="lab-metrics">
+          <div class="lab-metric">
+            <span>总体量</span>
+            <strong id="swarm-mass-value"></strong>
+            <div class="lab-meter"><span id="swarm-mass-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>流向协同</span>
+            <strong id="swarm-harmony-value"></strong>
+            <div class="lab-meter"><span id="swarm-harmony-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>沉淀结构度</span>
+            <strong id="swarm-structure-value"></strong>
+            <div class="lab-meter"><span id="swarm-structure-fill"></span></div>
+          </div>
+        </div>
+        <div id="swarm-summary" class="lab-result-card"></div>
+      </article>
+    </section>
+  `;
+}
+
+function initDifferenceSnakePlayground() {
+  const root = dom.labContent.querySelector('[data-playground="snake"]');
+  const canvas = root?.querySelector("#snake-canvas");
+  const summary = root?.querySelector("#snake-summary");
+
+  if (!root || !canvas || !summary) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const bounds = PLAYGROUND_CANVAS;
+  let snake = [];
+  let particles = [];
+  let targetLength = 7;
+  let totalDifference = 0;
+  let harmony = 0.46;
+  let structure = 0.22;
+  let instability = 0;
+  let direction = { x: 1, y: 0 };
+  let targetDirection = { x: 1, y: 0 };
+
+  const spawnParticle = () => ({
+    x: randomBetween(34, bounds.width - 34),
+    y: randomBetween(30, bounds.height - 30),
+    radius: randomBetween(4, 6.6),
+    value: Math.random() > 0.72 ? 2 : 1,
+    pulse: randomBetween(0, Math.PI * 2),
+  });
+
+  const resetGame = () => {
+    targetLength = 7;
+    totalDifference = 0;
+    harmony = 0.46;
+    structure = 0.22;
+    instability = 0;
+    direction = { x: 1, y: 0 };
+    targetDirection = { x: 1, y: 0 };
+    snake = Array.from({ length: targetLength }, (_, index) => ({
+      x: 104 - index * 11,
+      y: bounds.height * 0.55,
+    }));
+    particles = Array.from({ length: FLOW_SNAKE_PARTICLE_COUNT }, spawnParticle);
+  };
+
+  const fracture = () => {
+    targetLength = Math.max(5, targetLength - 3);
+    harmony = clamp01(harmony * 0.78);
+    instability = clamp01(instability + 0.28);
+    direction = { x: 1, y: 0 };
+    targetDirection = { x: 1, y: 0 };
+    snake = Array.from({ length: targetLength }, (_, index) => ({
+      x: 104 - index * 11,
+      y: bounds.height * 0.55,
+    }));
+  };
+
+  const updateUi = () => {
+    setPlaygroundMetric("snake-difference", totalDifference / 28, `${totalDifference}`);
+    setPlaygroundMetric("snake-harmony", harmony, `${Math.round(harmony * 100)}%`);
+    setPlaygroundMetric("snake-structure", structure, `${Math.round(structure * 100)}%`);
+
+    let verdict = "先顺着箭头走，让尾迹少断几次，差异才更容易排成结构。";
+    if (structure > 0.72) {
+      verdict = "你已经把吸进来的差异拖成了可见结构，流向正在帮你维持它。";
+    } else if (harmony > 0.62) {
+      verdict = "你正在借流向收差，尾迹已经开始站稳，但还没完全锁住。";
+    } else if (instability > 0.14) {
+      verdict = "尾迹刚刚断过。吃到差异不等于留下结构，边界和走向也在起作用。";
+    }
+
+    summary.innerHTML = `
+      <h4>玩法解释</h4>
+      <p>
+        当前尾迹长度是 <strong>${targetLength}</strong>，已经收进了 <strong>${totalDifference}</strong> 份落差。
+        顺流率为 ${Math.round(harmony * 100)}%，结构度为 ${Math.round(structure * 100)}%。
+      </p>
+      <p>${verdict}</p>
+    `;
+  };
+
+  const drawScene = (now) => {
+    ctx.clearRect(0, 0, bounds.width, bounds.height);
+
+    const background = ctx.createLinearGradient(0, 0, bounds.width, bounds.height);
+    background.addColorStop(0, "#fff8ee");
+    background.addColorStop(1, "#efe8de");
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, bounds.width, bounds.height);
+
+    ctx.save();
+    ctx.fillStyle = "rgba(217, 156, 91, 0.18)";
+    ctx.beginPath();
+    ctx.arc(54, 46, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(90, 118, 151, 0.12)";
+    ctx.beginPath();
+    ctx.arc(bounds.width - 46, bounds.height - 34, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    for (let y = 24; y < bounds.height; y += 44) {
+      for (let x = 24; x < bounds.width; x += 44) {
+        drawVectorArrow(
+          ctx,
+          x,
+          y,
+          getSnakeFlowVector(x, y, bounds.width, bounds.height),
+          15,
+          "rgba(117, 100, 88, 0.35)",
+          0.85,
+        );
+      }
+    }
+
+    ctx.save();
+    ctx.font = "12px sans-serif";
+    ctx.fillStyle = "rgba(139, 63, 52, 0.8)";
+    ctx.fillText("高差", 28, 26);
+    ctx.fillText("低势", bounds.width - 58, bounds.height - 12);
+    ctx.restore();
+
+    particles.forEach((particle) => {
+      const pulse = 0.7 + Math.sin(now * 0.004 + particle.pulse) * 0.12;
+      ctx.save();
+      ctx.globalAlpha = pulse;
+      ctx.fillStyle = particle.value > 1 ? "#d98f43" : "#e1b66f";
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = "rgba(217, 156, 91, 0.5)";
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    if (snake.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = `rgba(226, 175, 109, ${0.18 + structure * 0.26})`;
+      ctx.lineWidth = 18;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      snake.forEach((segment, index) => {
+        if (index === 0) {
+          ctx.moveTo(segment.x, segment.y);
+        } else {
+          ctx.lineTo(segment.x, segment.y);
+        }
+      });
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "#8b3f34";
+      ctx.lineWidth = 10;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      snake.forEach((segment, index) => {
+        if (index === 0) {
+          ctx.moveTo(segment.x, segment.y);
+        } else {
+          ctx.lineTo(segment.x, segment.y);
+        }
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (structure > 0.56 && snake.length > 8) {
+      const braceIndexes = [0, 3, 6, Math.min(snake.length - 1, 9)];
+      ctx.save();
+      ctx.strokeStyle = `rgba(84, 111, 140, ${0.2 + structure * 0.28})`;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      braceIndexes.forEach((index, order) => {
+        const node = snake[index];
+        if (!node) return;
+        if (order === 0) {
+          ctx.moveTo(node.x, node.y);
+        } else {
+          ctx.lineTo(node.x, node.y);
+        }
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const head = snake[0];
+    if (head) {
+      ctx.save();
+      ctx.fillStyle = "#f7ecd7";
+      ctx.strokeStyle = "#8b3f34";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(head.x, head.y, 9.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      const flow = getSnakeFlowVector(head.x, head.y, bounds.width, bounds.height);
+      drawVectorArrow(ctx, head.x, head.y, flow, 20, "rgba(84, 111, 140, 0.78)", 1);
+      ctx.restore();
+    }
+  };
+
+  const updateGame = (dt) => {
+    const head = snake[0];
+    if (!head) return;
+
+    direction = normalizeVector({
+      x: direction.x * 0.88 + targetDirection.x * 0.12,
+      y: direction.y * 0.88 + targetDirection.y * 0.12,
+    }, direction);
+
+    const flow = getSnakeFlowVector(head.x, head.y, bounds.width, bounds.height);
+    const rawAlignment = direction.x * flow.x + direction.y * flow.y;
+    const alignment = clamp01((rawAlignment + 1) / 2);
+
+    harmony = clamp01(harmony * 0.93 + alignment * 0.07 - dt * 0.06 * Math.max(0, -rawAlignment));
+    instability = Math.max(0, instability - dt * 0.08);
+
+    const speed = 78 + alignment * 54;
+    const nextHead = {
+      x: head.x + direction.x * speed * dt,
+      y: head.y + direction.y * speed * dt,
+    };
+
+    let collided = (
+      nextHead.x < 14
+      || nextHead.x > bounds.width - 14
+      || nextHead.y < 14
+      || nextHead.y > bounds.height - 14
+    );
+
+    if (!collided) {
+      for (let index = 5; index < snake.length; index += 1) {
+        if (distanceBetween(nextHead, snake[index]) < 10) {
+          collided = true;
+          break;
+        }
+      }
+    }
+
+    if (collided) {
+      fracture();
+    } else {
+      snake.unshift(nextHead);
+      while (snake.length > targetLength) {
+        snake.pop();
+      }
+    }
+
+    particles = particles.map((particle) => {
+      const drift = getSnakeFlowVector(particle.x, particle.y, bounds.width, bounds.height);
+      let nextX = particle.x + drift.x * dt * (16 + particle.value * 8);
+      let nextY = particle.y + drift.y * dt * (12 + particle.value * 5);
+
+      if (nextX > bounds.width + 12) nextX = -12;
+      if (nextY > bounds.height + 12) nextY = -12;
+      if (nextX < -12) nextX = bounds.width + 12;
+      if (nextY < -12) nextY = bounds.height + 12;
+
+      return {
+        ...particle,
+        x: nextX,
+        y: nextY,
+        pulse: particle.pulse + dt * 2.2,
+      };
+    });
+
+    particles.forEach((particle, index) => {
+      if (distanceBetween(snake[0], particle) < particle.radius + 10) {
+        totalDifference += particle.value;
+        targetLength = Math.min(28, targetLength + particle.value);
+        harmony = clamp01(harmony + 0.03);
+        particles[index] = spawnParticle();
+      }
+    });
+
+    structure = clamp01(((targetLength - 6) / 18) * 0.62 + harmony * 0.38 - instability * 0.55);
+  };
+
+  const handleAim = ({ x, y }) => {
+    const head = snake[0];
+    if (!head || distanceBetween(head, { x, y }) < 10) return;
+    targetDirection = normalizeVector({
+      x: x - head.x,
+      y: y - head.y,
+    }, targetDirection);
+  };
+
+  const pointerCleanup = bindPlaygroundPointer(canvas, handleAim);
+  const resetButton = root.querySelector('[data-playground-reset="snake"]');
+  const handleReset = () => {
+    resetGame();
+    updateUi();
+  };
+
+  resetButton?.addEventListener("click", handleReset);
+  resetGame();
+  updateUi();
+
+  const loopCleanup = startPlaygroundLoop((dt, now) => {
+    updateGame(dt);
+    drawScene(now);
+    updateUi();
+  });
+
+  registerLabPlaygroundCleanup(() => {
+    pointerCleanup();
+    loopCleanup();
+    resetButton?.removeEventListener("click", handleReset);
+  });
+}
+
+function initStructureSwarmPlayground() {
+  const root = dom.labContent.querySelector('[data-playground="swarm"]');
+  const canvas = root?.querySelector("#swarm-canvas");
+  const summary = root?.querySelector("#swarm-summary");
+
+  if (!root || !canvas || !summary) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const bounds = PLAYGROUND_CANVAS;
+  let target = { x: bounds.width * 0.66, y: bounds.height * 0.5 };
+  let core;
+  let particles = [];
+  let unstableMass = 1.8;
+  let stableMass = 0.6;
+  let harmony = 0.48;
+  let structure = 0.18;
+  let collectedDifference = 0;
+  let noiseHits = 0;
+  let boundaryStress = 0;
+
+  const spawnParticle = (kind) => ({
+    kind,
+    x: randomBetween(34, bounds.width - 34),
+    y: randomBetween(28, bounds.height - 28),
+    radius: kind === "difference" ? randomBetween(3.4, 5.8) : randomBetween(2.8, 4.4),
+    phase: randomBetween(0, Math.PI * 2),
+  });
+
+  const resetGame = () => {
+    target = { x: bounds.width * 0.66, y: bounds.height * 0.5 };
+    core = {
+      x: 98,
+      y: bounds.height * 0.5,
+      vx: 0,
+      vy: 0,
+      radius: 15,
+    };
+    unstableMass = 1.8;
+    stableMass = 0.6;
+    harmony = 0.48;
+    structure = 0.18;
+    collectedDifference = 0;
+    noiseHits = 0;
+    boundaryStress = 0;
+    particles = [
+      ...Array.from({ length: SWARM_DIFFERENCE_COUNT }, () => spawnParticle("difference")),
+      ...Array.from({ length: SWARM_NOISE_COUNT }, () => spawnParticle("noise")),
+    ];
+  };
+
+  const updateUi = () => {
+    const totalMass = unstableMass + stableMass;
+    const orbiterCount = Math.min(6, Math.floor(stableMass / 1.9));
+
+    setPlaygroundMetric("swarm-mass", totalMass / 18, totalMass.toFixed(1));
+    setPlaygroundMetric("swarm-harmony", harmony, `${Math.round(harmony * 100)}%`);
+    setPlaygroundMetric("swarm-structure", structure, `${Math.round(structure * 100)}%`);
+
+    let verdict = "先别只顾着吞。想把体量变成结构，还得让它在流场里慢慢沉下来。";
+    if (structure > 0.72) {
+      verdict = "你已经把吞入的差异沉成了稳定环，这时长大的不只是体量，而是结构。";
+    } else if (unstableMass > stableMass * 1.6) {
+      verdict = "你现在主要是在堆体量。只会吞并，不会沉淀，结构就还没真正长出来。";
+    } else if (noiseHits > 3 && structure < 0.46) {
+      verdict = "噪声正在打断沉淀。过滤和维持，也是结构形成的一部分。";
+    }
+
+    summary.innerHTML = `
+      <h4>玩法解释</h4>
+      <p>
+        你已经吞进了 <strong>${collectedDifference}</strong> 份差异，总体量是 <strong>${totalMass.toFixed(1)}</strong>。
+        当前有 <strong>${orbiterCount}</strong> 个卫星节点开始围绕核心稳定旋转。
+      </p>
+      <p>${verdict}</p>
+    `;
+  };
+
+  const drawScene = (now) => {
+    ctx.clearRect(0, 0, bounds.width, bounds.height);
+
+    const background = ctx.createLinearGradient(0, 0, bounds.width, bounds.height);
+    background.addColorStop(0, "#f4f7fb");
+    background.addColorStop(1, "#ece6dd");
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, bounds.width, bounds.height);
+
+    ctx.save();
+    ctx.fillStyle = "rgba(90, 118, 151, 0.12)";
+    ctx.beginPath();
+    ctx.arc(bounds.width * 0.72, bounds.height * 0.52, 46, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    for (let y = 24; y < bounds.height; y += 44) {
+      for (let x = 24; x < bounds.width; x += 44) {
+        drawVectorArrow(
+          ctx,
+          x,
+          y,
+          getSwarmFlowVector(x, y, bounds.width, bounds.height),
+          14,
+          "rgba(84, 111, 140, 0.38)",
+          0.88,
+        );
+      }
+    }
+
+    ctx.save();
+    ctx.font = "12px sans-serif";
+    ctx.fillStyle = "rgba(84, 111, 140, 0.82)";
+    ctx.fillText("汇聚盆地", bounds.width * 0.66, 24);
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(84, 111, 140, 0.26)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(target.x, target.y, 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    particles.forEach((particle) => {
+      ctx.save();
+      if (particle.kind === "difference") {
+        ctx.fillStyle = "#d89a57";
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = "rgba(216, 154, 87, 0.45)";
+      } else {
+        ctx.fillStyle = "rgba(108, 120, 138, 0.7)";
+      }
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    const orbiterCount = Math.min(6, Math.floor(stableMass / 1.9));
+    for (let index = 0; index < orbiterCount; index += 1) {
+      const angle = now * 0.0014 + index * ((Math.PI * 2) / Math.max(1, orbiterCount));
+      const orbitRadius = core.radius + 14 + index * 3.2;
+      const orbiterX = core.x + Math.cos(angle) * orbitRadius;
+      const orbiterY = core.y + Math.sin(angle) * orbitRadius;
+
+      ctx.save();
+      ctx.fillStyle = "rgba(92, 118, 152, 0.9)";
+      ctx.beginPath();
+      ctx.arc(orbiterX, orbiterY, 4.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (unstableMass > 0.16) {
+      ctx.save();
+      ctx.setLineDash([7, 6]);
+      ctx.strokeStyle = `rgba(216, 154, 87, ${0.22 + unstableMass * 0.06})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(core.x, core.y, core.radius + 8 + unstableMass * 2.2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const coreGradient = ctx.createRadialGradient(
+      core.x - core.radius * 0.25,
+      core.y - core.radius * 0.25,
+      core.radius * 0.18,
+      core.x,
+      core.y,
+      core.radius,
+    );
+    coreGradient.addColorStop(0, "#fff3da");
+    coreGradient.addColorStop(1, "#9b4f3f");
+    ctx.save();
+    ctx.fillStyle = coreGradient;
+    ctx.strokeStyle = "#5a7697";
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.arc(core.x, core.y, core.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  const updateGame = (dt, now) => {
+    const flow = getSwarmFlowVector(core.x, core.y, bounds.width, bounds.height);
+    const deltaX = target.x - core.x;
+    const deltaY = target.y - core.y;
+    const targetDistance = Math.hypot(deltaX, deltaY);
+    const targetDirection = targetDistance > 8
+      ? { x: deltaX / targetDistance, y: deltaY / targetDistance }
+      : { x: 0, y: 0 };
+
+    core.vx = clamp(core.vx + (targetDirection.x * 62 + flow.x * 34) * dt, -135, 135);
+    core.vy = clamp(core.vy + (targetDirection.y * 62 + flow.y * 34) * dt, -135, 135);
+    core.vx *= 0.985;
+    core.vy *= 0.985;
+
+    core.x += core.vx * dt;
+    core.y += core.vy * dt;
+
+    if (core.x < core.radius) {
+      core.x = core.radius;
+      core.vx = Math.abs(core.vx) * 0.42;
+      stableMass = Math.max(0, stableMass - 0.34);
+      boundaryStress = clamp01(boundaryStress + 0.18);
+    }
+    if (core.x > bounds.width - core.radius) {
+      core.x = bounds.width - core.radius;
+      core.vx = -Math.abs(core.vx) * 0.42;
+      stableMass = Math.max(0, stableMass - 0.34);
+      boundaryStress = clamp01(boundaryStress + 0.18);
+    }
+    if (core.y < core.radius) {
+      core.y = core.radius;
+      core.vy = Math.abs(core.vy) * 0.42;
+      stableMass = Math.max(0, stableMass - 0.34);
+      boundaryStress = clamp01(boundaryStress + 0.18);
+    }
+    if (core.y > bounds.height - core.radius) {
+      core.y = bounds.height - core.radius;
+      core.vy = -Math.abs(core.vy) * 0.42;
+      stableMass = Math.max(0, stableMass - 0.34);
+      boundaryStress = clamp01(boundaryStress + 0.18);
+    }
+
+    const speed = Math.hypot(core.vx, core.vy);
+    const velocityDirection = speed > 4
+      ? { x: core.vx / speed, y: core.vy / speed }
+      : flow;
+    const rawAlignment = velocityDirection.x * flow.x + velocityDirection.y * flow.y;
+    const alignment = clamp01((rawAlignment + 1) / 2);
+
+    harmony = clamp01(harmony * 0.93 + alignment * 0.07);
+    boundaryStress = Math.max(0, boundaryStress - dt * 0.16);
+
+    particles = particles.map((particle) => {
+      if (particle.kind === "difference") {
+        const drift = getSwarmFlowVector(particle.x, particle.y, bounds.width, bounds.height);
+        return {
+          ...particle,
+          x: (particle.x + drift.x * dt * (18 + particle.radius * 3) + bounds.width) % bounds.width,
+          y: (particle.y + drift.y * dt * (15 + particle.radius * 2.4) + Math.sin(now * 0.002 + particle.phase) * dt * 5 + bounds.height) % bounds.height,
+        };
+      }
+
+      return {
+        ...particle,
+        x: (particle.x + Math.cos(now * 0.0018 + particle.phase) * dt * 16 + bounds.width) % bounds.width,
+        y: (particle.y + Math.sin(now * 0.0021 + particle.phase) * dt * 14 + bounds.height) % bounds.height,
+      };
+    });
+
+    particles.forEach((particle, index) => {
+      if (distanceBetween(core, particle) < core.radius + particle.radius) {
+        if (particle.kind === "difference") {
+          unstableMass += 0.82;
+          collectedDifference += 1;
+        } else {
+          unstableMass = Math.max(0, unstableMass - 0.72);
+          stableMass = Math.max(0, stableMass - 0.45);
+          noiseHits += 1;
+          boundaryStress = clamp01(boundaryStress + 0.12);
+        }
+        particles[index] = spawnParticle(particle.kind);
+      }
+    });
+
+    const settleRatio = clamp01(0.62 * harmony + 0.38 * (1 - clamp01(speed / 140)));
+    const converted = Math.min(unstableMass, (0.18 + settleRatio * 0.68) * dt);
+
+    unstableMass = Math.max(0, unstableMass - converted);
+    stableMass = Math.max(
+      0,
+      stableMass + converted - dt * Math.max(0, speed / 145 - 0.68) * 0.24 - boundaryStress * dt * 0.22,
+    );
+    core.radius = 14 + unstableMass * 0.78 + stableMass * 1.12;
+    structure = clamp01(stableMass / 10.8);
+  };
+
+  const handleAim = ({ x, y }) => {
+    target = { x, y };
+  };
+
+  const pointerCleanup = bindPlaygroundPointer(canvas, handleAim);
+  const resetButton = root.querySelector('[data-playground-reset="swarm"]');
+  const handleReset = () => {
+    resetGame();
+    updateUi();
+  };
+
+  resetButton?.addEventListener("click", handleReset);
+  resetGame();
+  updateUi();
+
+  const loopCleanup = startPlaygroundLoop((dt, now) => {
+    updateGame(dt, now);
+    drawScene(now);
+    updateUi();
+  });
+
+  registerLabPlaygroundCleanup(() => {
+    pointerCleanup();
+    loopCleanup();
+    resetButton?.removeEventListener("click", handleReset);
+  });
+}
+
+function initPlayableLabSection() {
+  initDifferenceSnakePlayground();
+  initStructureSwarmPlayground();
+}
+
 function renderLabLearn() {
   dom.labNote.textContent =
-    "学习页强调主线与实验问题的对应关系，先弄清每个模拟器到底在检验哪种变量耦合，再进入参数比较。";
+    "学习页强调主线、思辨和实验问题的对应关系：先把判断放进方法里，再进入参数比较。";
   dom.labContent.innerHTML = `
     ${renderLabArchitectureSection("learn")}
 
@@ -1253,6 +2976,12 @@ function renderLabLearn() {
         </div>
       </article>
     </section>
+
+    ${renderPlayableLabSection()}
+
+    ${renderThoughtCompassSection()}
+
+    ${renderHierarchyLiftSection()}
 
     <section class="lab-grid lab-grid-three">
       <article class="lab-card">
@@ -1304,6 +3033,10 @@ function renderLabLearn() {
       </article>
     </section>
   `;
+
+  initPlayableLabSection();
+  initThoughtCompass();
+  initHierarchyLift();
 }
 
 function renderLabValidate() {
@@ -1937,6 +3670,7 @@ function renderLabPage(page) {
 }
 
 function renderHome() {
+  cleanupLabPlaygrounds();
   state.activeId = null;
   state.activeLabPage = null;
   state.currentPrevId = null;
@@ -1959,6 +3693,7 @@ function renderHome() {
 
 async function renderLab(page) {
   const activePage = normalizeLabPage(page);
+  cleanupLabPlaygrounds();
   state.activeId = null;
   state.currentPrevId = null;
   state.currentNextId = null;
@@ -2184,6 +3919,7 @@ async function renderDoc(id) {
     return;
   }
 
+  cleanupLabPlaygrounds();
   state.activeId = item.id;
   state.activeLabPage = null;
   document.body.classList.add("is-reading");
@@ -2219,6 +3955,12 @@ function updateShell() {
   dom.siteTagline.textContent = site.tagline;
   dom.heroTitle.textContent = site.heroTitle;
   dom.heroText.textContent = site.heroText;
+  if (dom.positioningStatement) {
+    dom.positioningStatement.textContent = site.positioningStatement || site.tagline;
+  }
+  if (dom.positioningSupport) {
+    dom.positioningSupport.textContent = site.positioningSupport || site.description;
+  }
   dom.siteStats.textContent = `共 ${stats.documentCount} 篇文稿，最近更新 ${formatDate(stats.newestUpdate)}。`;
 
   if (site.repoUrl) {
@@ -2276,7 +4018,7 @@ function bindEvents() {
     if (item) setHashForDoc(item.id);
   });
   dom.openLabButton.addEventListener("click", () => {
-    const item = getSectionEntry("book");
+    const item = getSectionEntry("light-series") || getSectionEntry("book");
     if (item) setHashForDoc(item.id);
   });
   dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
@@ -2356,8 +4098,10 @@ async function init() {
 
   state.payload = await response.json();
   updateShell();
+  buildStarterLinks();
   buildFeaturedVolume();
   applyPreferences();
+  buildLightSeriesLinks();
   buildQuickLinks();
   buildSystemLinks();
   buildNav();

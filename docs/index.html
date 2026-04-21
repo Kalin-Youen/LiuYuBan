@@ -6,8 +6,15 @@
     <title>差结构学习法</title>
     <meta
       name="description"
-      content="从分辨不同到理解结构、规则与文明的跨学科学习方法。"
+      content="差结构学习法不是终极存在论，而是一套跨学科学习、推理与验证的方法。"
     />
+    <meta property="og:title" content="差结构学习法" />
+    <meta
+      property="og:description"
+      content="差结构学习法不是终极存在论，而是一套跨学科学习、推理与验证的方法。"
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./assets/styles.css" />
     <script>
@@ -91,8 +98,8 @@
 
                 <div class="hero-actions">
                   <button id="start-reading-button" class="pill-button" type="button">先读白话卷</button>
-                  <button id="open-lab-button" class="pill-button" type="button">进入主书稿</button>
-                  <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">打开分卷目录</button>
+                  <button id="open-lab-button" class="pill-button" type="button">看10条轻内容</button>
+                  <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">查看全部入口</button>
                 </div>
               </div>
 
@@ -106,22 +113,57 @@
             </div>
           </div>
 
+          <div class="positioning-band">
+            <article class="positioning-card positioning-card-strong">
+              <p class="eyebrow">External Line</p>
+              <h3>对外主句</h3>
+              <p id="positioning-statement" class="positioning-statement"></p>
+              <p id="positioning-support" class="positioning-support"></p>
+            </article>
+            <article class="positioning-card">
+              <p class="eyebrow">How To Introduce</p>
+              <h3>第一次介绍这个项目时，先别把它说成“最后答案”</h3>
+              <p>
+                更稳的说法是：它给你一条跨学科学习与判断的走法。先辨认不同，再补边界、反馈与验证，
+                最后再决定什么能站住。这样更容易让新读者听懂，也更容易继续转发。
+              </p>
+            </article>
+          </div>
+
+          <section class="bookshelf-section starter-section">
+            <div class="section-heading">
+              <p class="eyebrow">New Reader Path</p>
+              <h3>第一次来，先走这三步</h3>
+              <p class="section-copy">先把主句说稳，再用一条轻内容进入，最后再切到白话卷。这样最容易真正读进去。</p>
+            </div>
+            <div id="starter-links" class="starter-grid"></div>
+          </section>
+
+          <section class="bookshelf-section light-series-section">
+            <div class="section-heading">
+              <p class="eyebrow">Light Series</p>
+              <h3>先连续发这 10 条轻内容</h3>
+              <p class="section-copy">每条都能单独成文、单独转发，也能连起来组成完整的新读者入口。</p>
+            </div>
+            <div id="light-series-links" class="book-shelf"></div>
+          </section>
+
           <div class="home-panels">
             <article class="home-card">
-              <h3>先学走法，再进正文</h3>
-              <p>第一次进站，先把“先分辨不同，再看边界、持续、反馈与耗散，再判断什么能站住、能重复、能验证”这套顺序读熟，再按兴趣切到主书稿、总述或术语边界。</p>
+              <h3>先记主句，再扩阅读</h3>
+              <p>首页最先要完成的，不是把所有内容都摆出来，而是让新读者先记住这项目到底是什么，不是什么。</p>
             </article>
             <article class="home-card">
-              <h3>把它当作学习法</h3>
-              <p>这里给出的不是一个包打天下的大词，而是一套更稳的观察、推理和验证顺序，并用“落差”把不同学科里的相关概念串起来，既方便跨学科继续学习，也方便接入大模型训练。</p>
+              <h3>轻内容先负责传播</h3>
+              <p>十条轻内容不是正文缩水版，而是专门为首次接触、二次复述和持续转发准备的外层入口。</p>
             </article>
             <article class="home-card">
-              <h3>直接拿去看问题</h3>
-              <p>真正该拿走的是一种用法：看哪里不同、边界在哪、什么在持续、什么在反馈和耗散、什么能站住、什么能重复、什么能验证。</p>
+              <h3>白话卷负责留住读者</h3>
+              <p>当读者愿意从一句话进入更长的主线时，就让白话卷接住他，而不是一开始就把整套理论书架一起压上去。</p>
             </article>
             <article class="home-card">
-              <h3>像书后附录一样扩</h3>
-              <p>实验台、专题和协作卷仍然保留，但它们会被放到首读之后的位置，不抢白话卷的入口注意力。</p>
+              <h3>深度内容放到后排</h3>
+              <p>主书稿、专题、术语边界和实验台仍然重要，但更适合作为第二层和第三层入口，而不是陌生人的第一眼。</p>
             </article>
           </div>
 
@@ -129,7 +171,7 @@
             <div class="section-heading">
               <p class="eyebrow">Volume Shelf</p>
               <h3>分卷阅读入口</h3>
-              <p class="section-copy">把不同卷册排成一排可直接进入的阅读入口，让首页更像小说阅读软件的卷架，而不是普通文档首页。</p>
+              <p class="section-copy">当你已经对主线有感觉，再从这里进入完整书架，会比第一次就正面冲进去更顺。</p>
             </div>
             <div id="system-links" class="systems-grid"></div>
           </section>
@@ -137,8 +179,8 @@
           <section class="bookshelf-section">
             <div class="section-heading">
               <p class="eyebrow">Plain Language First</p>
-              <h3>白话卷先读这些</h3>
-              <p class="section-copy">如果你是第一次进入这套理论，最适合先从这几篇开始，把直觉、边界和主线先读顺。</p>
+              <h3>准备连续阅读时，从白话卷开始</h3>
+              <p class="section-copy">如果你已经愿意读一组连续内容，就从这些篇目开始，把直觉、边界和主线先读顺。</p>
             </div>
             <div id="quick-links" class="book-shelf"></div>
           </section>
