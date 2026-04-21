@@ -14,6 +14,54 @@ const THEME_LABELS = {
   night: "夜读",
 };
 const HOME_SECTION_ORDER = ["plain-book", "book", "overview", "terms", "ai-book"];
+const PLAIN_TO_BOOK_VARIANT_PATHS = Object.freeze({
+  "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md":
+    "研究文稿/07_书稿/第1章_绪论.md",
+  "研究文稿/07_书稿/白话卷/第1章_世界先给人的不是物而是不同.md":
+    "研究文稿/07_书稿/第2章_力的落差概念的严格化.md",
+  "研究文稿/07_书稿/白话卷/第2章_不同怎样长成边界、对象和结构.md":
+    "研究文稿/07_书稿/第3章_非均匀性与经典结构形成.md",
+  "研究文稿/07_书稿/白话卷/第3章_规则不是天上掉下来的而是站住的重复.md":
+    "研究文稿/07_书稿/第5章_规则形成的分层理论.md",
+  "研究文稿/07_书稿/白话卷/第4章_光、生命与基因其实在同一条线上.md":
+    "研究文稿/07_书稿/第6章_光速、因果结构与时空约束.md",
+  "研究文稿/07_书稿/白话卷/第5章_思考、意识和自我是世界在自己里面再长一层.md":
+    "研究文稿/07_书稿/第8章_思考的物理实现与认知生成.md",
+  "研究文稿/07_书稿/白话卷/第6章_文明就是规则开始写到身体外面.md":
+    "研究文稿/07_书稿/专题_生命、基因与文明的层级必然性.md",
+  "研究文稿/07_书稿/白话卷/第7章_把整套理论压成一条人人能走通的线.md":
+    "研究文稿/07_书稿/第11章_统一结论.md",
+  "研究文稿/07_书稿/白话卷/第8章_影响是存在的_理论如何进入人的判断与行动.md":
+    "研究文稿/07_书稿/专题_反思辩证模块_让质疑成为理论生长的回路.md",
+});
+const BOOK_TO_PLAIN_VARIANT_PATHS = Object.freeze({
+  "研究文稿/07_书稿/第1章_绪论.md":
+    "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
+  "研究文稿/07_书稿/第2章_力的落差概念的严格化.md":
+    "研究文稿/07_书稿/白话卷/第1章_世界先给人的不是物而是不同.md",
+  "研究文稿/07_书稿/第3章_非均匀性与经典结构形成.md":
+    "研究文稿/07_书稿/白话卷/第2章_不同怎样长成边界、对象和结构.md",
+  "研究文稿/07_书稿/第5章_规则形成的分层理论.md":
+    "研究文稿/07_书稿/白话卷/第3章_规则不是天上掉下来的而是站住的重复.md",
+  "研究文稿/07_书稿/第6章_光速、因果结构与时空约束.md":
+    "研究文稿/07_书稿/白话卷/第4章_光、生命与基因其实在同一条线上.md",
+  "研究文稿/07_书稿/第8章_思考的物理实现与认知生成.md":
+    "研究文稿/07_书稿/白话卷/第5章_思考、意识和自我是世界在自己里面再长一层.md",
+  "研究文稿/07_书稿/第9章_思考的力学运作机制及其与量子力学的异同.md":
+    "研究文稿/07_书稿/白话卷/第5章_思考、意识和自我是世界在自己里面再长一层.md",
+  "研究文稿/07_书稿/第10章_意识、自我、直觉、灵感与错误推理.md":
+    "研究文稿/07_书稿/白话卷/第5章_思考、意识和自我是世界在自己里面再长一层.md",
+  "研究文稿/07_书稿/第11章_统一结论.md":
+    "研究文稿/07_书稿/白话卷/第7章_把整套理论压成一条人人能走通的线.md",
+  "研究文稿/07_书稿/第12章_展望与研究计划.md":
+    "研究文稿/07_书稿/白话卷/第8章_影响是存在的_理论如何进入人的判断与行动.md",
+  "研究文稿/07_书稿/专题_反思辩证模块_让质疑成为理论生长的回路.md":
+    "研究文稿/07_书稿/白话卷/第8章_影响是存在的_理论如何进入人的判断与行动.md",
+  "研究文稿/07_书稿/专题_生命、基因与文明的层级必然性.md":
+    "研究文稿/07_书稿/白话卷/第6章_文明就是规则开始写到身体外面.md",
+  "研究文稿/07_书稿/专题_落差的稳态_结构形成与规则形成的共同基础.md":
+    "研究文稿/07_书稿/白话卷/第3章_规则不是天上掉下来的而是站住的重复.md",
+});
 const SECTION_PRESENTATION = {
   "plain-book": {
     badge: "推荐先读",
@@ -635,6 +683,54 @@ function getRenderedDocHtml(item) {
   }
 
   return wrapper.innerHTML;
+}
+
+function normalizeSourcePath(sourcePath) {
+  return (sourcePath || "").replace(/\\/g, "/");
+}
+
+function findItemBySourcePath(sourcePath) {
+  const normalizedSourcePath = normalizeSourcePath(sourcePath);
+
+  if (!normalizedSourcePath) {
+    return null;
+  }
+
+  return (
+    state.payload.items.find(
+      (entry) => normalizeSourcePath(entry.sourcePath) === normalizedSourcePath,
+    ) || null
+  );
+}
+
+function getAlternateVersionLabel(item) {
+  if (item?.sectionId === "plain-book") return "正文版";
+  if (item?.sectionId === "book") return "白话版";
+  return "互转阅读";
+}
+
+function getAlternateVersionEmptyTitle(item) {
+  if (item?.sectionId === "plain-book") return "暂未建立直达正文";
+  if (item?.sectionId === "book") return "暂未建立直达白话";
+  return "当前页暂无互转版本";
+}
+
+function getAlternateVersionItem(item) {
+  const normalizedSourcePath = normalizeSourcePath(item?.sourcePath);
+
+  if (!normalizedSourcePath) {
+    return null;
+  }
+
+  if (item.sectionId === "plain-book") {
+    return findItemBySourcePath(PLAIN_TO_BOOK_VARIANT_PATHS[normalizedSourcePath]);
+  }
+
+  if (item.sectionId === "book") {
+    return findItemBySourcePath(BOOK_TO_PLAIN_VARIANT_PATHS[normalizedSourcePath]);
+  }
+
+  return null;
 }
 
 function formatVolumeEntryIndex(item, index) {
@@ -2016,22 +2112,42 @@ async function renderComments(item) {
   }
 }
 
+function renderPagerCard(entry, label, emptyTitle, className = "") {
+  const classes = ["pager-card", className];
+
+  if (!entry) {
+    classes.push("is-disabled");
+  }
+
+  const classAttr = classes.filter(Boolean).join(" ");
+
+  if (!entry) {
+    return `<div class="${classAttr}"><small>${label}</small><strong>${emptyTitle}</strong></div>`;
+  }
+
+  return `<a class="${classAttr}" href="#doc/${encodeURIComponent(entry.id)}"><small>${label}</small><strong>${getDisplayTitle(entry)}</strong></a>`;
+}
+
 function renderPagination(item) {
   const sequence = getReadingSequence();
   const currentIndex = sequence.findIndex((entry) => entry.id === item.id);
   const prev = sequence[currentIndex - 1] || null;
   const next = sequence[currentIndex + 1] || null;
+  const alternate = getAlternateVersionItem(item);
+  const alternateLabel = getAlternateVersionLabel(item);
 
   updateChapterButtons(prev, next);
   dom.docPagination.innerHTML = "";
 
   const cards = [
-    prev
-      ? `<a class="pager-card" href="#doc/${encodeURIComponent(prev.id)}"><small>上一章</small><strong>${getDisplayTitle(prev)}</strong></a>`
-      : `<div class="pager-card"><small>上一章</small><strong>已经到头了</strong></div>`,
-    next
-      ? `<a class="pager-card" href="#doc/${encodeURIComponent(next.id)}"><small>下一章</small><strong>${getDisplayTitle(next)}</strong></a>`
-      : `<div class="pager-card"><small>下一章</small><strong>已经到底了</strong></div>`,
+    renderPagerCard(prev, "上一章", "已经到头了"),
+    renderPagerCard(
+      alternate,
+      alternateLabel,
+      getAlternateVersionEmptyTitle(item),
+      "is-variant",
+    ),
+    renderPagerCard(next, "下一章", "已经到底了"),
   ];
 
   dom.docPagination.innerHTML = cards.join("");
