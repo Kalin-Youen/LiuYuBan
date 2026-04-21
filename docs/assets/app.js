@@ -126,6 +126,11 @@ const LAB_PAGES = {
     intro:
       "把展望里的实验想法先压成一条可读的学习链，先看每个实验究竟想检验什么，再看变量应该怎么读。",
   },
+  play: {
+    title: "游戏实验页",
+    intro:
+      "把落差、流向、结构和感知回路压成能玩的交互，让你不是只读概念，而是直接在玩法里感受它们怎样站住、怎样失稳。",
+  },
   validate: {
     title: "交互检验页",
     intro:
@@ -171,7 +176,12 @@ const LAB_ARCHITECTURE_LAYERS = [
   {
     title: "变量层",
     copy: "把理论词转成可调参数、代理指标和观测提示，避免只剩抽象口号。",
-    pages: ["learn", "validate"],
+    pages: ["learn", "play", "validate"],
+  },
+  {
+    title: "交互层",
+    copy: "把概念压成能玩、能误判、能被反馈修正的小游戏与思想实验。",
+    pages: ["play"],
   },
   {
     title: "判别层",
@@ -186,7 +196,7 @@ const LAB_ARCHITECTURE_LAYERS = [
   {
     title: "接口层",
     copy: "为真实求解器、观测数据、批量扫描和研究日志预留挂接位置。",
-    pages: ["learn", "validate", "infer"],
+    pages: ["learn", "play", "validate", "infer"],
   },
 ];
 const LAB_PAGE_ARCHITECTURE = {
@@ -197,6 +207,14 @@ const LAB_PAGE_ARCHITECTURE = {
     focus:
       "当前这页更偏向理论层与变量层：先把概念链和实验问题对齐，再进入真正的参数比较。",
     hookTitle: "学习页后面能继续挂什么",
+  },
+  play: {
+    title: "先把概念做成能玩的回路，再看哪些反馈真的能改变判断",
+    copy:
+      "游戏页负责把‘落差、流向、结构、接口、误判’压成能直接上手的互动器，让你用手感、分数、连击和失误去体验哪些条件会留下结构，哪些只会留下短促效果。",
+    focus:
+      "当前这页更偏向变量层、交互层与接口层：重点不是宣布答案，而是让你通过玩法亲自碰到差异、补偿、噪声和结构沉淀。",
+    hookTitle: "游戏页后面能继续挂什么",
   },
   validate: {
     title: "把理论词压成参数，再让解释力正面碰撞",
@@ -228,6 +246,20 @@ const LAB_EXTENSION_LAYERS = {
     {
       title: "研究笔记",
       copy: "把读者反馈、章节疑问和新假设直接沉淀为后续实验任务。",
+    },
+  ],
+  play: [
+    {
+      title: "关卡系统",
+      copy: "把现在的开放试玩扩成阶段目标、闭环任务和失败条件，让结构形成真正变成通关条件。",
+    },
+    {
+      title: "移动端操控",
+      copy: "后续可以加入虚拟摇杆、触屏拖拽和双手操作，把手机端手感补得更完整。",
+    },
+    {
+      title: "成绩与回放",
+      copy: "记录每轮分数、连击、最佳结构状态，甚至导出回放帧，让玩法结果也能变成研究材料。",
     },
   ],
   validate: [
@@ -1375,6 +1407,13 @@ function setPlaygroundMetric(id, ratio, label) {
   if (text) text.textContent = label;
 }
 
+function setPlayText(id, value) {
+  const node = dom.labContent.querySelector(`#${id}`);
+  if (node) {
+    node.textContent = value;
+  }
+}
+
 function getRatio(id) {
   const input = dom.labContent.querySelector(`#${id}`);
   return clamp01(Number(input?.value || 0) / 100);
@@ -2203,14 +2242,92 @@ function getSwarmFlowVector(x, y, width, height) {
   });
 }
 
+function renderPlayIcon(kind) {
+  const icons = {
+    snake: `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 7c3-3 6-3 9 0s5 3 7 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M6 13c2.5-2.4 5.3-2.4 8 0s4.7 2.4 6.5 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="18.4" cy="12.9" r="1.5" fill="currentColor"/>
+      </svg>
+    `,
+    swarm: `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3.4" fill="currentColor"/>
+        <circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2.6 2.6"/>
+      </svg>
+    `,
+    brain: `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9.2 5.1a3.2 3.2 0 0 0-3 3.2c-1.4.5-2.2 1.7-2.2 3.1 0 1.6 1 2.8 2.5 3.2.3 2 1.9 3.3 3.9 3.3 1 0 1.9-.3 2.6-.9.8.6 1.7.9 2.7.9 2 0 3.6-1.4 3.9-3.4 1.4-.5 2.4-1.7 2.4-3.1 0-1.5-.9-2.7-2.3-3.2a3.2 3.2 0 0 0-3.1-3.1c-1.1 0-2.1.5-2.8 1.2A4 4 0 0 0 12 4c-1.1 0-2.1.4-2.8 1.1Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M12 7.3v9.4M9.4 9.2c1 .3 1.7 1 2 2m4.2-2c-1 .3-1.7 1-2 2m-1.8 2c-.4.9-1.1 1.5-2 1.8m4.1-1.8c.4.9 1.1 1.5 2 1.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+    `,
+    play: `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 7.5v9l8-4.5-8-4.5Z" fill="currentColor"/>
+        <rect x="3.5" y="4.5" width="17" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+    `,
+  };
+
+  return `<span class="game-icon" aria-hidden="true">${icons[kind] || icons.play}</span>`;
+}
+
+function renderPlayNavigatorSection() {
+  return `
+    <section class="lab-grid lab-grid-three">
+      <article class="lab-card game-launch-card">
+        <p class="eyebrow">Game 01</p>
+        <h3 class="game-card-title">${renderPlayIcon("snake")}差流游蛇</h3>
+        <p>更像贪吃蛇。你不是只追求变长，而是要顺着流把差异拖成稳住的尾迹。</p>
+        <div class="lab-mini-points">
+          <span>核心词：落差、流向、断裂</span>
+          <span>更适合感受“结构不是吃出来，而是站住的”</span>
+        </div>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-play-jump="play-snake">去玩这个</button>
+        </div>
+      </article>
+
+      <article class="lab-card game-launch-card">
+        <p class="eyebrow">Game 02</p>
+        <h3 class="game-card-title">${renderPlayIcon("swarm")}结构吞并场</h3>
+        <p>更像球球大作战。你会不断变大，但真正的目标是把体量沉成稳定轨道和结构环。</p>
+        <div class="lab-mini-points">
+          <span>核心词：吞并、汇聚、沉淀</span>
+          <span>更适合感受“变大”与“成结构”不是一回事</span>
+        </div>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-play-jump="play-swarm">去玩这个</button>
+        </div>
+      </article>
+
+      <article class="lab-card game-launch-card">
+        <p class="eyebrow">Game 03</p>
+        <h3 class="game-card-title">${renderPlayIcon("brain")}缸中之脑实验台</h3>
+        <p>更像思想实验。你不能直接看底层，只能通过测试和残差去逼近“自己到底身处哪一层”。</p>
+        <div class="lab-mini-points">
+          <span>核心词：反馈、他者、记忆、接口</span>
+          <span>更适合感受“判断依赖什么测试”</span>
+        </div>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-play-jump="play-brain">去玩这个</button>
+        </div>
+      </article>
+    </section>
+  `;
+}
+
 function renderPlayableLabSection() {
   return `
     <section class="lab-grid lab-grid-two">
-      <article class="lab-card lab-card-strong" data-playground="snake">
+      <article id="play-snake" class="lab-card lab-card-strong" data-playground="snake">
         <div class="simulation-head">
           <div>
             <p class="eyebrow">Playable A</p>
-            <h3>差流游蛇：顺着流吃差异，尾迹会长成结构</h3>
+            <h3 class="game-card-title">${renderPlayIcon("snake")}差流游蛇：顺着流吃差异，尾迹会长成结构</h3>
           </div>
           <span class="simulation-badge">落差 · 流向 · 结构</span>
         </div>
@@ -2218,6 +2335,20 @@ function renderPlayableLabSection() {
           这一块故意做得更像贪吃蛇。亮球是可吸收的差异，背景箭头是流向，
           你留下的尾迹就是最直观的结构。只顾着吃会变长，但只有顺流和少断裂，尾迹才会真正站稳。
         </p>
+        <div class="play-scoreboard">
+          <div class="play-score-chip">
+            <span>得分</span>
+            <strong id="snake-score-value"></strong>
+          </div>
+          <div class="play-score-chip">
+            <span>连击</span>
+            <strong id="snake-combo-value"></strong>
+          </div>
+          <div class="play-score-chip">
+            <span>成环</span>
+            <strong id="snake-loop-value"></strong>
+          </div>
+        </div>
         <div class="playground-shell">
           <canvas
             id="snake-canvas"
@@ -2256,11 +2387,11 @@ function renderPlayableLabSection() {
         <div id="snake-summary" class="lab-result-card"></div>
       </article>
 
-      <article class="lab-card" data-playground="swarm">
+      <article id="play-swarm" class="lab-card" data-playground="swarm">
         <div class="simulation-head">
           <div>
             <p class="eyebrow">Playable B</p>
-            <h3>结构吞并场：先吞入差异，再把体量沉成稳定环</h3>
+            <h3 class="game-card-title">${renderPlayIcon("swarm")}结构吞并场：先吞入差异，再把体量沉成稳定环</h3>
           </div>
           <span class="simulation-badge">吞并 · 汇聚 · 沉淀</span>
         </div>
@@ -2268,6 +2399,20 @@ function renderPlayableLabSection() {
           这一块更接近球球大作战。你可以不断吞入差异，但“变大”不等于“形成结构”。
           只有在流场里慢慢收束，吞进去的体量才会沉成卫星环，变成更稳定的结构。
         </p>
+        <div class="play-scoreboard">
+          <div class="play-score-chip">
+            <span>得分</span>
+            <strong id="swarm-score-value"></strong>
+          </div>
+          <div class="play-score-chip">
+            <span>连击</span>
+            <strong id="swarm-combo-value"></strong>
+          </div>
+          <div class="play-score-chip">
+            <span>沉淀环</span>
+            <strong id="swarm-loop-value"></strong>
+          </div>
+        </div>
         <div class="playground-shell playground-shell-cool">
           <canvas
             id="swarm-canvas"
@@ -2312,11 +2457,11 @@ function renderPlayableLabSection() {
 function renderBrainVatExperimentSection() {
   return `
     <section class="lab-grid lab-grid-two">
-      <article class="lab-card lab-card-strong" data-playground="brain-vat">
+      <article id="play-brain" class="lab-card lab-card-strong" data-playground="brain-vat">
         <div class="simulation-head">
           <div>
             <p class="eyebrow">Thought Experiment</p>
-            <h3>缸中之脑实验台：只靠回路，你能判断自己在哪吗</h3>
+            <h3 class="game-card-title">${renderPlayIcon("brain")}缸中之脑实验台：只靠回路，你能判断自己在哪吗</h3>
           </div>
           <span class="simulation-badge">反馈 · 阻力 · 他者 · 记忆</span>
         </div>
@@ -2977,6 +3122,11 @@ function initDifferenceSnakePlayground() {
   let harmony = 0.46;
   let structure = 0.22;
   let instability = 0;
+  let score = 0;
+  let combo = 0;
+  let ringsClosed = 0;
+  let loopCharge = 0;
+  let comboTimer = 0;
   let direction = { x: 1, y: 0 };
   let targetDirection = { x: 1, y: 0 };
 
@@ -2994,6 +3144,11 @@ function initDifferenceSnakePlayground() {
     harmony = 0.46;
     structure = 0.22;
     instability = 0;
+    score = 0;
+    combo = 0;
+    ringsClosed = 0;
+    loopCharge = 0;
+    comboTimer = 0;
     direction = { x: 1, y: 0 };
     targetDirection = { x: 1, y: 0 };
     snake = Array.from({ length: targetLength }, (_, index) => ({
@@ -3007,6 +3162,10 @@ function initDifferenceSnakePlayground() {
     targetLength = Math.max(5, targetLength - 3);
     harmony = clamp01(harmony * 0.78);
     instability = clamp01(instability + 0.28);
+    score = Math.max(0, score - 18);
+    combo = 0;
+    comboTimer = 0;
+    loopCharge = Math.max(0, loopCharge - 0.36);
     direction = { x: 1, y: 0 };
     targetDirection = { x: 1, y: 0 };
     snake = Array.from({ length: targetLength }, (_, index) => ({
@@ -3019,6 +3178,9 @@ function initDifferenceSnakePlayground() {
     setPlaygroundMetric("snake-difference", totalDifference / 28, `${totalDifference}`);
     setPlaygroundMetric("snake-harmony", harmony, `${Math.round(harmony * 100)}%`);
     setPlaygroundMetric("snake-structure", structure, `${Math.round(structure * 100)}%`);
+    setPlayText("snake-score-value", `${Math.round(score)}`);
+    setPlayText("snake-combo-value", combo > 0 ? `x${combo}` : "x0");
+    setPlayText("snake-loop-value", `${ringsClosed} (${Math.round(clamp01(loopCharge) * 100)}%)`);
 
     let verdict = "先顺着箭头走，让尾迹少断几次，差异才更容易排成结构。";
     if (structure > 0.72) {
@@ -3167,6 +3329,11 @@ function initDifferenceSnakePlayground() {
     const head = snake[0];
     if (!head) return;
 
+    comboTimer = Math.max(0, comboTimer - dt);
+    if (comboTimer === 0) {
+      combo = 0;
+    }
+
     direction = normalizeVector({
       x: direction.x * 0.88 + targetDirection.x * 0.12,
       y: direction.y * 0.88 + targetDirection.y * 0.12,
@@ -3233,11 +3400,41 @@ function initDifferenceSnakePlayground() {
         totalDifference += particle.value;
         targetLength = Math.min(28, targetLength + particle.value);
         harmony = clamp01(harmony + 0.03);
+        combo = Math.min(12, comboTimer > 0 ? combo + 1 : 1);
+        comboTimer = 2.4;
+        score += particle.value * 12 + combo * 5 + Math.round(harmony * 10);
+        loopCharge = Math.min(1.24, loopCharge + 0.04 * particle.value);
         particles[index] = spawnParticle();
       }
     });
 
     structure = clamp01(((targetLength - 6) / 18) * 0.62 + harmony * 0.38 - instability * 0.55);
+
+    if (snake.length > 10) {
+      const tail = snake[snake.length - 1];
+      const headTailGap = tail ? distanceBetween(snake[0], tail) : 120;
+      const loopSignal =
+        clamp01((structure - 0.56) / 0.34) *
+        clamp01((harmony - 0.54) / 0.34) *
+        clamp01(1 - headTailGap / 88);
+
+      if (loopSignal > 0.12) {
+        loopCharge = Math.min(1.24, loopCharge + dt * (0.2 + loopSignal * 0.92));
+      } else {
+        loopCharge = Math.max(0, loopCharge - dt * 0.28);
+      }
+
+      if (loopCharge >= 1) {
+        ringsClosed += 1;
+        loopCharge = 0;
+        score += 64 + ringsClosed * 14;
+        combo = Math.max(combo, 2);
+        comboTimer = Math.max(comboTimer, 1.8);
+        harmony = clamp01(harmony + 0.08);
+      }
+    } else {
+      loopCharge = Math.max(0, loopCharge - dt * 0.32);
+    }
   };
 
   const handleAim = ({ x, y }) => {
@@ -3294,6 +3491,11 @@ function initStructureSwarmPlayground() {
   let collectedDifference = 0;
   let noiseHits = 0;
   let boundaryStress = 0;
+  let score = 0;
+  let combo = 0;
+  let settleLoops = 0;
+  let loopCharge = 0;
+  let comboTimer = 0;
 
   const spawnParticle = (kind) => ({
     kind,
@@ -3319,6 +3521,11 @@ function initStructureSwarmPlayground() {
     collectedDifference = 0;
     noiseHits = 0;
     boundaryStress = 0;
+    score = 0;
+    combo = 0;
+    settleLoops = 0;
+    loopCharge = 0;
+    comboTimer = 0;
     particles = [
       ...Array.from({ length: SWARM_DIFFERENCE_COUNT }, () => spawnParticle("difference")),
       ...Array.from({ length: SWARM_NOISE_COUNT }, () => spawnParticle("noise")),
@@ -3332,6 +3539,9 @@ function initStructureSwarmPlayground() {
     setPlaygroundMetric("swarm-mass", totalMass / 18, totalMass.toFixed(1));
     setPlaygroundMetric("swarm-harmony", harmony, `${Math.round(harmony * 100)}%`);
     setPlaygroundMetric("swarm-structure", structure, `${Math.round(structure * 100)}%`);
+    setPlayText("swarm-score-value", `${Math.round(score)}`);
+    setPlayText("swarm-combo-value", combo > 0 ? `x${combo}` : "x0");
+    setPlayText("swarm-loop-value", `${settleLoops} (${Math.round(clamp01(loopCharge) * 100)}%)`);
 
     let verdict = "先别只顾着吞。想把体量变成结构，还得让它在流场里慢慢沉下来。";
     if (structure > 0.72) {
@@ -3459,6 +3669,11 @@ function initStructureSwarmPlayground() {
   };
 
   const updateGame = (dt, now) => {
+    comboTimer = Math.max(0, comboTimer - dt);
+    if (comboTimer === 0) {
+      combo = 0;
+    }
+
     const flow = getSwarmFlowVector(core.x, core.y, bounds.width, bounds.height);
     const deltaX = target.x - core.x;
     const deltaY = target.y - core.y;
@@ -3480,24 +3695,28 @@ function initStructureSwarmPlayground() {
       core.vx = Math.abs(core.vx) * 0.42;
       stableMass = Math.max(0, stableMass - 0.34);
       boundaryStress = clamp01(boundaryStress + 0.18);
+      score = Math.max(0, score - 6);
     }
     if (core.x > bounds.width - core.radius) {
       core.x = bounds.width - core.radius;
       core.vx = -Math.abs(core.vx) * 0.42;
       stableMass = Math.max(0, stableMass - 0.34);
       boundaryStress = clamp01(boundaryStress + 0.18);
+      score = Math.max(0, score - 6);
     }
     if (core.y < core.radius) {
       core.y = core.radius;
       core.vy = Math.abs(core.vy) * 0.42;
       stableMass = Math.max(0, stableMass - 0.34);
       boundaryStress = clamp01(boundaryStress + 0.18);
+      score = Math.max(0, score - 6);
     }
     if (core.y > bounds.height - core.radius) {
       core.y = bounds.height - core.radius;
       core.vy = -Math.abs(core.vy) * 0.42;
       stableMass = Math.max(0, stableMass - 0.34);
       boundaryStress = clamp01(boundaryStress + 0.18);
+      score = Math.max(0, score - 6);
     }
 
     const speed = Math.hypot(core.vx, core.vy);
@@ -3532,11 +3751,19 @@ function initStructureSwarmPlayground() {
         if (particle.kind === "difference") {
           unstableMass += 0.82;
           collectedDifference += 1;
+          combo = Math.min(12, comboTimer > 0 ? combo + 1 : 1);
+          comboTimer = 2.1;
+          score += 14 + combo * 6 + Math.round(stableMass * 2);
+          loopCharge = Math.min(1.24, loopCharge + 0.04);
         } else {
           unstableMass = Math.max(0, unstableMass - 0.72);
           stableMass = Math.max(0, stableMass - 0.45);
           noiseHits += 1;
           boundaryStress = clamp01(boundaryStress + 0.12);
+          score = Math.max(0, score - 22);
+          combo = 0;
+          comboTimer = 0;
+          loopCharge = Math.max(0, loopCharge - 0.24);
         }
         particles[index] = spawnParticle(particle.kind);
       }
@@ -3552,6 +3779,27 @@ function initStructureSwarmPlayground() {
     );
     core.radius = 14 + unstableMass * 0.78 + stableMass * 1.12;
     structure = clamp01(stableMass / 10.8);
+
+    const settleSignal =
+      clamp01((structure - 0.42) / 0.36) *
+      clamp01((harmony - 0.55) / 0.3) *
+      clamp01(1 - boundaryStress) *
+      clamp01(1 - targetDistance / 160);
+
+    if (settleSignal > 0.12) {
+      loopCharge = Math.min(1.24, loopCharge + dt * (0.18 + settleSignal * 0.86));
+    } else {
+      loopCharge = Math.max(0, loopCharge - dt * 0.24);
+    }
+
+    if (loopCharge >= 1) {
+      settleLoops += 1;
+      loopCharge = 0;
+      stableMass += 0.24;
+      score += 78 + settleLoops * 18;
+      combo = Math.max(combo, 2);
+      comboTimer = Math.max(comboTimer, 1.8);
+    }
   };
 
   const handleAim = ({ x, y }) => {
@@ -3585,6 +3833,60 @@ function initStructureSwarmPlayground() {
 function initPlayableLabSection() {
   initDifferenceSnakePlayground();
   initStructureSwarmPlayground();
+}
+
+function renderLabPlay() {
+  dom.labNote.textContent =
+    "游戏页把差异、流向、结构和判断压成可玩的反馈回路：你会直接看到得分、连击、成环与失稳，而不是只在文字里理解它们。";
+  dom.labContent.innerHTML = `
+    ${renderLabArchitectureSection("play")}
+
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong">
+        <p class="eyebrow">Game Hall</p>
+        <h3>小游戏现在单独放在这里，不再藏在学习页里</h3>
+        <p class="lab-section-copy">
+          这一页优先做“能上手、能反馈、能留痕”的小游戏。先让你通过得分、连击、成环和失稳感到差异如何站成结构，
+          再回到理论页看概念，会更容易把抽象语言和手感对上。
+        </p>
+        <div class="lab-mini-points">
+          <span>差流游蛇：更偏贪吃蛇，重点是顺流吸差异并尽量闭环。</span>
+          <span>结构吞并场：更偏球球式吞并，重点是把体量沉成稳定轨道，而不是只长大。</span>
+          <span>缸中之脑实验台：更偏思想实验，用回路、记忆和反馈来逼近判断。</span>
+        </div>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Play Route</p>
+        <h3>先玩，再回看理论与检验</h3>
+        <ul class="lab-bullet-list">
+          <li>先看顶部入口，选你想玩的项目直接跳转。</li>
+          <li>优先注意分数、连击和成环读数，而不只是“有没有吃到”或“有没有变大”。</li>
+          <li>如果某个玩法让你明显感到失稳，再回理论学习页看概念链，理解会更快。</li>
+        </ul>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-lab-nav="learn">回理论学习</button>
+          <button class="reader-button" type="button" data-lab-nav="validate">去交互检验</button>
+        </div>
+      </article>
+    </section>
+
+    ${renderPlayNavigatorSection()}
+
+    ${renderPlayableLabSection()}
+
+    ${renderBrainVatExperimentSection()}
+  `;
+
+  dom.labContent.querySelectorAll("[data-play-jump]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const target = dom.labContent.querySelector(`#${button.dataset.playJump}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  initPlayableLabSection();
+  initBrainVatExperiment();
 }
 
 function renderLabLearn() {
@@ -3627,9 +3929,30 @@ function renderLabLearn() {
       </article>
     </section>
 
-    ${renderPlayableLabSection()}
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card">
+        <p class="eyebrow">Play Lab</p>
+        <h3>小游戏已经移到独立的游戏实验页</h3>
+        <p>
+          现在学习页只保留概念链、阅读路径和思辨工具。差流游蛇、结构吞并场以及缸中之脑实验台都已经拆到单独页面，
+          这样入口更明显，也不会再和理论阅读混在一起。
+        </p>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-lab-nav="play">前往游戏实验页</button>
+          <button class="reader-button" type="button" data-lab-nav="validate">继续交互检验</button>
+        </div>
+      </article>
 
-    ${renderBrainVatExperimentSection()}
+      <article class="lab-card">
+        <p class="eyebrow">Reading Hint</p>
+        <h3>理论页先抓主链，不必在这里试玩</h3>
+        <div class="lab-mini-points">
+          <span>先把差异、边界、反馈、耗散与结构的关系读顺。</span>
+          <span>再去游戏页感受“站稳”和“失稳”到底是什么手感。</span>
+          <span>如果想做参数对照，再切到交互检验页继续看解释力。</span>
+        </div>
+      </article>
+    </section>
 
     ${renderThoughtCompassSection()}
 
@@ -3686,8 +4009,6 @@ function renderLabLearn() {
     </section>
   `;
 
-  initPlayableLabSection();
-  initBrainVatExperiment();
   initThoughtCompass();
   initHierarchyLift();
 }
@@ -4311,6 +4632,8 @@ function renderLabPage(page) {
 
   if (activePage === "learn") {
     renderLabLearn();
+  } else if (activePage === "play") {
+    renderLabPlay();
   } else if (activePage === "validate") {
     renderLabValidate();
   } else {
