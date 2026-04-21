@@ -2309,6 +2309,656 @@ function renderPlayableLabSection() {
   `;
 }
 
+function renderBrainVatExperimentSection() {
+  return `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong" data-playground="brain-vat">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Thought Experiment</p>
+            <h3>缸中之脑实验台：只靠回路，你能判断自己在哪吗</h3>
+          </div>
+          <span class="simulation-badge">反馈 · 阻力 · 他者 · 记忆</span>
+        </div>
+        <p class="lab-section-copy">
+          这里不直接回答“你是不是缸中之脑”，而是让你亲手做判断。
+          你只能通过差异、反馈、记忆、他者和输入缺口去逼近底层模式：
+          是更像外界回路、缸中接口，还是介于两者之间的混合层。
+        </p>
+        <div class="lab-preset-grid brain-vat-action-grid">
+          ${VAT_EXPERIMENT_ACTIONS.map((action) => `
+            <button class="lab-preset-button brain-vat-action" type="button" data-vat-action="${action.id}" title="${action.hint}">
+              <strong>${action.label}</strong>
+              <span>${action.hint}</span>
+            </button>
+          `).join("")}
+        </div>
+        <p class="lab-section-copy">
+          你可以先多测几步，再做判断；也可以直接押注。重点不是宣布终极，而是看哪些测试真正能撬动判断。
+        </p>
+        <div class="brain-vat-guess-grid">
+          ${VAT_EXPERIMENT_SCENARIOS.map((scenario) => `
+            <button class="reader-button brain-vat-guess" type="button" data-vat-guess="${scenario.id}">
+              判断为${scenario.label}
+            </button>
+          `).join("")}
+        </div>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-vat-reset="true">新一轮</button>
+          <button class="reader-button" type="button" data-vat-reveal="true">直接揭示底层</button>
+        </div>
+      </article>
+
+      <article class="lab-card">
+        <div class="simulation-head">
+          <div>
+            <p class="eyebrow">Sensory Tank</p>
+            <h3>当前感官场与推断残差</h3>
+          </div>
+          <span class="simulation-badge">你只能看见界面，不直接看见底层</span>
+        </div>
+        <div class="playground-shell brain-vat-shell">
+          <canvas
+            id="vat-canvas"
+            class="playground-canvas brain-vat-canvas"
+            width="${PLAYGROUND_CANVAS.width}"
+            height="${PLAYGROUND_CANVAS.height}"
+            aria-label="缸中之脑感官回路画布"
+          ></canvas>
+        </div>
+        <div id="vat-status" class="thought-verdict-grid brain-vat-status"></div>
+        <div class="lab-metrics brain-vat-metrics">
+          <div class="lab-metric">
+            <span>外界阻力</span>
+            <strong id="vat-resistance-value"></strong>
+            <div class="lab-meter"><span id="vat-resistance-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>他者独立</span>
+            <strong id="vat-peer-value"></strong>
+            <div class="lab-meter"><span id="vat-peer-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>记忆连续</span>
+            <strong id="vat-memory-value"></strong>
+            <div class="lab-meter"><span id="vat-memory-fill"></span></div>
+          </div>
+          <div class="lab-metric">
+            <span>缸中疑度</span>
+            <strong id="vat-suspicion-value"></strong>
+            <div class="lab-meter"><span id="vat-suspicion-fill"></span></div>
+          </div>
+        </div>
+        <div id="vat-summary" class="lab-result-card"></div>
+        <div id="vat-log" class="brain-vat-log"></div>
+      </article>
+    </section>
+  `;
+}
+
+function initBrainVatExperiment() {
+  const root = dom.labContent.querySelector('[data-playground="brain-vat"]');
+  const canvas = dom.labContent.querySelector("#vat-canvas");
+  const summary = dom.labContent.querySelector("#vat-summary");
+  const log = dom.labContent.querySelector("#vat-log");
+  const status = dom.labContent.querySelector("#vat-status");
+
+  if (!root || !canvas || !summary || !log || !status) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const actionMap = new Map(VAT_EXPERIMENT_ACTIONS.map((action) => [action.id, action]));
+  const scenarioMap = new Map(VAT_EXPERIMENT_SCENARIOS.map((scenario) => [scenario.id, scenario]));
+  const bounds = PLAYGROUND_CANVAS;
+
+  let scenario = VAT_EXPERIMENT_SCENARIOS[0];
+  let usedActions = new Set();
+  let observations = [];
+  let lastActionId = null;
+  let resolved = false;
+  let guessId = null;
+  let estimates = {};
+  let counts = {};
+
+  const resetEstimates = () => {
+    estimates = {
+      resistance: 0.5,
+      memory: 0.5,
+      peer: 0.5,
+      fill: 0.5,
+      mask: 0.5,
+      closure: 0.5,
+      latency: 0.5,
+    };
+    counts = {
+      resistance: 0,
+      memory: 0,
+      peer: 0,
+      fill: 0,
+      mask: 0,
+      closure: 0,
+      latency: 0,
+    };
+  };
+
+  const observe = (key, value) => {
+    const nextCount = counts[key] + 1;
+    estimates[key] = (estimates[key] * counts[key] + value) / nextCount;
+    counts[key] = nextCount;
+  };
+
+  const getEstimate = (key) => (counts[key] ? estimates[key] : 0.5);
+  const sample = (base, span = 0.08) => clamp01(base + randomBetween(-span, span));
+
+  const deriveViewModel = () => {
+    const resistance = getEstimate("resistance");
+    const memory = getEstimate("memory");
+    const peer = getEstimate("peer");
+    const fill = getEstimate("fill");
+    const mask = getEstimate("mask");
+    const closure = getEstimate("closure");
+
+    const vatSuspicion = clamp01(
+      0.24 * (1 - resistance)
+      + 0.2 * (1 - memory)
+      + 0.2 * (1 - peer)
+      + 0.18 * fill
+      + 0.18 * mask,
+    );
+    const realityConfidence = clamp01(
+      0.34 * resistance
+      + 0.24 * memory
+      + 0.22 * peer
+      + 0.12 * (1 - fill)
+      + 0.08 * closure,
+    );
+    const mixedConfidence = clamp01(
+      1 - Math.abs(vatSuspicion - realityConfidence) * 1.15 - Math.abs(fill - 0.5) * 0.12,
+    );
+
+    let suggestion = "layered";
+    if (vatSuspicion - realityConfidence > 0.12) {
+      suggestion = "vat";
+    } else if (realityConfidence - vatSuspicion > 0.12) {
+      suggestion = "reality";
+    }
+
+    return {
+      resistance,
+      memory,
+      peer,
+      fill,
+      mask,
+      closure,
+      vatSuspicion,
+      realityConfidence,
+      mixedConfidence,
+      suggestion,
+    };
+  };
+
+  const buildSignalLine = (viewModel) => {
+    const lines = [];
+
+    if (viewModel.fill > 0.66) lines.push("输入缺口会被快速补满");
+    if (viewModel.mask > 0.64) lines.push("系统会主动遮住输入源");
+    if (viewModel.peer < 0.42) lines.push("他者回应独立度偏低");
+    if (viewModel.resistance > 0.66) lines.push("外界阻力偏高");
+    if (viewModel.memory < 0.42) lines.push("记忆细节容易被磨平");
+    if (viewModel.closure > 0.78) lines.push("反馈回路过于顺滑");
+
+    return lines.slice(0, 2).join("、") || "当前信号还不够分明";
+  };
+
+  const getRecommendedAction = (viewModel) => {
+    const candidates = [
+      {
+        id: "body-jolt",
+        score: Math.abs(viewModel.resistance - 0.5),
+        reason: "它最能分出你感到的阻力到底是外界约束，还是界面补偿。",
+      },
+      {
+        id: "peer-check",
+        score: Math.abs(viewModel.peer - 0.5),
+        reason: "它最能看出“他者”是不是独立主体，还是共享同一生成源。",
+      },
+      {
+        id: "memory-audit",
+        score: Math.abs(viewModel.memory - 0.5),
+        reason: "它能检验你的连续性到底被什么维持住。",
+      },
+      {
+        id: "input-cut",
+        score: Math.abs(viewModel.fill - 0.5),
+        reason: "它最能暴露系统会不会自动补白。",
+      },
+      {
+        id: "trace-source",
+        score: Math.abs(viewModel.mask - 0.5),
+        reason: "它能测试界面是否主动把问题从源头引回你的内部。",
+      },
+      {
+        id: "repeat-stimulus",
+        score: Math.abs(viewModel.closure - 0.5),
+        reason: "它能看出反馈是自然稳定，还是被抹得过于平整。",
+      },
+    ]
+      .filter((item) => !usedActions.has(item.id))
+      .sort((left, right) => left.score - right.score);
+
+    return candidates[0] || null;
+  };
+
+  const generateObservation = (actionId) => {
+    const profile = scenario.profile;
+
+    if (actionId === "repeat-stimulus") {
+      const closure = sample(profile.closure, 0.08);
+      const latency = sample(profile.latency, 0.07);
+      return {
+        title: "重复刺激",
+        probes: { closure, latency },
+        text:
+          closure > 0.82 && latency < 0.24
+            ? "你重复了同一刺激，回路几乎秒回，细部差异被抹得很干净。"
+            : closure > 0.68
+              ? "你重复了同一刺激，主链能复现，但仍能感觉到惯性、滞后和一些边角摩擦。"
+              : "同样刺激也带出明显漂移，像是外界约束和接口补偿都没有把它完全钉死。",
+      };
+    }
+
+    if (actionId === "body-jolt") {
+      const resistance = sample(profile.resistance, 0.09);
+      return {
+        title: "扰动身体",
+        probes: { resistance },
+        text:
+          resistance > 0.64
+            ? "你故意扰动动作后，世界留下了可感的惰性和回摆，像在撞真实阻力。"
+            : "你一偏离，系统就迅速把扰动补平，阻力更像来自柔性的界面层。",
+      };
+    }
+
+    if (actionId === "peer-check") {
+      const peer = sample(profile.peer, 0.1);
+      return {
+        title: "问他者同证",
+        probes: { peer },
+        text:
+          peer > 0.62
+            ? "他者保留了自己的误解、盲区和迟疑，回应没有完全跟着你同步。"
+            : "他者回应和你的预期过于同频，像从同一模板里出声。",
+      };
+    }
+
+    if (actionId === "input-cut") {
+      const fill = sample(profile.fill, 0.1);
+      return {
+        title: "切断部分输入",
+        probes: { fill },
+        text:
+          fill > 0.66
+            ? "你抽掉一部分输入后，系统没有老实留白，而是迅速补出连续画面和叙事。"
+            : "输入一断，空白就真的露出来了，世界并没有立刻替你把洞补上。",
+      };
+    }
+
+    if (actionId === "memory-audit") {
+      const memory = sample(profile.memory, 0.1);
+      return {
+        title: "回查记忆链",
+        probes: { memory },
+        text:
+          memory > 0.62
+            ? "记忆不完美，但主链还能被旧痕迹和外证钉住，不像随回忆一起重写。"
+            : "回忆链表面顺滑，但边角细节互相覆盖，越追越像被磨平的摘要。",
+      };
+    }
+
+    const mask = sample(profile.mask, 0.09);
+    return {
+      title: "追问输入源",
+      probes: { mask },
+      text:
+        mask > 0.64
+          ? "你一追问输入源头，系统就迅速把问题改写成你的体验问题，像在主动遮住接口层。"
+          : "你继续追问时，系统反而承认了边界、未知和暂时解释不到的部分。",
+    };
+  };
+
+  const updateUi = () => {
+    const viewModel = deriveViewModel();
+    const recommended = getRecommendedAction(viewModel);
+    const suggestionLabel = scenarioMap.get(viewModel.suggestion)?.label || "混合层";
+    const usedCount = usedActions.size;
+
+    setPlaygroundMetric("vat-resistance", viewModel.resistance, `${Math.round(viewModel.resistance * 100)}%`);
+    setPlaygroundMetric("vat-peer", viewModel.peer, `${Math.round(viewModel.peer * 100)}%`);
+    setPlaygroundMetric("vat-memory", viewModel.memory, `${Math.round(viewModel.memory * 100)}%`);
+    setPlaygroundMetric("vat-suspicion", viewModel.vatSuspicion, `${Math.round(viewModel.vatSuspicion * 100)}%`);
+
+    status.innerHTML = `
+      <span class="thought-chip">已做测试：${usedCount}/${VAT_EXPERIMENT_ACTIONS.length}</span>
+      <span class="thought-chip">当前更像：${suggestionLabel}</span>
+      <span class="thought-chip ${viewModel.vatSuspicion > 0.64 ? "is-alert" : ""}">补画强度：${Math.round(viewModel.fill * 100)}%</span>
+      <span class="thought-chip">反馈闭合：${Math.round(viewModel.closure * 100)}%</span>
+    `;
+
+    root.querySelectorAll("[data-vat-action]").forEach((button) => {
+      const actionId = button.dataset.vatAction;
+      const used = usedActions.has(actionId);
+      button.disabled = used || resolved;
+      button.dataset.state = used ? "used" : "ready";
+    });
+
+    root.querySelectorAll("[data-vat-guess]").forEach((button) => {
+      const currentId = button.dataset.vatGuess;
+      button.disabled = resolved;
+      button.classList.toggle("is-selected", guessId === currentId);
+      button.classList.toggle("is-correct", resolved && scenario.id === currentId);
+      button.classList.toggle("is-wrong", resolved && guessId === currentId && scenario.id !== currentId);
+    });
+
+    if (!resolved) {
+      summary.innerHTML = `
+        <h4>当前判断</h4>
+        <p>
+          现在它更像<strong>${suggestionLabel}</strong>，但这只是基于你已经做的 ${usedCount} 次测试得到的临时推断，
+          还不是“终局真相”。目前最显著的信号是：${buildSignalLine(viewModel)}。
+        </p>
+        <p>
+          ${recommended
+            ? `下一步最值得做的是“${actionMap.get(recommended.id)?.label}”。${recommended.reason}`
+            : "你已经把六个测试都做过了，现在可以直接给出判断，或者揭示这一轮的底层。"}
+        </p>
+      `;
+    } else {
+      const guessedLabel = guessId ? scenarioMap.get(guessId)?.label : "直接揭示";
+      const verdict = guessId
+        ? guessId === scenario.id
+          ? `你的判断落在了正确层级上：你把它判成了${scenario.label}。`
+          : `你把它判成了${guessedLabel}，这一轮实际更像${scenario.label}。`
+        : "你选择了直接揭示底层。";
+
+      summary.innerHTML = `
+        <h4>本轮揭示</h4>
+        <p>
+          ${verdict}${scenario.reveal}
+        </p>
+        <p>
+          这一轮最关键的线索是：${buildSignalLine(viewModel)}。
+          它提醒我们的不是“宣布终极”，而是知道该用什么测试去逼近底层。
+        </p>
+      `;
+    }
+
+    log.innerHTML = observations.length
+      ? observations.map((entry) => `
+          <div class="brain-vat-log-item" data-tone="${entry.tone}">
+            <small>${entry.title}</small>
+            <p>${entry.text}</p>
+          </div>
+        `).join("")
+      : `
+          <div class="brain-vat-log-item is-empty">
+            <small>实验日志</small>
+            <p>先从左侧点一个测试。这里会记录你刚刚在回路里观察到的差异。</p>
+          </div>
+        `;
+  };
+
+  const drawScene = (now) => {
+    const viewModel = deriveViewModel();
+    const suspicion = viewModel.vatSuspicion;
+    const reality = viewModel.realityConfidence;
+    const fill = viewModel.fill;
+    const closure = viewModel.closure;
+    const interfaceMask = viewModel.mask;
+    const liquidTop = 94 + fill * 28 + Math.sin(now * 0.0023) * 2.4;
+    const brainCenter = { x: bounds.width * 0.5, y: bounds.height * 0.55 };
+    const tank = { x: 52, y: 22, width: 316, height: 202 };
+    const nodes = [
+      { x: 96, y: 48, key: "repeat-stimulus" },
+      { x: 314, y: 48, key: "input-cut" },
+      { x: 348, y: 128, key: "peer-check" },
+      { x: 72, y: 128, key: "trace-source" },
+      { x: 210, y: 208, key: "body-jolt" },
+      { x: 210, y: 82, key: "memory-audit" },
+    ];
+
+    ctx.clearRect(0, 0, bounds.width, bounds.height);
+
+    const background = ctx.createLinearGradient(0, 0, bounds.width, bounds.height);
+    background.addColorStop(0, suspicion > 0.58 ? "#eef5ff" : "#fff8ee");
+    background.addColorStop(1, reality > 0.56 ? "#efe5da" : "#edf0f5");
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, bounds.width, bounds.height);
+
+    ctx.save();
+    ctx.fillStyle = suspicion > 0.58 ? "rgba(84, 111, 140, 0.12)" : "rgba(216, 154, 87, 0.1)";
+    ctx.beginPath();
+    ctx.arc(58, 42, 28, 0, Math.PI * 2);
+    ctx.arc(bounds.width - 48, bounds.height - 28, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(117, 100, 88, 0.22)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(tank.x, tank.y, tank.width, tank.height);
+    ctx.restore();
+
+    const liquidGradient = ctx.createLinearGradient(0, tank.y, 0, tank.y + tank.height);
+    liquidGradient.addColorStop(0, suspicion > 0.58 ? "rgba(154, 194, 229, 0.52)" : "rgba(221, 187, 145, 0.44)");
+    liquidGradient.addColorStop(1, suspicion > 0.58 ? "rgba(82, 130, 174, 0.38)" : "rgba(196, 139, 89, 0.28)");
+    ctx.save();
+    ctx.fillStyle = liquidGradient;
+    ctx.beginPath();
+    ctx.moveTo(tank.x, liquidTop);
+    for (let x = tank.x; x <= tank.x + tank.width; x += 12) {
+      const wave = Math.sin((x * 0.05) + now * 0.0033) * (3 + closure * 5);
+      ctx.lineTo(x, liquidTop + wave);
+    }
+    ctx.lineTo(tank.x + tank.width, tank.y + tank.height);
+    ctx.lineTo(tank.x, tank.y + tank.height);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = "12px sans-serif";
+    ctx.fillStyle = "rgba(139, 63, 52, 0.82)";
+    ctx.fillText("感官液面", tank.x + 10, liquidTop - 10);
+    ctx.fillText("接口边界", tank.x + tank.width - 60, tank.y + 16);
+    ctx.restore();
+
+    nodes.forEach((node, index) => {
+      ctx.save();
+      ctx.strokeStyle = "rgba(117, 100, 88, 0.28)";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(node.x, node.y);
+      ctx.lineTo(brainCenter.x, brainCenter.y);
+      ctx.stroke();
+
+      const pulse = (Math.sin(now * 0.004 + index * 0.9) + 1) * 0.5;
+      const pulseX = node.x + (brainCenter.x - node.x) * pulse;
+      const pulseY = node.y + (brainCenter.y - node.y) * pulse;
+      ctx.fillStyle = lastActionId === node.key ? "rgba(216, 154, 87, 0.95)" : "rgba(92, 118, 152, 0.55)";
+      ctx.beginPath();
+      ctx.arc(pulseX, pulseY, lastActionId === node.key ? 4.4 : 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = lastActionId === node.key ? "#d89a57" : "#5a7697";
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = "rgba(92, 118, 152, 0.25)";
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, 7.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    if (interfaceMask > 0.58) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(84, 111, 140, 0.18)";
+      ctx.lineWidth = 1;
+      for (let y = 32; y < bounds.height - 16; y += 10) {
+        ctx.beginPath();
+        ctx.moveTo(34, y + Math.sin(now * 0.003 + y * 0.1) * 1.2);
+        ctx.lineTo(bounds.width - 34, y + Math.cos(now * 0.003 + y * 0.1) * 1.2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    ctx.save();
+    const halo = ctx.createRadialGradient(brainCenter.x, brainCenter.y, 12, brainCenter.x, brainCenter.y, 56);
+    halo.addColorStop(0, suspicion > 0.56 ? "rgba(140, 182, 223, 0.28)" : "rgba(229, 186, 132, 0.24)");
+    halo.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(brainCenter.x, brainCenter.y, 56, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    const lobes = [
+      { x: -18, y: -8, r: 17 },
+      { x: 0, y: -12, r: 19 },
+      { x: 18, y: -7, r: 16 },
+      { x: -10, y: 10, r: 15 },
+      { x: 12, y: 10, r: 14 },
+    ];
+    lobes.forEach((lobe, index) => {
+      ctx.save();
+      ctx.fillStyle = index % 2 === 0 ? "#f2d7b5" : "#f7e3c6";
+      ctx.strokeStyle = suspicion > 0.56 ? "#5a7697" : "#8b3f34";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(brainCenter.x + lobe.x, brainCenter.y + lobe.y, lobe.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(117, 100, 88, 0.34)";
+    ctx.lineWidth = 1.2;
+    for (let curve = -16; curve <= 16; curve += 8) {
+      ctx.beginPath();
+      ctx.moveTo(brainCenter.x - 22, brainCenter.y + curve);
+      ctx.bezierCurveTo(
+        brainCenter.x - 8,
+        brainCenter.y + curve - 8,
+        brainCenter.x + 8,
+        brainCenter.y + curve + 8,
+        brainCenter.x + 22,
+        brainCenter.y + curve,
+      );
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    if (reality > 0.56) {
+      for (let index = 0; index < 12; index += 1) {
+        const px = 24 + (index * 31 + now * 0.02) % (bounds.width - 48);
+        const py = 18 + ((index * 47) % (bounds.height - 36));
+        ctx.save();
+        ctx.fillStyle = "rgba(139, 63, 52, 0.18)";
+        ctx.beginPath();
+        ctx.arc(px, py, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  };
+
+  const performAction = (actionId) => {
+    if (resolved || usedActions.has(actionId)) return;
+
+    const observation = generateObservation(actionId);
+    Object.entries(observation.probes).forEach(([key, value]) => observe(key, value));
+
+    observations = [
+      {
+        id: actionId,
+        title: observation.title,
+        text: observation.text,
+        tone: actionId === "trace-source" || actionId === "input-cut" ? "glitch" : "note",
+      },
+      ...observations,
+    ].slice(0, VAT_EXPERIMENT_ACTIONS.length);
+    usedActions = new Set([...usedActions, actionId]);
+    lastActionId = actionId;
+    updateUi();
+  };
+
+  const reveal = (nextGuessId = null) => {
+    resolved = true;
+    guessId = nextGuessId;
+    updateUi();
+  };
+
+  const resetRound = () => {
+    scenario = VAT_EXPERIMENT_SCENARIOS[Math.floor(Math.random() * VAT_EXPERIMENT_SCENARIOS.length)];
+    usedActions = new Set();
+    observations = [];
+    lastActionId = null;
+    resolved = false;
+    guessId = null;
+    resetEstimates();
+    updateUi();
+  };
+
+  const handleReset = () => resetRound();
+  const handleReveal = () => reveal(null);
+
+  const actionButtons = [...root.querySelectorAll("[data-vat-action]")];
+  const guessButtons = [...root.querySelectorAll("[data-vat-guess]")];
+  const resetButton = root.querySelector("[data-vat-reset]");
+  const revealButton = root.querySelector("[data-vat-reveal]");
+
+  actionButtons.forEach((button) => {
+    const handler = () => performAction(button.dataset.vatAction);
+    button.__vatHandler = handler;
+    button.addEventListener("click", handler);
+  });
+
+  guessButtons.forEach((button) => {
+    const handler = () => reveal(button.dataset.vatGuess);
+    button.__vatGuessHandler = handler;
+    button.addEventListener("click", handler);
+  });
+
+  resetButton?.addEventListener("click", handleReset);
+  revealButton?.addEventListener("click", handleReveal);
+
+  resetRound();
+
+  const loopCleanup = startPlaygroundLoop((dt, now) => {
+    void dt;
+    drawScene(now);
+  });
+
+  registerLabPlaygroundCleanup(() => {
+    loopCleanup();
+    actionButtons.forEach((button) => {
+      if (button.__vatHandler) {
+        button.removeEventListener("click", button.__vatHandler);
+        delete button.__vatHandler;
+      }
+    });
+    guessButtons.forEach((button) => {
+      if (button.__vatGuessHandler) {
+        button.removeEventListener("click", button.__vatGuessHandler);
+        delete button.__vatGuessHandler;
+      }
+    });
+    resetButton?.removeEventListener("click", handleReset);
+    revealButton?.removeEventListener("click", handleReveal);
+  });
+}
+
 function initDifferenceSnakePlayground() {
   const root = dom.labContent.querySelector('[data-playground="snake"]');
   const canvas = root?.querySelector("#snake-canvas");
@@ -2979,6 +3629,8 @@ function renderLabLearn() {
 
     ${renderPlayableLabSection()}
 
+    ${renderBrainVatExperimentSection()}
+
     ${renderThoughtCompassSection()}
 
     ${renderHierarchyLiftSection()}
@@ -3035,6 +3687,7 @@ function renderLabLearn() {
   `;
 
   initPlayableLabSection();
+  initBrainVatExperiment();
   initThoughtCompass();
   initHierarchyLift();
 }

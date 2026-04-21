@@ -1913,6 +1913,95 @@ input {
   line-height: 1.7;
 }
 
+.brain-vat-shell {
+  background: linear-gradient(180deg, rgba(242, 247, 253, 0.82), rgba(255, 255, 255, 0.58));
+}
+
+.brain-vat-canvas {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(240, 244, 249, 0.7));
+}
+
+.brain-vat-action-grid {
+  margin-top: 16px;
+}
+
+.brain-vat-action[data-state="used"] {
+  opacity: 0.68;
+  border-color: rgba(84, 111, 140, 0.24);
+  background: rgba(240, 244, 250, 0.86);
+}
+
+.brain-vat-guess-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.brain-vat-guess {
+  justify-content: center;
+}
+
+.brain-vat-guess.is-selected {
+  border-color: rgba(139, 63, 52, 0.24);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.brain-vat-guess.is-correct {
+  border-color: rgba(84, 111, 140, 0.32);
+  background: rgba(235, 244, 252, 0.92);
+  color: #45698a;
+}
+
+.brain-vat-guess.is-wrong {
+  border-color: rgba(139, 63, 52, 0.26);
+  background: rgba(255, 244, 239, 0.92);
+}
+
+.brain-vat-status {
+  margin-top: 16px;
+}
+
+.brain-vat-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.brain-vat-log {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.brain-vat-log-item {
+  padding: 14px 14px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--paper-line);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.brain-vat-log-item small {
+  display: block;
+  margin: 0;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.brain-vat-log-item p {
+  margin: 8px 0 0;
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.brain-vat-log-item[data-tone="glitch"] {
+  border-color: rgba(84, 111, 140, 0.24);
+  background: rgba(240, 245, 251, 0.86);
+}
+
+.brain-vat-log-item.is-empty {
+  background: var(--bg-fade);
+}
+
 .lab-lead {
   margin: 0;
   font-size: 1.02rem;
@@ -1956,9 +2045,11 @@ input {
   .lab-entry-grid,
   .lab-controls,
   .lab-metrics,
+  .brain-vat-metrics,
   .dist-shell,
   .thought-gate-grid,
-  .layer-lift-shell {
+  .layer-lift-shell,
+  .brain-vat-guess-grid {
     grid-template-columns: 1fr;
   }
 
