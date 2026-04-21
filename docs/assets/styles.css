@@ -603,6 +603,26 @@ input {
   margin-top: 18px;
 }
 
+.quick-use-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.quick-use-card {
+  min-height: 100%;
+}
+
+.quick-use-list {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+  color: var(--text-soft);
+}
+
+.quick-use-list li + li {
+  margin-top: 6px;
+}
+
 .positioning-band {
   display: grid;
   grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
@@ -2856,6 +2876,7 @@ input {
   }
 
   .home-panels,
+  .quick-use-grid,
   .starter-grid,
   .book-shelf,
   .systems-grid {

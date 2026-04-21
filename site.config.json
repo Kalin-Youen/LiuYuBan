@@ -1,9 +1,9 @@
 {
   "siteTitle": "差结构学习法",
-  "siteTagline": "不是终极存在论，而是一套跨学科学习、推理与验证的方法",
-  "siteDescription": "差结构学习法不是终极存在论，而是一套跨学科学习、推理与验证的方法。它的走法是：先分辨不同，再看边界、持续、反馈与耗散，最后判断什么能站住、能重复、能验证。",
-  "positioningStatement": "差结构学习法不是终极存在论，而是一套跨学科学习、推理与验证的方法。",
-  "positioningSupport": "它的走法是：先分辨不同，再看边界、持续、反馈与耗散，最后判断什么能站住、能重复、能验证。",
+  "siteTagline": "三卷制的公共方法基础设施",
+  "siteDescription": "差结构学习法不是终极存在论，也不是面向大众的大理论宣讲；它更适合作为一套供学习者、研究者与 AI 协作者直接使用的三卷制公共方法基础设施。第一卷负责上手，第二卷负责压实，第三卷负责协作与回写。",
+  "positioningStatement": "不是终极存在论，而是一套分成大众卷、研究卷与 AI 协作卷的公共方法基础设施。",
+  "positioningSupport": "先选卷：第一卷上手，第二卷压实，第三卷协作与回写。",
   "author": "尤安",
   "repoUrl": "https://github.com/Kalin-Youen/LiuYuBan",
   "siteUrl": "https://kalin-youen.github.io/LiuYuBan/",
@@ -15,46 +15,47 @@
     "lang": "zh-CN",
     "scriptUrl": "./assets/vendor/twikoo.all.min.js"
   },
-  "heroTitle": "先用一句话看懂，再决定往哪读",
-  "heroText": "如果你第一次来到这里，先不要急着整套进入。先用 30 秒理解项目定位，再看 10 条轻内容，然后进入白话卷。这样更容易复述、转发，也更容易真正走进去。",
+  "heroTitle": "先选卷，再进入主线",
+  "heroText": "第一卷大众卷先上手，第二卷研究卷压实定义与桥梁，第三卷 AI 协作卷把方法接进模型、版本与回写系统。",
   "sections": [
     {
       "id": "overview",
-      "title": "总述与校验",
+      "title": "项目定位与自校验",
       "type": "explicit",
       "files": [
         "研究文稿/04_议论与说明/差结构学习法是什么_对外主句与入口说明.md",
+        "研究文稿/04_议论与说明/三卷制说明_为什么分成大众卷、研究卷与AI协作卷.md",
         "研究文稿/04_议论与说明/差结构学习法_归结、展望与自我校验.md",
         "研究文稿/04_议论与说明/这些理论研究的价值_说明文章.md"
       ]
     },
     {
       "id": "light-series",
-      "title": "十条轻内容",
+      "title": "第一卷：大众卷·十条轻内容",
       "type": "directory",
       "path": "研究文稿/08_轻内容连载"
     },
     {
-      "id": "book",
-      "title": "主书稿",
-      "type": "directory",
-      "path": "研究文稿/07_书稿"
-    },
-    {
       "id": "plain-book",
-      "title": "白话卷",
+      "title": "第一卷：大众卷·白话卷",
       "type": "directory",
       "path": "研究文稿/07_书稿/白话卷"
     },
     {
+      "id": "book",
+      "title": "第二卷：研究卷·主书稿",
+      "type": "directory",
+      "path": "研究文稿/07_书稿"
+    },
+    {
       "id": "ai-book",
-      "title": "AI协作卷",
+      "title": "第三卷：AI 协作卷",
       "type": "directory",
       "path": "研究文稿/07_书稿/AI协作卷"
     },
     {
       "id": "terms",
-      "title": "术语与边界",
+      "title": "第二卷：研究卷·术语与边界",
       "type": "explicit",
       "files": [
         "研究文稿/02_指正与术语/术语决议_持续、维继与场流.md",

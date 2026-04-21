@@ -14,6 +14,12 @@ const THEME_LABELS = {
   night: "夜读",
 };
 const HOME_SECTION_ORDER = ["light-series", "plain-book", "overview", "book", "terms", "ai-book"];
+const PRIMARY_VOLUME_SECTION_IDS = Object.freeze(["plain-book", "book", "ai-book"]);
+const VOLUME_ENTRY_SOURCE_PATHS = Object.freeze({
+  "plain-book": "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
+  book: "研究文稿/07_书稿/00_卷首_怎么使用这本研究卷.md",
+  "ai-book": "研究文稿/07_书稿/AI协作卷/00_卷首_AI不是结论机器而是受主线约束的协作系统.md",
+});
 const STARTER_GUIDE = Object.freeze([
   {
     sourcePath: "研究文稿/04_议论与说明/差结构学习法是什么_对外主句与入口说明.md",
@@ -36,7 +42,7 @@ const STARTER_GUIDE = Object.freeze([
 ]);
 const PLAIN_TO_BOOK_VARIANT_PATHS = Object.freeze({
   "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md":
-    "研究文稿/07_书稿/第1章_绪论.md",
+    "研究文稿/07_书稿/00_卷首_怎么使用这本研究卷.md",
   "研究文稿/07_书稿/白话卷/第1章_世界先给人的不是物而是不同.md":
     "研究文稿/07_书稿/第2章_力的落差概念的严格化.md",
   "研究文稿/07_书稿/白话卷/第2章_不同怎样长成边界、对象和结构.md":
@@ -55,6 +61,8 @@ const PLAIN_TO_BOOK_VARIANT_PATHS = Object.freeze({
     "研究文稿/07_书稿/专题_反思辩证模块_让质疑成为理论生长的回路.md",
 });
 const BOOK_TO_PLAIN_VARIANT_PATHS = Object.freeze({
+  "研究文稿/07_书稿/00_卷首_怎么使用这本研究卷.md":
+    "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
   "研究文稿/07_书稿/第1章_绪论.md":
     "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
   "研究文稿/07_书稿/第2章_力的落差概念的严格化.md":
@@ -90,16 +98,16 @@ const SECTION_PRESENTATION = {
     description: "如果你想先感受这套方法怎样进入日常判断，就先从十条轻内容开始。每条都可以单独读，也能连成一条新读者路径。",
   },
   "plain-book": {
-    badge: "推荐先读",
-    eyebrow: "直观理解卷",
-    hook: "先把主线读成一条能直接走进去的线。",
-    description: "第一次进入本站，优先从白话卷开始。先建立直觉，再决定什么时候切到主书稿。",
+    badge: "第一卷",
+    eyebrow: "大众卷",
+    hook: "先上手、先复述、先把判断动作练顺。",
+    description: "第一次进入本站，优先从大众卷开始。它负责降低门槛，让方法先进入阅读、教学和自测。",
   },
   book: {
-    badge: "主线正文",
-    eyebrow: "理论骨架卷",
-    hook: "从绪论、正文到专题与附录，完整展开论证。",
-    description: "当你想看更严密、更完整的版本，或者准备进入细部推导和接口扩展时，从这里进入。",
+    badge: "第二卷",
+    eyebrow: "研究卷",
+    hook: "压定义、补桥梁、留接口，让主线真正站住。",
+    description: "当你已经愿意继续追问这套方法哪里站住、哪里还没站住时，就从研究卷进入。",
   },
   overview: {
     badge: "总述入口",
@@ -114,10 +122,10 @@ const SECTION_PRESENTATION = {
     description: "当你被术语、边界、强命题或跨层接口卡住时，从这里翻最省时间。",
   },
   "ai-book": {
-    badge: "协作系统",
+    badge: "第三卷",
     eyebrow: "AI 协作卷",
-    hook: "给协作系统、版本治理与残差回写使用的卷册。",
-    description: "它不是第一次进入时的首读入口，更像主线稳定后供协作、扩写和版本治理使用的后端卷册。",
+    hook: "把扩写变成协作，把噪声变成残差，把修改变成回写。",
+    description: "它不是第一次进入时的首读入口，而是让模型协作守主线、控噪声和做版本治理的卷册。",
   },
 };
 const GRAPH_STATUS_LABELS = {
@@ -1704,9 +1712,17 @@ function buildQuickLinks() {
 
 function getSectionEntry(sectionId) {
   const items = getSectionItems(sectionId);
+  const preferredPath = VOLUME_ENTRY_SOURCE_PATHS[sectionId];
+
+  if (preferredPath) {
+    const preferredItem = findItemBySourcePath(preferredPath);
+    if (preferredItem) return preferredItem;
+  }
 
   if (sectionId === "book") {
     return (
+      items.find((item) => getDisplayTitle(item).includes("卷首")) ||
+      items.find((item) => getDisplayTitle(item).includes("导读")) ||
       items.find((item) => getDisplayTitle(item).includes("第1章")) ||
       items.find((item) => getDisplayTitle(item).includes("绪论")) ||
       items[0] ||
@@ -1773,7 +1789,10 @@ function buildFeaturedVolume() {
 function buildSystemLinks() {
   dom.systemLinks.innerHTML = "";
 
-  getOrderedSections().forEach((section) => {
+  PRIMARY_VOLUME_SECTION_IDS
+    .map((sectionId) => state.payload.sections.find((section) => section.id === sectionId))
+    .filter(Boolean)
+    .forEach((section) => {
     const sectionId = section.id;
     const entry = getSectionEntry(sectionId);
     const presentation = getSectionPresentation(sectionId);

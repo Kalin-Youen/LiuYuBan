@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import re
 from datetime import datetime, timezone
@@ -15,6 +16,7 @@ DOCS_DIR = ROOT / "docs"
 DATA_DIR = DOCS_DIR / "assets" / "data"
 CONTENT_JSON = DATA_DIR / "content.json"
 CNAME_PATH = DOCS_DIR / "CNAME"
+INDEX_HTML_PATH = DOCS_DIR / "index.html"
 GRAPH_CORE_PATH = ROOT / "研究文稿" / "05_总纲与图谱" / "核心理论网络图谱_三十六网.md"
 GRAPH_SECONDARY_PATH = (
     ROOT
@@ -708,12 +710,43 @@ def write_cname(custom_domain: str) -> None:
         CNAME_PATH.unlink()
 
 
+def sync_index_html(config: dict) -> None:
+    if not INDEX_HTML_PATH.exists():
+        return
+
+    text = INDEX_HTML_PATH.read_text(encoding="utf-8")
+    title = html.escape(config["siteTitle"], quote=True)
+    description = html.escape(config["siteDescription"], quote=True)
+
+    replacements = [
+        (r"(<title>)(.*?)(</title>)", rf"\g<1>{title}\g<3>"),
+        (
+            r'(<meta\s+name="description"\s+content=")([^"]*)(")',
+            rf'\g<1>{description}\g<3>',
+        ),
+        (
+            r'(<meta\s+property="og:title"\s+content=")([^"]*)(")',
+            rf'\g<1>{title}\g<3>',
+        ),
+        (
+            r'(<meta\s+property="og:description"\s+content=")([^"]*)(")',
+            rf'\g<1>{description}\g<3>',
+        ),
+    ]
+
+    for pattern, replacement in replacements:
+        text = re.sub(pattern, replacement, text, count=1, flags=re.DOTALL)
+
+    INDEX_HTML_PATH.write_text(text, encoding="utf-8")
+
+
 def main() -> None:
     ensure_dirs()
     config = load_config()
     payload = build_payload(config)
     write_payload(payload)
     write_cname(config.get("customDomain", ""))
+    sync_index_html(config)
     print(f"Generated site data: {CONTENT_JSON.relative_to(ROOT)}")
 
 
