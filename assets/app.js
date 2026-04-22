@@ -6585,6 +6585,43 @@ function renderCommentsPlaceholder(note, body) {
   `;
 }
 
+function describeTwikooError(error) {
+  const raw = String(error?.stack || error?.message || error || "").trim();
+  const escapedRaw = escapeHtml(raw || "未知错误");
+
+  if (/ACCESS_TOKEN_DISABLED|匿名登录/.test(raw)) {
+    return `
+      <strong>Twikoo 已加载，但 CloudBase 匿名登录没有开通。</strong>
+      <br />
+      当前报错表明评论脚本已经运行到 Twikoo 初始化阶段，只是在云开发身份认证这一步被拒绝了。
+      <br />
+      请前往腾讯云云开发控制台，为环境 <code>${escapeHtml(getCommentsConfig().envId || "")}</code> 开启匿名登录。
+      <br />
+      常见位置：云开发控制台 &gt; 身份认证 / 登录方式 &gt; 匿名登录。
+      <br />
+      原始错误：<code>${escapedRaw}</code>
+    `;
+  }
+
+  if (/Failed to load Twikoo script/i.test(raw)) {
+    return `
+      <strong>Twikoo 脚本文件没有成功加载。</strong>
+      <br />
+      请检查 <code>${escapeHtml(getCommentsConfig().scriptUrl || "")}</code> 是否能被当前页面访问。
+      <br />
+      原始错误：<code>${escapedRaw}</code>
+    `;
+  }
+
+  return `
+    <strong>Twikoo 初始化失败。</strong>
+    <br />
+    请检查 CloudBase 环境、envId、匿名登录与评论脚本地址是否配置完整。
+    <br />
+    原始错误：<code>${escapedRaw}</code>
+  `;
+}
+
 function ensureTwikooLoaded(scriptUrl) {
   if (window.twikoo) {
     return Promise.resolve(window.twikoo);
@@ -6659,7 +6696,7 @@ async function renderComments(item) {
     console.error(error);
     renderCommentsPlaceholder(
       "Twikoo 评论区加载失败。",
-      "评论脚本或云环境暂时不可用。你可以稍后刷新重试，或检查 envId 与云环境部署是否完成。",
+      describeTwikooError(error),
     );
   }
 }
