@@ -4,13 +4,459 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>差结构学习法</title>
-    <meta http-equiv="refresh" content="0; url=./docs/" />
+    <meta
+      name="description"
+      content="差结构学习法不是终极存在论，也不是面向大众的大理论宣讲；它更适合作为一套供学习者、研究者与 AI 协作者直接使用的四卷一站公共方法基础设施。第一卷负责上手，第二卷负责压实，第三卷负责把方法直接变成能力，第四卷负责协作与回写。"
+    />
+    <meta property="og:title" content="差结构学习法" />
+    <meta
+      property="og:description"
+      content="差结构学习法不是终极存在论，也不是面向大众的大理论宣讲；它更适合作为一套供学习者、研究者与 AI 协作者直接使用的四卷一站公共方法基础设施。第一卷负责上手，第二卷负责压实，第三卷负责把方法直接变成能力，第四卷负责协作与回写。"
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./assets/styles.css" />
     <script>
-      const target = new URL("./docs/" + window.location.hash, window.location.href);
-      window.location.replace(target);
+      window.MathJax = {
+        tex: {
+          inlineMath: [["$", "$"], ["\\(", "\\)"]],
+          displayMath: [["$$", "$$"], ["\\[", "\\]"]]
+        },
+        svg: {
+          fontCache: "global"
+        }
+      };
     </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   </head>
   <body>
-    <p>正在跳转到网站主页：<a href="./docs/">差结构学习法</a></p>
+    <div id="page-overlay" class="page-overlay hidden" aria-hidden="true"></div>
+
+    <aside id="catalog-drawer" class="reader-drawer" aria-label="章节目录">
+      <div class="drawer-panel">
+        <p class="eyebrow">Reader Shelf</p>
+        <h1 id="site-title">差结构学习法</h1>
+        <p id="site-tagline" class="tagline"></p>
+
+        <label class="search-box">
+          <span>搜索章节</span>
+          <input id="search-input" type="search" placeholder="输入标题或关键词" />
+        </label>
+
+        <nav id="nav-sections" class="nav-sections"></nav>
+
+        <div class="drawer-footer">
+          <p id="site-stats"></p>
+          <a id="repo-link" class="ghost-link" href="#" target="_blank" rel="noreferrer">查看 GitHub 仓库</a>
+        </div>
+      </div>
+    </aside>
+
+    <aside id="toc-drawer" class="reader-drawer reader-drawer-right" aria-label="本章目录">
+      <div class="drawer-panel drawer-panel-compact">
+        <p class="eyebrow">Chapter Outline</p>
+        <div id="doc-toc" class="doc-toc"></div>
+      </div>
+    </aside>
+
+    <div class="reader-shell">
+      <header class="reader-header">
+        <div class="header-start">
+          <button id="catalog-button" class="reader-button" type="button">目录</button>
+          <div class="header-copy">
+            <p class="eyebrow">Novel Mode</p>
+            <h2 id="view-title">书架</h2>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="toc-button" class="reader-button" type="button">本章</button>
+          <button id="graph-button" class="reader-button" type="button">图谱</button>
+          <button id="lab-button" class="reader-button" type="button">实验台</button>
+          <button id="theme-button" class="reader-button" type="button">主题</button>
+          <div class="font-controls" aria-label="字体大小">
+            <button id="font-down-button" class="reader-button" type="button" aria-label="减小字体">A-</button>
+            <span id="font-size-indicator" class="font-size-indicator" aria-live="polite"></span>
+            <button id="font-up-button" class="reader-button" type="button" aria-label="增大字体">A+</button>
+          </div>
+          <button id="home-button" class="reader-button reader-button-strong" type="button">首页</button>
+        </div>
+      </header>
+
+      <div class="reader-progress">
+        <span id="reader-progress-bar"></span>
+      </div>
+
+      <main class="reader-main">
+        <section id="home-view" class="home-view">
+          <div class="hero-card hero-card-featured">
+            <div class="hero-layout">
+              <div class="hero-copy-block">
+                <p class="eyebrow">Recommended First Volume</p>
+                <h2 id="hero-title"></h2>
+                <p id="hero-text" class="hero-text"></p>
+
+                <div class="hero-actions">
+                  <button id="start-reading-button" class="pill-button" type="button">先读白话卷</button>
+                  <button id="open-graph-button" class="pill-button" type="button">打开知识图谱</button>
+                  <button id="open-lab-button" class="pill-button" type="button">看10条轻内容</button>
+                  <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">查看全部入口</button>
+                </div>
+              </div>
+
+              <aside class="hero-spotlight" aria-label="推荐入口">
+                <p class="eyebrow">第一卷：大众卷</p>
+                <h3 id="featured-volume-title"></h3>
+                <p id="featured-volume-copy" class="hero-spotlight-copy"></p>
+                <div id="featured-volume-meta" class="spotlight-meta"></div>
+                <div id="featured-volume-links" class="spotlight-links"></div>
+              </aside>
+            </div>
+          </div>
+
+          <div class="positioning-band">
+            <article class="positioning-card positioning-card-strong">
+              <p class="eyebrow">External Line</p>
+              <h3>对外主句</h3>
+              <p id="positioning-statement" class="positioning-statement"></p>
+              <p id="positioning-support" class="positioning-support"></p>
+            </article>
+            <article class="positioning-card">
+              <p class="eyebrow">How To Introduce</p>
+              <h3>第一次介绍这个项目时，先别把它说成“最后答案”</h3>
+              <p>
+                更稳的说法是：它给你一条跨学科学习与判断的走法。先辨认不同，再补边界、反馈与验证，
+                最后再决定什么能站住。这样更容易让新读者听懂，也更容易继续转发。
+              </p>
+            </article>
+          </div>
+
+          <section id="live-book-section" class="bookshelf-section live-book-section">
+            <div class="section-heading">
+              <p class="eyebrow">Living Book</p>
+              <h3 id="live-book-title">活书计划</h3>
+              <p id="live-book-summary" class="section-copy"></p>
+            </div>
+            <div class="live-book-layout">
+              <article class="live-book-card live-book-card-strong">
+                <p class="eyebrow">Feedback Loop</p>
+                <h4>读者评论如何进入回写</h4>
+                <p id="live-book-cadence" class="live-book-meta"></p>
+                <p id="live-book-status" class="live-book-status"></p>
+                <div class="hero-actions live-book-actions">
+                  <a id="live-book-entry-link" class="pill-button" href="#doc/">查看活书说明</a>
+                  <button id="live-book-open-catalog" class="pill-button pill-button-ghost" type="button">先去看章节入口</button>
+                </div>
+              </article>
+              <div id="live-book-workflow" class="live-book-workflow"></div>
+            </div>
+            <div id="live-book-home-cards" class="live-book-home-cards"></div>
+          </section>
+
+          <section class="bookshelf-section starter-section">
+            <div class="section-heading">
+              <p class="eyebrow">New Reader Path</p>
+              <h3>第一次来，先走这三步</h3>
+              <p class="section-copy">先把主句说稳，再用一条轻内容进入，最后再切到白话卷。这样最容易真正读进去。</p>
+            </div>
+            <div id="starter-links" class="starter-grid"></div>
+          </section>
+
+          <section class="bookshelf-section light-series-section">
+            <div class="section-heading">
+              <p class="eyebrow">Light Series</p>
+              <h3>先连续发这 10 条轻内容</h3>
+              <p class="section-copy">每条都能单独成文、单独转发，也能连起来组成完整的新读者入口。</p>
+            </div>
+            <div id="light-series-links" class="book-shelf"></div>
+          </section>
+
+          <section class="bookshelf-section graph-launch-section">
+            <div class="section-heading">
+              <p class="eyebrow">Knowledge Graph</p>
+              <h3>先从图谱看六个母网、三十六个核心网和候选二级网</h3>
+              <p class="section-copy">
+                这里不是普通目录，而是把目前已经谈到的节点、还停留在图谱层的节点、以及准备继续扩写的候选层一起点亮。
+                你可以先点节点，再顺着章节直接跳进去读。
+              </p>
+            </div>
+            <div class="graph-launch-shell">
+              <article class="graph-launch-card">
+                <p class="eyebrow">Visible Entry</p>
+                <h4>知识图谱入口</h4>
+                <p>
+                  节点颜色代表它目前在站内的展开程度：
+                  已展开的节点会更亮，只在图谱或附录中出现的节点会偏暗，尚未进入正文的候选节点会保留成待点亮状态。
+                </p>
+                <div class="hero-actions graph-launch-actions">
+                  <button id="open-graph-launch-button" class="pill-button" type="button">进入知识图谱</button>
+                  <a class="pill-button pill-button-ghost" href="#graph/core-02">先看“落差”主轴</a>
+                </div>
+              </article>
+              <div id="graph-preview-grid" class="graph-preview-grid"></div>
+            </div>
+          </section>
+
+          <div class="home-panels">
+            <article class="home-card">
+              <h3>第一卷先负责上手</h3>
+              <p>大众卷先把方法做成可进入、可复述、可自测的动作，让读者先用起来，而不是先被大词挡在门外。</p>
+            </article>
+            <article class="home-card">
+              <h3>第二卷负责压实</h3>
+              <p>研究卷负责压定义、补桥梁、留接口，让项目从“能说”走向“能被追问、能被继续研究”。</p>
+            </article>
+            <article class="home-card">
+              <h3>第三卷负责协作回写</h3>
+              <p>AI 协作卷负责把扩写变成受约束的协作，让版本、残差和主线能在持续修改中留下来。</p>
+            </article>
+            <article class="home-card">
+              <h3>三卷合起来才形成方法</h3>
+              <p>先上手，再压实，再协作回写。这样项目才不是一堆说明，而是一套真的能进入现实、继续生长的结构。</p>
+            </article>
+          </div>
+
+          <section class="bookshelf-section quick-use-section">
+            <div class="section-heading">
+              <p class="eyebrow">Use It Now</p>
+              <h3>先直接用这三张速用卡</h3>
+              <p class="section-copy">如果你现在不想先读整卷，就先拿这三组问题去看一段文字、一个现象、一个系统，或者一条 AI 回答。它们就是第一卷最先要交给你的动作。</p>
+            </div>
+            <div class="quick-use-grid">
+              <a class="starter-card quick-use-card" href="#doc/plain-book-02-%E7%AC%AC1%E7%AB%A0-%E4%B8%96%E7%95%8C%E5%85%88%E7%BB%99%E4%BA%BA%E7%9A%84%E4%B8%8D%E6%98%AF%E7%89%A9%E8%80%8C%E6%98%AF%E4%B8%8D%E5%90%8C">
+                <span class="starter-index">01</span>
+                <span class="starter-copy">
+                  <span class="starter-eyebrow">入口四问</span>
+                  <strong>先把不同认出来</strong>
+                  <p>适合刚接触一个陌生对象时使用，先别急着背定义。</p>
+                  <ul class="quick-use-list">
+                    <li>它和周围哪里不一样？</li>
+                    <li>哪种不同最稳定？</li>
+                    <li>哪种不同只是暂时噪声？</li>
+                    <li>这些不同会不会反复出现？</li>
+                  </ul>
+                  <em>进入：第1章</em>
+                </span>
+              </a>
+              <a class="starter-card quick-use-card" href="#doc/plain-book-03-%E7%AC%AC2%E7%AB%A0-%E4%B8%8D%E5%90%8C%E6%80%8E%E6%A0%B7%E9%95%BF%E6%88%90%E8%BE%B9%E7%95%8C-%E5%AF%B9%E8%B1%A1%E5%92%8C%E7%BB%93%E6%9E%84">
+                <span class="starter-index">02</span>
+                <span class="starter-copy">
+                  <span class="starter-eyebrow">结构五问</span>
+                  <strong>顺着边界看它怎么站住</strong>
+                  <p>适合分析一个系统、一段关系或一个现象是怎样被托住的。</p>
+                  <ul class="quick-use-list">
+                    <li>差异在哪里？</li>
+                    <li>边界靠什么显出来？</li>
+                    <li>什么在维持这条边界？</li>
+                    <li>哪些变化被留下，长成了结构？</li>
+                    <li>它会不会继续沉淀成规则？</li>
+                  </ul>
+                  <em>进入：第2章</em>
+                </span>
+              </a>
+              <a class="starter-card quick-use-card" href="#doc/plain-book-04-%E7%AC%AC3%E7%AB%A0-%E8%A7%84%E5%88%99%E4%B8%8D%E6%98%AF%E5%A4%A9%E4%B8%8A%E6%8E%89%E4%B8%8B%E6%9D%A5%E7%9A%84%E8%80%8C%E6%98%AF%E7%AB%99%E4%BD%8F%E7%9A%84%E9%87%8D%E5%A4%8D">
+                <span class="starter-index">03</span>
+                <span class="starter-copy">
+                  <span class="starter-eyebrow">重复三问</span>
+                  <strong>看看这里有没有规则在形成</strong>
+                  <p>适合判断一种关系是不是已经从偶然变成了可调用的读法。</p>
+                  <ul class="quick-use-list">
+                    <li>什么关系总是这样？</li>
+                    <li>换个情境，它还能大体站住吗？</li>
+                    <li>它能不能被压成一句可复述的读法？</li>
+                  </ul>
+                  <em>进入：第3章</em>
+                </span>
+              </a>
+            </div>
+          </section>
+
+          <section class="systems-section">
+            <div class="section-heading">
+              <p class="eyebrow">Volume Shelf</p>
+              <h3>三卷直达入口</h3>
+              <p class="section-copy">这里不再混放总述、术语和轻内容，只保留真正的三卷入口：第一卷上手，第二卷压实，第三卷协作回写。</p>
+            </div>
+            <div id="system-links" class="systems-grid"></div>
+          </section>
+
+          <section class="bookshelf-section">
+            <div class="section-heading">
+              <p class="eyebrow">Plain Language First</p>
+              <h3>准备连续阅读时，从白话卷开始</h3>
+              <p class="section-copy">如果你已经愿意读一组连续内容，就从这些篇目开始，把直觉、边界和主线先读顺。</p>
+            </div>
+            <div id="quick-links" class="book-shelf"></div>
+          </section>
+
+          <section class="bookshelf-section lab-launch-section">
+            <div class="section-heading">
+              <p class="eyebrow">Theory Lab</p>
+              <h3>把实验页和 AI 提示词都做成可交互分页</h3>
+              <p class="section-copy">先做教学型实验台，再补一页可直接调用 AI 的提示词生成器，把学习、检验、推演与协作放进站内统一浏览。</p>
+            </div>
+            <div class="lab-entry-grid">
+              <a class="lab-entry-card" href="#lab/learn">
+                <span class="lab-entry-tag">学习</span>
+                <h4>理论学习页</h4>
+                <p>把落差、边界、通量、反馈、稳态、结构、规则压成一条连续可读的学习路径。</p>
+              </a>
+              <a class="lab-entry-card" href="#lab/play">
+                <span class="lab-entry-tag">游戏</span>
+                <h4>游戏实验页</h4>
+                <p>把差异、流向、结构和判断压成可玩反馈，直接从得分、连击、成环与失稳里理解概念。</p>
+              </a>
+              <a class="lab-entry-card" href="#lab/validate">
+                <span class="lab-entry-tag">检验</span>
+                <h4>交互检验页</h4>
+                <p>围绕旋转流体、原行星盘和星系角动量分布做教学型参数比较与解释对照。</p>
+              </a>
+              <a class="lab-entry-card" href="#lab/infer">
+                <span class="lab-entry-tag">推演</span>
+                <h4>研究推演页</h4>
+                <p>从差结构条件出发，推演什么时候只是事件，什么时候能沉淀成结构与规则。</p>
+              </a>
+              <a class="lab-entry-card" href="#lab/prompt">
+                <span class="lab-entry-tag">提示词</span>
+                <h4>AI 提示词页</h4>
+                <p>一键生成学习计划、概念拉通、错题诊断、生活稳态、能力变现与研究协作等提示词。</p>
+              </a>
+            </div>
+          </section>
+        </section>
+
+        <section id="graph-view" class="graph-view hidden">
+          <div class="graph-shell">
+            <div class="hero-card graph-hero-card">
+              <p class="eyebrow">Knowledge Graph</p>
+              <h2 id="graph-title">层级知识图谱</h2>
+              <p id="graph-intro" class="hero-text">
+                把六个母网、三十六个核心网、十二个接口和三十六个二级候选网放到同一页里，先看它们现在亮到了哪，再决定往哪一章继续读。
+              </p>
+              <div id="graph-stats" class="graph-stats"></div>
+            </div>
+
+            <div class="graph-note-card">
+              <div class="section-heading graph-heading-inline">
+                <p class="eyebrow">Legend</p>
+                <h3>点亮状态怎么看</h3>
+                <p class="section-copy">点击任意节点，右侧会立刻列出它已经落到哪些章节、以及还能往哪层继续长。</p>
+              </div>
+              <div id="graph-legend" class="graph-legend"></div>
+            </div>
+
+            <div class="graph-layout">
+              <section class="graph-board-card">
+                <div class="section-heading graph-heading-inline">
+                  <p class="eyebrow">Layered Nets</p>
+                  <h3>六个母网的可视化关系图</h3>
+                  <p class="section-copy">现在这里会直接显示节点和连线。母网负责总览，核心网负责阅读入口，接口与二级网则作为下一层延伸。</p>
+                </div>
+                <div id="graph-clusters" class="graph-clusters"></div>
+              </section>
+
+              <aside id="graph-detail" class="graph-detail-card"></aside>
+            </div>
+          </div>
+        </section>
+
+        <section id="lab-view" class="lab-view hidden">
+          <div class="lab-shell">
+            <div class="hero-card lab-hero-card">
+              <p id="lab-eyebrow" class="eyebrow">Theory Lab</p>
+              <h2 id="lab-title">理论实验台</h2>
+              <p id="lab-intro" class="hero-text"></p>
+              <div id="lab-tabs" class="lab-tabs" role="tablist" aria-label="实验台分页">
+                <button id="lab-tab-learn" class="pill-button lab-tab" type="button" data-lab-page="learn">理论学习</button>
+                <button id="lab-tab-play" class="pill-button lab-tab" type="button" data-lab-page="play">游戏场</button>
+                <button id="lab-tab-validate" class="pill-button lab-tab" type="button" data-lab-page="validate">交互检验</button>
+                <button id="lab-tab-infer" class="pill-button lab-tab" type="button" data-lab-page="infer">推演台</button>
+                <button id="lab-tab-prompt" class="pill-button lab-tab" type="button" data-lab-page="prompt">提示词页</button>
+              </div>
+            </div>
+
+            <div class="lab-note-card">
+              <p class="eyebrow">Method Note</p>
+              <p id="lab-note">
+                当前页面属于理论学习型交互器，用于帮助理解变量关系、检验方向与推演路径，不替代正式数值模拟、实验装置或观测拟合。
+              </p>
+            </div>
+
+            <div id="lab-content" class="lab-content"></div>
+          </div>
+        </section>
+
+        <section id="doc-view" class="doc-view hidden">
+          <article id="reader-paper" class="reader-paper">
+            <div class="reader-paper-inner">
+              <div class="doc-meta">
+                <p id="doc-breadcrumb" class="eyebrow"></p>
+                <h2 id="doc-title"></h2>
+                <div class="meta-row">
+                  <span id="doc-updated"></span>
+                  <span id="doc-source"></span>
+                </div>
+              </div>
+
+              <div id="doc-content" class="doc-content"></div>
+
+              <section class="comments-shell">
+                <div class="comments-copy">
+                  <p class="eyebrow">Discussion</p>
+                  <h3>评论区</h3>
+                  <p id="comments-note">
+                    这里将接入适合中国大陆访问的评论系统。你只需要创建腾讯云云开发环境并提供 envId，就能启用游客评论。
+                  </p>
+                  <div class="feedback-guide">
+                    <h4>什么反馈最有价值</h4>
+                    <ul class="feedback-list">
+                      <li>哪一段最容易进入，哪一段最容易无感。</li>
+                      <li>哪里需要补桥、补白话、补术语或降强度。</li>
+                      <li>哪些内容应升为主线，哪些内容更适合转入专题或备忘录。</li>
+                    </ul>
+                  </div>
+                </div>
+                <div id="live-book-comment-panel" class="live-book-comment-panel"></div>
+                <div id="comment-template-grid" class="comment-template-grid"></div>
+                <p id="comment-copy-status" class="comment-copy-status" aria-live="polite"></p>
+                <div id="comments-mount" class="comments-mount">
+                  <div class="comments-placeholder">
+                    评论功能正在切换到 Twikoo。
+                  </div>
+                </div>
+              </section>
+
+              <nav id="doc-pagination" class="doc-pagination"></nav>
+            </div>
+          </article>
+        </section>
+      </main>
+
+      <nav class="mobile-reader-bar">
+        <button id="mobile-home-button" class="mobile-tool" type="button">首页</button>
+        <button id="mobile-catalog-button" class="mobile-tool" type="button">目录</button>
+        <button id="mobile-font-button" class="mobile-tool" type="button">字号</button>
+        <button id="mobile-prev-button" class="mobile-tool" type="button">上一章</button>
+        <button id="mobile-next-button" class="mobile-tool" type="button">下一章</button>
+      </nav>
+
+      <div id="mobile-font-panel" class="mobile-font-panel hidden" aria-hidden="true">
+        <div class="mobile-font-panel-card">
+          <p class="mobile-font-title">字体大小</p>
+          <div class="mobile-font-actions">
+            <button id="mobile-font-down-button" class="reader-button" type="button" aria-label="减小字体">A-</button>
+            <span id="mobile-font-size-indicator" class="font-size-indicator font-size-indicator-strong" aria-live="polite"></span>
+            <button id="mobile-font-up-button" class="reader-button" type="button" aria-label="增大字体">A+</button>
+          </div>
+          <div class="mobile-font-meta">
+            <button id="mobile-theme-button" class="reader-button" type="button">主题</button>
+            <button id="font-reset-button" class="reader-button" type="button">默认</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="./assets/app.js" defer></script>
   </body>
 </html>

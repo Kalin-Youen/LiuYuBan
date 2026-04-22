@@ -4,13 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>差结构学习法</title>
-    <meta http-equiv="refresh" content="0; url=./docs/" />
+    <meta name="robots" content="noindex" />
     <script>
-      const target = new URL("./docs/" + window.location.hash, window.location.href);
-      window.location.replace(target);
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const repoBase = parts.length ? `/${parts[0]}/` : "/";
+      const target = new URL(repoBase, window.location.origin);
+      target.hash = window.location.hash;
+      window.location.replace(target.toString());
     </script>
   </head>
   <body>
-    <p>页面不存在，正在返回网站主页：<a href="./docs/">差结构学习法</a></p>
+    <p>页面不存在，正在返回 <a href="./">差结构学习法</a>。</p>
   </body>
 </html>

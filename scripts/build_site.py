@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import json
 import re
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
@@ -13,10 +14,15 @@ import markdown
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "site.config.json"
 DOCS_DIR = ROOT / "docs"
+DOCS_ASSETS_DIR = DOCS_DIR / "assets"
 DATA_DIR = DOCS_DIR / "assets" / "data"
 CONTENT_JSON = DATA_DIR / "content.json"
 CNAME_PATH = DOCS_DIR / "CNAME"
 INDEX_HTML_PATH = DOCS_DIR / "index.html"
+ROOT_INDEX_PATH = ROOT / "index.html"
+ROOT_404_PATH = ROOT / "404.html"
+ROOT_ASSETS_DIR = ROOT / "assets"
+ROOT_CNAME_PATH = ROOT / "CNAME"
 GRAPH_CORE_PATH = ROOT / "研究文稿" / "05_总纲与图谱" / "核心理论网络图谱_三十六网.md"
 GRAPH_SECONDARY_PATH = (
     ROOT
@@ -741,6 +747,45 @@ def sync_index_html(config: dict) -> None:
     INDEX_HTML_PATH.write_text(text, encoding="utf-8")
 
 
+def sync_publish_root() -> None:
+    if INDEX_HTML_PATH.exists():
+        ROOT_INDEX_PATH.write_text(INDEX_HTML_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+
+    if DOCS_ASSETS_DIR.exists():
+        if ROOT_ASSETS_DIR.exists():
+            shutil.rmtree(ROOT_ASSETS_DIR)
+        shutil.copytree(DOCS_ASSETS_DIR, ROOT_ASSETS_DIR)
+
+    if CNAME_PATH.exists():
+        ROOT_CNAME_PATH.write_text(CNAME_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+    elif ROOT_CNAME_PATH.exists():
+        ROOT_CNAME_PATH.unlink()
+
+    ROOT_404_PATH.write_text(
+        """<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>差结构学习法</title>
+    <meta name="robots" content="noindex" />
+    <script>
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const repoBase = parts.length ? `/${parts[0]}/` : "/";
+      const target = new URL(repoBase, window.location.origin);
+      target.hash = window.location.hash;
+      window.location.replace(target.toString());
+    </script>
+  </head>
+  <body>
+    <p>页面不存在，正在返回 <a href="./">差结构学习法</a>。</p>
+  </body>
+</html>
+""",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     ensure_dirs()
     config = load_config()
@@ -748,6 +793,7 @@ def main() -> None:
     write_payload(payload)
     write_cname(config.get("customDomain", ""))
     sync_index_html(config)
+    sync_publish_root()
     print(f"Generated site data: {CONTENT_JSON.relative_to(ROOT)}")
 
 
