@@ -7710,21 +7710,81 @@ function ensureTwikooLoaded(scriptUrl) {
     return window.__twikooLoadingPromise;
   }
 
-  window.__twikooLoadingPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector('script[data-twikoo-script="true"]');
-    if (existing) {
-      existing.addEventListener("load", () => resolve(window.twikoo), { once: true });
-      existing.addEventListener("error", reject, { once: true });
-      return;
+  const resolveTwikooScriptCandidates = (value) => {
+    const fallback = "./assets/vendor/twikoo.all.min.js";
+    const candidates = new Set();
+    const configured = String(value || "").trim() || fallback;
+    const addCandidate = (candidate, base) => {
+      try {
+        candidates.add(new URL(candidate, base).toString());
+      } catch {}
+    };
+
+    addCandidate(configured, document.baseURI);
+    addCandidate(fallback, document.baseURI);
+
+    const appScript = document.querySelector('script[src*="/assets/app.js"], script[src$="assets/app.js"], script[src*="assets/app.js?"]');
+    const appScriptSrc = String(appScript?.src || "").trim();
+    if (appScriptSrc) {
+      addCandidate("./vendor/twikoo.all.min.js", appScriptSrc);
     }
 
+    return Array.from(candidates);
+  };
+
+  const loadTwikooScript = (src) => new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = scriptUrl;
+    script.src = src;
     script.async = true;
     script.dataset.twikooScript = "true";
-    script.onload = () => resolve(window.twikoo);
-    script.onerror = () => reject(new Error(`Failed to load Twikoo script: ${scriptUrl}`));
+    script.dataset.twikooScriptState = "loading";
+    script.onload = () => {
+      script.dataset.twikooScriptState = "loaded";
+      if (window.twikoo) {
+        resolve(window.twikoo);
+        return;
+      }
+      script.remove();
+      reject(new Error(`Twikoo script loaded but window.twikoo is unavailable: ${src}`));
+    };
+    script.onerror = () => {
+      script.dataset.twikooScriptState = "error";
+      script.remove();
+      reject(new Error(`Failed to load Twikoo script: ${src}`));
+    };
     (document.head || document.body).appendChild(script);
+  });
+
+  window.__twikooLoadingPromise = (async () => {
+    const existing = document.querySelector('script[data-twikoo-script="true"]');
+    if (existing) {
+      const loadState = existing.dataset.twikooScriptState || "";
+      if (loadState === "loaded" && window.twikoo) {
+        return window.twikoo;
+      }
+      if (loadState === "loading") {
+        return await new Promise((resolve, reject) => {
+          existing.addEventListener("load", () => resolve(window.twikoo), { once: true });
+          existing.addEventListener("error", reject, { once: true });
+        });
+      }
+      existing.remove();
+    }
+
+    const candidates = resolveTwikooScriptCandidates(scriptUrl);
+    let lastError = null;
+    for (const candidate of candidates) {
+      try {
+        return await loadTwikooScript(candidate);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error(`Failed to load Twikoo script: ${scriptUrl}`);
+  })().catch((error) => {
+    window.__twikooLoadingPromise = null;
+    throw error;
   });
 
   return window.__twikooLoadingPromise;
