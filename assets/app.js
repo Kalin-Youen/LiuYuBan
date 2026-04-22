@@ -1057,6 +1057,8 @@ const state = {
   currentNextId: null,
   commentCopyTimer: null,
   commentFocusTimer: null,
+  commentFocusRevision: 0,
+  commentFocusFrame: null,
   preferences: loadPreferences(),
 };
 
@@ -2067,6 +2069,70 @@ function setCommentFocusMode(active) {
   document.body.classList.toggle("is-comment-focus", active);
 }
 
+function clearCommentFocusFrame() {
+  if (!state.commentFocusFrame) return;
+  window.cancelAnimationFrame(state.commentFocusFrame);
+  state.commentFocusFrame = null;
+}
+
+function getCommentViewportHeight() {
+  const visualViewportHeight = window.visualViewport?.height;
+  return Number.isFinite(visualViewportHeight) ? visualViewportHeight : window.innerHeight;
+}
+
+function stabilizeCommentField(target = document.activeElement) {
+  if (!isCommentFieldTarget(target)) return;
+
+  const rect = target.getBoundingClientRect();
+  const viewportHeight = getCommentViewportHeight();
+  const keyboardInset = Math.max(0, window.innerHeight - viewportHeight);
+  const topPadding = window.innerWidth <= MOBILE_BREAKPOINT ? 18 : 28;
+  const bottomPadding = Math.max(window.innerWidth <= MOBILE_BREAKPOINT ? 132 : 88, keyboardInset + 28);
+  const availableHeight = Math.max(120, viewportHeight - topPadding - bottomPadding);
+  let nextTop = null;
+
+  if (rect.height >= availableHeight) {
+    nextTop = window.scrollY + rect.top - topPadding;
+  } else if (rect.top < topPadding) {
+    nextTop = window.scrollY + rect.top - topPadding;
+  } else if (rect.bottom > viewportHeight - bottomPadding) {
+    nextTop = window.scrollY + rect.bottom - (viewportHeight - bottomPadding);
+  }
+
+  if (nextTop === null) return;
+
+  window.scrollTo({
+    top: Math.max(0, nextTop),
+    behavior: "auto",
+  });
+}
+
+function queueCommentFieldStabilization(target = document.activeElement, withFollowUp = false) {
+  if (!isCommentFieldTarget(target)) return;
+
+  clearCommentFocusFrame();
+  const revision = ++state.commentFocusRevision;
+  const delays = withFollowUp ? [0, 140, 320] : [0];
+
+  delays.forEach((delay) => {
+    window.setTimeout(() => {
+      if (revision !== state.commentFocusRevision || !isCommentFieldTarget(target)) {
+        return;
+      }
+
+      clearCommentFocusFrame();
+      state.commentFocusFrame = window.requestAnimationFrame(() => {
+        if (revision !== state.commentFocusRevision) {
+          state.commentFocusFrame = null;
+          return;
+        }
+        state.commentFocusFrame = null;
+        stabilizeCommentField(target);
+      });
+    }, delay);
+  });
+}
+
 function clearCommentFocusTimer() {
   if (!state.commentFocusTimer) return;
   window.clearTimeout(state.commentFocusTimer);
@@ -2075,7 +2141,13 @@ function clearCommentFocusTimer() {
 
 function releaseCommentFocusModeSoon() {
   clearCommentFocusTimer();
+  const revision = ++state.commentFocusRevision;
+  clearCommentFocusFrame();
   state.commentFocusTimer = window.setTimeout(() => {
+    if (revision !== state.commentFocusRevision) {
+      state.commentFocusTimer = null;
+      return;
+    }
     if (!isCommentFieldTarget(document.activeElement)) {
       setCommentFocusMode(false);
     }
@@ -7990,6 +8062,8 @@ function updateShell() {
 
 async function route() {
   clearCommentFocusTimer();
+  state.commentFocusRevision += 1;
+  clearCommentFocusFrame();
   setCommentFocusMode(false);
   const routeState = getHashRoute();
   if (routeState.type === "home") {
@@ -8098,7 +8172,9 @@ function bindEvents() {
   document.addEventListener("focusin", (event) => {
     if (!isCommentFieldTarget(event.target)) return;
     clearCommentFocusTimer();
+    state.commentFocusRevision += 1;
     setCommentFocusMode(true);
+    queueCommentFieldStabilization(event.target, true);
   });
 
   document.addEventListener("focusout", (event) => {
@@ -8106,11 +8182,24 @@ function bindEvents() {
     releaseCommentFocusModeSoon();
   });
 
+  document.addEventListener("input", (event) => {
+    if (!isCommentFieldTarget(event.target)) return;
+    queueCommentFieldStabilization(event.target);
+  });
+
   window.addEventListener("hashchange", () => {
     route().catch(console.error);
   });
 
   window.addEventListener("scroll", updateReadingProgress, { passive: true });
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!isCommentFieldTarget(document.activeElement)) return;
+      queueCommentFieldStabilization(document.activeElement);
+    },
+    { passive: true },
+  );
   window.addEventListener("resize", () => {
     if (window.innerWidth > MOBILE_BREAKPOINT) {
       document.body.classList.remove("lock-scroll");
@@ -8118,6 +8207,19 @@ function bindEvents() {
     }
     applyPreferences();
     updateReadingProgress();
+    if (isCommentFieldTarget(document.activeElement)) {
+      queueCommentFieldStabilization(document.activeElement, true);
+    }
+  });
+
+  window.visualViewport?.addEventListener("resize", () => {
+    if (!isCommentFieldTarget(document.activeElement)) return;
+    queueCommentFieldStabilization(document.activeElement, true);
+  });
+
+  window.visualViewport?.addEventListener("scroll", () => {
+    if (!isCommentFieldTarget(document.activeElement)) return;
+    queueCommentFieldStabilization(document.activeElement);
   });
 
   window.addEventListener("keydown", (event) => {

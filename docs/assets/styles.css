@@ -68,6 +68,8 @@ html {
 
 html.is-comment-focus {
   scroll-behavior: auto;
+  scroll-padding-top: 20px;
+  scroll-padding-bottom: calc(env(safe-area-inset-bottom) + 132px);
 }
 
 html,
@@ -84,6 +86,10 @@ body {
 
 body {
   line-height: 1.7;
+}
+
+body.is-comment-focus {
+  overscroll-behavior-y: contain;
 }
 
 body.lock-scroll {
@@ -2040,6 +2046,36 @@ input {
 .comments-mount {
   margin-top: 18px;
   overflow-anchor: none;
+}
+
+.comments-mount,
+.comments-mount .twikoo,
+.comments-mount .tk-input,
+.comments-mount .tk-meta-input,
+.comments-mount .el-form,
+.comments-mount .el-form-item,
+.comments-mount .el-textarea,
+.comments-mount .el-textarea__inner {
+  overflow-anchor: none;
+}
+
+.comments-mount .twikoo,
+.comments-mount .tk-input,
+.comments-mount .el-textarea,
+.comments-mount .el-textarea__inner {
+  overscroll-behavior: contain;
+}
+
+.comments-mount :is(input, textarea, select) {
+  scroll-margin-top: 20px;
+  scroll-margin-bottom: calc(env(safe-area-inset-bottom) + 136px);
+}
+
+.comments-mount .twikoo .el-textarea__inner {
+  max-height: min(42vh, 360px);
+  max-height: min(42dvh, 360px);
+  overflow-y: auto !important;
+  resize: none;
 }
 
 .feedback-guide {
