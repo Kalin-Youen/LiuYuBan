@@ -11,7 +11,7 @@
     "customDomain": "",
     "comments": {
       "provider": "twikoo",
-      "envId": "",
+      "envId": "https://liuyuban.netlify.app/.netlify/functions/twikoo",
       "region": "",
       "lang": "zh-CN",
       "scriptUrl": "./assets/vendor/twikoo.all.min.js",
