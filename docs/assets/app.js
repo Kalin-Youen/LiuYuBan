@@ -1022,6 +1022,7 @@ const VAT_EXPERIMENT_SCENARIOS = [
 const state = {
   payload: null,
   filteredItems: [],
+  searchTextCache: new Map(),
   activeId: null,
   activeGraphNodeId: null,
   activeLabPage: null,
@@ -2129,24 +2130,145 @@ function buildSystemLinks() {
   });
 }
 
-function matchesSearch(item, keyword) {
-  if (!keyword) return true;
-  const haystack = `${item.title} ${getDisplayTitle(item)} ${item.excerpt} ${item.sectionTitle}`.toLowerCase();
-  return haystack.includes(keyword.toLowerCase());
+function getItemSearchText(item) {
+  if (!item) return "";
+
+  if (state.searchTextCache.has(item.id)) {
+    return state.searchTextCache.get(item.id);
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = item.html || "";
+  const text = (wrapper.textContent || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  state.searchTextCache.set(item.id, text);
+  return text;
+}
+
+function buildSearchSnippet(text, keyword, radius = 24) {
+  if (!text || !keyword) return "";
+
+  const normalizedText = text.toLowerCase();
+  const normalizedKeyword = keyword.toLowerCase();
+  const index = normalizedText.indexOf(normalizedKeyword);
+
+  if (index === -1) return "";
+
+  const start = Math.max(0, index - radius);
+  const end = Math.min(text.length, index + keyword.length + radius);
+  const prefix = start > 0 ? "…" : "";
+  const suffix = end < text.length ? "…" : "";
+
+  return `${prefix}${text.slice(start, end).trim()}${suffix}`;
+}
+
+function getSearchMatch(item, keyword) {
+  if (!keyword) {
+    return {
+      matches: true,
+      score: 0,
+      directoryHit: false,
+      titleHit: false,
+      bodyHit: false,
+      snippet: "",
+    };
+  }
+
+  const normalizedKeyword = keyword.toLowerCase();
+  const displayTitle = getDisplayTitle(item);
+  const headingText = (item.headings || []).map((heading) => heading.label).join(" ");
+  const bodyText = getItemSearchText(item);
+
+  const titleFields = [displayTitle, item.title].filter(Boolean);
+  const directoryFields = [item.sectionTitle, item.excerpt, headingText].filter(Boolean);
+
+  const titleHit = titleFields.some((value) => value.toLowerCase().includes(normalizedKeyword));
+  const directoryHit = titleHit || directoryFields.some((value) => value.toLowerCase().includes(normalizedKeyword));
+  const bodyHit = bodyText.toLowerCase().includes(normalizedKeyword);
+
+  if (!directoryHit && !bodyHit) {
+    return {
+      matches: false,
+      score: -1,
+      directoryHit: false,
+      titleHit: false,
+      bodyHit: false,
+      snippet: "",
+    };
+  }
+
+  const exactTitleHit = titleFields.some((value) => value.trim().toLowerCase() === normalizedKeyword);
+  const prefixTitleHit = titleFields.some((value) => value.toLowerCase().startsWith(normalizedKeyword));
+  const snippet = bodyHit ? buildSearchSnippet(bodyText, keyword) : "";
+
+  let score = 0;
+  if (bodyHit) score = 100;
+  if (directoryHit) score = 240;
+  if (titleHit) score = 340;
+  if (prefixTitleHit) score += 20;
+  if (exactTitleHit) score += 40;
+
+  return {
+    matches: true,
+    score,
+    directoryHit,
+    titleHit,
+    bodyHit,
+    snippet,
+  };
 }
 
 function buildNav() {
   const keyword = dom.searchInput.value.trim();
-  state.filteredItems = state.payload.items.filter((item) => matchesSearch(item, keyword));
-  const filteredIds = new Set(state.filteredItems.map((item) => item.id));
+  const searchMatches = new Map();
+
+  state.filteredItems = state.payload.items.filter((item) => {
+    const match = getSearchMatch(item, keyword);
+    if (!match.matches) return false;
+    searchMatches.set(item.id, match);
+    return true;
+  });
 
   dom.navSections.innerHTML = "";
 
-  getOrderedSections().forEach((section) => {
-    const sectionItems = getSectionItems(section.id)
-      .filter((item) => filteredIds.has(item.id));
+  const orderedSections = getOrderedSections()
+    .map((section, sectionIndex) => {
+      const sectionItems = getSectionItems(section.id)
+        .map((item, itemIndex) => ({
+          item,
+          itemIndex,
+          match: searchMatches.get(item.id),
+        }))
+        .filter((entry) => entry.match);
 
-    if (!sectionItems.length) return;
+      if (!sectionItems.length) return null;
+
+      if (keyword) {
+        sectionItems.sort((left, right) =>
+          right.match.score - left.match.score ||
+          left.itemIndex - right.itemIndex,
+        );
+      }
+
+      return {
+        section,
+        sectionIndex,
+        bestScore: sectionItems[0]?.match.score || 0,
+        sectionItems,
+      };
+    })
+    .filter(Boolean);
+
+  if (keyword) {
+    orderedSections.sort((left, right) =>
+      right.bestScore - left.bestScore ||
+      left.sectionIndex - right.sectionIndex,
+    );
+  }
+
+  orderedSections.forEach(({ section, sectionItems }) => {
 
     const group = document.createElement("section");
     group.className = "nav-group";
@@ -2162,7 +2284,7 @@ function buildNav() {
     const list = document.createElement("div");
     list.className = "nav-list";
 
-    sectionItems.forEach((item) => {
+    sectionItems.forEach(({ item, match }) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "nav-item";
@@ -2171,7 +2293,18 @@ function buildNav() {
         button.classList.add("is-active");
       }
 
-      button.innerHTML = `<strong>${getDisplayTitle(item)}</strong>`;
+      const titleText = document.createElement("strong");
+      titleText.textContent = getDisplayTitle(item);
+      button.appendChild(titleText);
+
+      if (keyword && match?.bodyHit && match.snippet) {
+        const hint = document.createElement("small");
+        hint.className = "nav-item-hint";
+        hint.textContent = match.directoryHit
+          ? `正文也命中：${match.snippet}`
+          : `正文命中：${match.snippet}`;
+        button.appendChild(hint);
+      }
 
       button.addEventListener("click", () => {
         closePanels();
