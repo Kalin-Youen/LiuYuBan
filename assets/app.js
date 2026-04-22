@@ -1894,6 +1894,49 @@ function getCommentsConfig() {
   return state.payload.site.comments || {};
 }
 
+function isTwikooServiceUrl(envId) {
+  return /^https?:\/\//i.test(String(envId || "").trim());
+}
+
+function getCommentsSetupItem() {
+  const comments = getCommentsConfig();
+  if (!comments.setupSourcePath) return null;
+  return findItemBySourcePath(comments.setupSourcePath);
+}
+
+function getCommentsSetupHref() {
+  const item = getCommentsSetupItem();
+  return item ? `#doc/${encodeURIComponent(item.id)}` : "";
+}
+
+function buildCommentsSetupPlaceholder(comments) {
+  const target = String(comments.deploymentTarget || "").trim().toLowerCase();
+  const setupHref = getCommentsSetupHref();
+  const serviceExample = comments.serviceUrlExample
+    ? `<code>${escapeHtml(comments.serviceUrlExample)}</code>`
+    : `<code>https://your-site.netlify.app/.netlify/functions/twikoo</code>`;
+
+  if (target === "netlify") {
+    return `
+      <p>评论后端已改走 <strong>Netlify + MongoDB Atlas</strong> 方案，前台会继续留在当前阅读站点。</p>
+      <ol class="comments-placeholder-steps">
+        <li>先在 Netlify 部署 Twikoo 后端，并配置 <code>MONGODB_URI</code>。</li>
+        <li>部署成功后，拿到评论服务地址，例如 ${serviceExample}。</li>
+        <li>把该地址填回 <code>site.config.json</code> 的 <code>comments.envId</code>，然后重新构建站点。</li>
+      </ol>
+      ${
+        setupHref
+          ? `<p class="comments-placeholder-action"><a href="${setupHref}">查看站内接入说明</a></p>`
+          : ""
+      }
+    `;
+  }
+
+  return `
+    <p>Twikoo 评论区已预留，但当前还没有填写可用的服务地址或环境 ID。</p>
+  `;
+}
+
 function getLiveBookConfig() {
   return state.payload.site.liveBook || {};
 }
@@ -6588,8 +6631,11 @@ function renderCommentsPlaceholder(note, body) {
 function describeTwikooError(error) {
   const raw = String(error?.stack || error?.message || error || "").trim();
   const escapedRaw = escapeHtml(raw || "未知错误");
+  const comments = getCommentsConfig();
+  const envId = comments.envId || "";
+  const serviceUrlMode = isTwikooServiceUrl(envId);
 
-  if (/ACCESS_TOKEN_DISABLED|匿名登录/.test(raw)) {
+  if (/ACCESS_TOKEN_DISABLED|匿名登录/.test(raw) && !serviceUrlMode) {
     return `
       <strong>Twikoo 已加载，但 CloudBase 匿名登录没有开通。</strong>
       <br />
@@ -6598,6 +6644,18 @@ function describeTwikooError(error) {
       请前往腾讯云云开发控制台，为环境 <code>${escapeHtml(getCommentsConfig().envId || "")}</code> 开启匿名登录。
       <br />
       常见位置：云开发控制台 &gt; 身份认证 / 登录方式 &gt; 匿名登录。
+      <br />
+      原始错误：<code>${escapedRaw}</code>
+    `;
+  }
+
+  if (serviceUrlMode && /network request error|failed to fetch|fetch failed|ERR_NAME_NOT_RESOLVED|404|502|503/i.test(raw)) {
+    return `
+      <strong>Twikoo 已切到 URL 型服务地址，但评论服务当前没有成功连通。</strong>
+      <br />
+      请检查 <code>${escapeHtml(envId)}</code> 是否是实际可访问的 Twikoo 服务地址，并确认路径末尾包含 <code>/.netlify/functions/twikoo</code>。
+      <br />
+      同时检查 Netlify 部署是否成功、环境变量 <code>MONGODB_URI</code> 是否已配置。
       <br />
       原始错误：<code>${escapedRaw}</code>
     `;
@@ -6616,7 +6674,11 @@ function describeTwikooError(error) {
   return `
     <strong>Twikoo 初始化失败。</strong>
     <br />
-    请检查 CloudBase 环境、envId、匿名登录与评论脚本地址是否配置完整。
+    请检查 ${
+      serviceUrlMode
+        ? "Twikoo 服务地址、Netlify 函数部署状态与评论脚本地址"
+        : "CloudBase 环境、envId、匿名登录与评论脚本地址"
+    } 是否配置完整。
     <br />
     原始错误：<code>${escapedRaw}</code>
   `;
@@ -6656,13 +6718,18 @@ async function mountTwikoo(item, comments) {
 
   dom.commentsMount.innerHTML = "";
 
-  await window.twikoo.init({
+  const options = {
     el: "#comments-mount",
     envId: comments.envId,
-    region: comments.region || undefined,
     lang: comments.lang || "zh-CN",
     path: getCommentPath(item),
-  });
+  };
+
+  if (comments.region && !isTwikooServiceUrl(comments.envId)) {
+    options.region = comments.region;
+  }
+
+  await window.twikoo.init(options);
 }
 
 async function renderComments(item) {
@@ -6679,8 +6746,10 @@ async function renderComments(item) {
 
   if (!comments.envId) {
     renderCommentsPlaceholder(
-      "本站已切换为 Twikoo。只要创建腾讯云云开发环境并填入 envId，就能启用大陆可访问的游客评论。",
-      "Twikoo 已预留，但还没有填写腾讯云 CloudBase 的 envId。",
+      comments.deploymentTarget === "netlify"
+        ? "评论区已切换到 Twikoo Netlify 方案，当前在等待评论服务地址。"
+        : "Twikoo 已预留，但还没有填写评论服务地址。",
+      buildCommentsSetupPlaceholder(comments),
     );
     return;
   }

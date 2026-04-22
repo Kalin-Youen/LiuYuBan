@@ -201,6 +201,26 @@ http://localhost:4173
 - `docs/assets/app.js`
 - `docs/assets/styles.css`
 
+### Twikoo 评论后端（Netlify）
+
+当前评论系统已经从 CloudBase 免费套餐限制中退出，改走 `GitHub Pages 前台 + Netlify Twikoo 后端 + MongoDB Atlas` 的组合。
+
+真正需要回填到站点里的值只有一个：
+
+```text
+comments.envId = https://你的-netlify-站点.netlify.app/.netlify/functions/twikoo
+```
+
+注意：
+
+1. 这里的 `envId` 现在是 URL，不再是腾讯云环境 ID。
+2. 如果使用 Netlify 方案，`comments.region` 留空即可。
+3. 改完 `site.config.json` 后，要重新执行 `python scripts/build_site.py` 再发布前台。
+
+更完整的站内说明见：
+
+- `研究文稿/07_书稿/AI协作卷/第11章_把Twikoo评论迁到Netlify_为活书准备可持续反馈入口.md`
+
 ## 适合人读，也适合机器读
 
 这个 `README.md` 的目的不是只做仓库门面，而是充当一个稳定入口：

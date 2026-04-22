@@ -10,10 +10,13 @@
   "customDomain": "",
   "comments": {
     "provider": "twikoo",
-    "envId": "liuyuban-d5gy8au9329e4f7d0",
-    "region": "ap-shanghai",
+    "envId": "",
+    "region": "",
     "lang": "zh-CN",
-    "scriptUrl": "./assets/vendor/twikoo.all.min.js"
+    "scriptUrl": "./assets/vendor/twikoo.all.min.js",
+    "deploymentTarget": "netlify",
+    "serviceUrlExample": "https://your-site.netlify.app/.netlify/functions/twikoo",
+    "setupSourcePath": "研究文稿/07_书稿/AI协作卷/第11章_把Twikoo评论迁到Netlify_为活书准备可持续反馈入口.md"
   },
   "liveBook": {
     "title": "活书计划",

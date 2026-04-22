@@ -1987,6 +1987,24 @@ input {
   background: rgba(255, 255, 255, 0.38);
 }
 
+.comments-placeholder-steps {
+  margin: 12px 0 0;
+  padding-left: 1.2rem;
+}
+
+.comments-placeholder-steps li + li {
+  margin-top: 0.35rem;
+}
+
+.comments-placeholder-action {
+  margin-top: 14px;
+}
+
+.comments-placeholder-action a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .doc-pagination {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
