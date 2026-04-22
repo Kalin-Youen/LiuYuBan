@@ -680,6 +680,7 @@ def build_payload(config: dict) -> dict:
             "siteUrl": config["siteUrl"],
             "customDomain": config["customDomain"],
             "comments": config.get("comments", {}),
+            "liveBook": config.get("liveBook", {}),
             "heroTitle": config["heroTitle"],
             "heroText": config["heroText"],
         },

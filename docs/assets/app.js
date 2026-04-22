@@ -1034,6 +1034,7 @@ const state = {
   mobileFontPanelOpen: false,
   currentPrevId: null,
   currentNextId: null,
+  commentCopyTimer: null,
   preferences: loadPreferences(),
 };
 
@@ -1058,6 +1059,15 @@ const dom = {
   heroText: document.getElementById("hero-text"),
   positioningStatement: document.getElementById("positioning-statement"),
   positioningSupport: document.getElementById("positioning-support"),
+  liveBookSection: document.getElementById("live-book-section"),
+  liveBookTitle: document.getElementById("live-book-title"),
+  liveBookSummary: document.getElementById("live-book-summary"),
+  liveBookCadence: document.getElementById("live-book-cadence"),
+  liveBookStatus: document.getElementById("live-book-status"),
+  liveBookEntryLink: document.getElementById("live-book-entry-link"),
+  liveBookOpenCatalog: document.getElementById("live-book-open-catalog"),
+  liveBookWorkflow: document.getElementById("live-book-workflow"),
+  liveBookHomeCards: document.getElementById("live-book-home-cards"),
   starterLinks: document.getElementById("starter-links"),
   lightSeriesLinks: document.getElementById("light-series-links"),
   systemLinks: document.getElementById("system-links"),
@@ -1111,6 +1121,9 @@ const dom = {
   readerProgressBar: document.getElementById("reader-progress-bar"),
   readerPaper: document.getElementById("reader-paper"),
   commentsNote: document.getElementById("comments-note"),
+  liveBookCommentPanel: document.getElementById("live-book-comment-panel"),
+  commentTemplateGrid: document.getElementById("comment-template-grid"),
+  commentCopyStatus: document.getElementById("comment-copy-status"),
   commentsMount: document.getElementById("comments-mount"),
 };
 
@@ -1170,6 +1183,15 @@ function formatDate(isoString) {
     month: "2-digit",
     day: "2-digit",
   }).format(date);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function relativeTime(isoString) {
@@ -1872,6 +1894,31 @@ function getCommentsConfig() {
   return state.payload.site.comments || {};
 }
 
+function getLiveBookConfig() {
+  return state.payload.site.liveBook || {};
+}
+
+function getLiveBookEntryItem() {
+  const liveBook = getLiveBookConfig();
+  if (!liveBook.entrySourcePath) return null;
+  return findItemBySourcePath(liveBook.entrySourcePath);
+}
+
+function getLiveBookWorkflow() {
+  const liveBook = getLiveBookConfig();
+  return Array.isArray(liveBook.workflow) ? liveBook.workflow : [];
+}
+
+function getLiveBookHomeCards() {
+  const liveBook = getLiveBookConfig();
+  return Array.isArray(liveBook.homeCards) ? liveBook.homeCards : [];
+}
+
+function getLiveBookTemplates() {
+  const liveBook = getLiveBookConfig();
+  return Array.isArray(liveBook.templates) ? liveBook.templates : [];
+}
+
 function getPrimaryStartItem() {
   return (
     getSectionEntry("plain-book") ||
@@ -2089,6 +2136,68 @@ function buildFeaturedVolume() {
     `;
     dom.featuredVolumeLinks.appendChild(link);
   });
+}
+
+function buildLiveBookHomeSection() {
+  if (!dom.liveBookSection) return;
+
+  const liveBook = getLiveBookConfig();
+  const workflow = getLiveBookWorkflow();
+  const homeCards = getLiveBookHomeCards();
+  const entryItem = getLiveBookEntryItem();
+  const hasContent =
+    Boolean(liveBook.title || liveBook.summary || liveBook.cadence || liveBook.statusNote) ||
+    workflow.length > 0 ||
+    homeCards.length > 0;
+
+  dom.liveBookSection.hidden = !hasContent;
+  if (!hasContent) return;
+
+  dom.liveBookTitle.textContent = liveBook.title || "活书计划";
+  dom.liveBookSummary.textContent =
+    liveBook.summary || "把评论、整理与回写接成循环，让书稿在读者反馈中持续更新。";
+  dom.liveBookCadence.textContent =
+    liveBook.cadence || "保持定期整理与重点章节优先回写的双轨节奏。";
+  dom.liveBookStatus.textContent =
+    liveBook.statusNote || "当前正在把读者评论、AI 归并与版本修改继续接通。";
+
+  if (entryItem) {
+    dom.liveBookEntryLink.href = `#doc/${encodeURIComponent(entryItem.id)}`;
+    dom.liveBookEntryLink.textContent = `查看：${getDisplayTitle(entryItem)}`;
+    dom.liveBookEntryLink.hidden = false;
+  } else {
+    dom.liveBookEntryLink.hidden = true;
+  }
+
+  dom.liveBookWorkflow.innerHTML = workflow.length
+    ? workflow
+      .map((step, index) => `
+        <article class="live-book-step">
+          <span class="live-book-step-index">${String(index + 1).padStart(2, "0")}</span>
+          <p class="eyebrow">Step ${String(index + 1).padStart(2, "0")}</p>
+          <h4>${escapeHtml(step.title || `步骤 ${index + 1}`)}</h4>
+          <p>${escapeHtml(step.copy || "")}</p>
+        </article>
+      `)
+      .join("")
+    : `
+      <article class="live-book-step">
+        <span class="live-book-step-index">01</span>
+        <p class="eyebrow">Step 01</p>
+        <h4>活书流程待补</h4>
+        <p>先把评论入口稳定下来，再把归并、回写与版本更新继续接进去。</p>
+      </article>
+    `;
+
+  dom.liveBookHomeCards.innerHTML = homeCards
+    .map((card) => `
+      <article class="live-book-home-card">
+        <p class="eyebrow">${escapeHtml(card.eyebrow || "Value")}</p>
+        <h4>${escapeHtml(card.title || "")}</h4>
+        <p>${escapeHtml(card.copy || "")}</p>
+      </article>
+    `)
+    .join("");
 }
 
 function buildSystemLinks() {
@@ -6352,6 +6461,117 @@ function updateChapterButtons(prev, next) {
   dom.mobileNextButton.disabled = !next;
 }
 
+function setCommentCopyStatus(message) {
+  if (!dom.commentCopyStatus) return;
+
+  dom.commentCopyStatus.textContent = message || "";
+
+  if (state.commentCopyTimer) {
+    window.clearTimeout(state.commentCopyTimer);
+    state.commentCopyTimer = null;
+  }
+
+  if (message) {
+    state.commentCopyTimer = window.setTimeout(() => {
+      dom.commentCopyStatus.textContent = "";
+      state.commentCopyTimer = null;
+    }, 3200);
+  }
+}
+
+function resolveLiveBookTemplateBody(template, item) {
+  const replacements = {
+    "{{chapterTitle}}": getDisplayTitle(item),
+    "{{commentPath}}": getCommentPath(item),
+    "{{sourcePath}}": item?.sourcePath || "",
+  };
+
+  return Object.entries(replacements).reduce((body, [token, value]) => {
+    return body.split(token).join(value);
+  }, template?.body || "");
+}
+
+function renderLiveBookCommentPanel(item) {
+  if (!dom.liveBookCommentPanel || !dom.commentTemplateGrid) return;
+
+  const liveBook = getLiveBookConfig();
+  const templates = getLiveBookTemplates();
+  const workflow = getLiveBookWorkflow();
+  const entryItem = getLiveBookEntryItem();
+  const chapterTitle = getDisplayTitle(item);
+  const threadLabel = `章节：${chapterTitle}\n线程：${getCommentPath(item)}`;
+  const summary =
+    liveBook.summary ||
+    "章节评论不会只停留在留言区，而会进入后续的整理、回写与版本更新流程。";
+  const badges = workflow.length
+    ? workflow.map((step) => step.title).filter(Boolean).slice(0, 4)
+    : ["读者评论入站", "AI 归并整理", "修改模块回写"];
+
+  dom.liveBookCommentPanel.innerHTML = `
+    <div class="live-book-comment-head">
+      <div>
+        <p class="eyebrow">Living Book Loop</p>
+        <h4>这条评论会进入活书回写链路</h4>
+        <p>${escapeHtml(summary)}</p>
+      </div>
+      <div class="live-book-inline-actions">
+        ${entryItem
+          ? `<a class="pill-button pill-button-ghost" href="#doc/${encodeURIComponent(entryItem.id)}">查看活书说明</a>`
+          : ""}
+        <button class="pill-button" type="button" data-copy-comment-path="true">复制当前评论线程</button>
+      </div>
+    </div>
+    <div class="live-book-thread">${escapeHtml(threadLabel)}</div>
+    <div class="live-book-badges">
+      ${badges.map((label) => `<span class="live-book-badge">${escapeHtml(label)}</span>`).join("")}
+    </div>
+  `;
+
+  dom.commentTemplateGrid.innerHTML = templates.length
+    ? templates
+      .map((template, index) => {
+        const body = resolveLiveBookTemplateBody(template, item);
+        return `
+          <article class="comment-template-card">
+            <p class="eyebrow">Structured Comment</p>
+            <h4>${escapeHtml(template.title || `模板 ${index + 1}`)}</h4>
+            <p>${escapeHtml(template.description || "")}</p>
+            <pre class="comment-template-preview">${escapeHtml(body)}</pre>
+            <div class="comment-template-actions">
+              <button class="pill-button" type="button" data-template-index="${index}">复制模板</button>
+            </div>
+          </article>
+        `;
+      })
+      .join("")
+    : `<div class="comments-placeholder">结构化评论模板正在整理中。</div>`;
+
+  setCommentCopyStatus("");
+
+  dom.liveBookCommentPanel
+    .querySelector('[data-copy-comment-path="true"]')
+    ?.addEventListener("click", async () => {
+      const copied = await copyTextToClipboard(getCommentPath(item));
+      setCommentCopyStatus(
+        copied ? "已复制当前章节的评论线程路径。" : "当前环境不支持自动复制，请手动复制线程路径。",
+      );
+    });
+
+  dom.commentTemplateGrid.querySelectorAll("[data-template-index]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const index = Number(button.dataset.templateIndex);
+      const template = templates[index];
+      if (!template) return;
+      const copied = await copyTextToClipboard(resolveLiveBookTemplateBody(template, item));
+      setCommentCopyStatus(
+        copied
+          ? `已复制“${template.title || "评论模板"}”。`
+          : "当前环境不支持自动复制，请手动复制模板内容。",
+      );
+    });
+  });
+}
+
 function getCommentPath(item) {
   return `/doc/${item.id}`;
 }
@@ -6410,6 +6630,7 @@ async function mountTwikoo(item, comments) {
 
 async function renderComments(item) {
   const comments = getCommentsConfig();
+  const liveBook = getLiveBookConfig();
 
   if (comments.provider !== "twikoo") {
     renderCommentsPlaceholder(
@@ -6428,7 +6649,9 @@ async function renderComments(item) {
   }
 
   dom.commentsNote.textContent =
-    "评论区已接入 Twikoo。当前每个章节会使用独立评论线程，适合按章节收集阅读反馈、主线修订意见与结构调整建议。";
+    liveBook.title
+      ? `评论区已接入 Twikoo。当前每个章节会使用独立评论线程，读者反馈会优先进入“${liveBook.title}”的整理与回写流程。`
+      : "评论区已接入 Twikoo。当前每个章节会使用独立评论线程，适合按章节收集阅读反馈、主线修订意见与结构调整建议。";
 
   try {
     await mountTwikoo(item, comments);
@@ -6534,6 +6757,7 @@ async function renderDoc(id) {
   dom.docUpdated.textContent = relativeTime(item.updatedAt);
   dom.docSource.textContent = `源文件：${item.sourcePath}`;
   dom.docContent.innerHTML = getRenderedDocHtml(item);
+  renderLiveBookCommentPanel(item);
   await renderComments(item);
 
   renderToc(item);
@@ -6634,6 +6858,7 @@ function bindEvents() {
     if (item) setHashForDoc(item.id);
   });
   dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
+  dom.liveBookOpenCatalog?.addEventListener("click", () => setDrawerOpen(true));
 
   dom.mobileHomeButton.addEventListener("click", () => {
     closePanels();
@@ -6712,6 +6937,7 @@ async function init() {
   updateShell();
   buildStarterLinks();
   buildFeaturedVolume();
+  buildLiveBookHomeSection();
   buildGraphPreview();
   applyPreferences();
   buildLightSeriesLinks();
