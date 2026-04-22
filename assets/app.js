@@ -13,11 +13,13 @@ const THEME_LABELS = {
   sepia: "暖棕",
   night: "夜读",
 };
-const HOME_SECTION_ORDER = ["light-series", "plain-book", "overview", "book", "terms", "ai-book"];
-const PRIMARY_VOLUME_SECTION_IDS = Object.freeze(["plain-book", "book", "ai-book"]);
+const HOME_SECTION_ORDER = ["light-series", "plain-book", "overview", "book", "extension-book", "terms", "ai-book"];
+const PRIMARY_VOLUME_SECTION_IDS = Object.freeze(["plain-book", "book", "extension-book", "ai-book"]);
 const VOLUME_ENTRY_SOURCE_PATHS = Object.freeze({
   "plain-book": "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
   book: "研究文稿/07_书稿/00_卷首_怎么使用这本研究卷.md",
+  "extension-book":
+    "研究文稿/07_书稿/拓展卷/00_卷首_为什么要有拓展卷_让方法在阅读中直接变成能力.md",
   "ai-book": "研究文稿/07_书稿/AI协作卷/00_卷首_AI不是结论机器而是受主线约束的协作系统.md",
 });
 const STARTER_GUIDE = Object.freeze([
@@ -109,6 +111,12 @@ const SECTION_PRESENTATION = {
     hook: "压定义、补桥梁、留接口，让主线真正站住。",
     description: "当你已经愿意继续追问这套方法哪里站住、哪里还没站住时，就从研究卷进入。",
   },
+  "extension-book": {
+    badge: "第三卷",
+    eyebrow: "拓展卷",
+    hook: "把方法从能懂推进到能练、能用、能迁移。",
+    description: "当你想把方法直接练进思维、学习和行动里，而不只停在理解层时，就从拓展卷进入。",
+  },
   overview: {
     badge: "总述入口",
     eyebrow: "总览与校准",
@@ -122,12 +130,18 @@ const SECTION_PRESENTATION = {
     description: "当你被术语、边界、强命题或跨层接口卡住时，从这里翻最省时间。",
   },
   "ai-book": {
-    badge: "第三卷",
+    badge: "第四卷",
     eyebrow: "AI 协作卷",
     hook: "把扩写变成协作，把噪声变成残差，把修改变成回写。",
     description: "它不是第一次进入时的首读入口，而是让模型协作守主线、控噪声和做版本治理的卷册。",
   },
 };
+const DEFAULT_COMMENT_QUICK_ASK_PROVIDERS = Object.freeze([
+  { id: "deepseek", label: "DeepSeek", url: "https://chat.deepseek.com/" },
+  { id: "kimi", label: "Kimi", url: "https://www.kimi.com/" },
+  { id: "doubao", label: "豆包", url: "https://www.doubao.com/chat/" },
+  { id: "chatgpt", label: "ChatGPT", url: "https://chatgpt.com/" },
+]);
 const GRAPH_STATUS_LABELS = {
   lit: "已展开",
   mapped: "已标注",
@@ -197,9 +211,9 @@ const LAB_PAGES = {
       "从差结构条件出发，推演什么时候只会形成事件，什么时候能沉淀为结构、稳态甚至规则。",
   },
   prompt: {
-    title: "AI 提示词页",
+    title: "AI 导读台",
     intro:
-      "把差结构学习法压成可直接投喂给 AI 的提示词生成器，让新读者先用 AI 跑起来，再回头补理论与案例。",
+      "先用提示词把问题收紧，再让站内导读助手带着章节入口返回，让读者能直接继续读下去。",
   },
 };
 const LAB_INFER_DOMAINS = ["fluid", "disk", "galaxy", "ai"];
@@ -450,12 +464,12 @@ const LAB_PAGE_ARCHITECTURE = {
     hookTitle: "推演页后面能继续挂什么",
   },
   prompt: {
-    title: "把方法压成一段能直接拿去问 AI 的话，再看它怎样反过来帮人学习",
+    title: "把方法压成可直接提问的入口，再让回答回到站内章节",
     copy:
-      "提示词页负责把差结构学习法压成新读者可直接投喂 AI 的工作界面。重点不是把理论喊成大词，而是让 AI 先学会：找差异、收边界、看反馈、压结构、留验证。",
+      "这一页不再只负责生成提示词，也负责把站内实时问答接起来。重点不是让 AI 脱离文本自由发挥，而是先在站内找相关章节，再按差异、边界、反馈、结构和验证的顺序组织回答。",
     focus:
-      "当前这页更偏向理论层、协作层与接口层：先把方法变成一句能用的话，再把返回结果继续接回学习、检验和推演。",
-    hookTitle: "提示词页后面能继续挂什么",
+      "当前这页更偏向理论层、协作层与接口层：前半部分把方法压成一句能问的话，后半部分则把问答重新接回章节、图谱与后续阅读线。",
+    hookTitle: "AI 导读台后面能继续挂什么",
   },
 };
 const LAB_EXTENSION_LAYERS = {
@@ -1029,12 +1043,20 @@ const state = {
   labParams: {},
   labActionTimer: null,
   labPlaygroundCleanups: [],
+  assistantMessages: [],
+  assistantPending: false,
+  assistantAbortController: null,
+  assistantStatus: {
+    message: "",
+    tone: "info",
+  },
   drawerOpen: false,
   tocOpen: false,
   mobileFontPanelOpen: false,
   currentPrevId: null,
   currentNextId: null,
   commentCopyTimer: null,
+  commentFocusTimer: null,
   preferences: loadPreferences(),
 };
 
@@ -1122,7 +1144,6 @@ const dom = {
   readerPaper: document.getElementById("reader-paper"),
   commentsNote: document.getElementById("comments-note"),
   liveBookCommentPanel: document.getElementById("live-book-comment-panel"),
-  commentTemplateGrid: document.getElementById("comment-template-grid"),
   commentCopyStatus: document.getElementById("comment-copy-status"),
   commentsMount: document.getElementById("comments-mount"),
 };
@@ -1139,6 +1160,7 @@ function loadPreferences() {
     fontSize: getDefaultFontSize(),
     hasCustomFontSize: false,
   };
+
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
     const parsedFontSize = Number(saved.fontSize);
@@ -1258,7 +1280,7 @@ function getHashRoute() {
 
   if (!hash) return { type: "home" };
   if (hash.startsWith("doc/")) {
-    return { type: "doc", id: hash.slice(4) };
+    return { type: "doc", id: hash.slice(4), params };
   }
   if (hash === "graph") {
     return { type: "graph", nodeId: null };
@@ -1275,8 +1297,49 @@ function getHashRoute() {
   return { type: "home" };
 }
 
-function setHashForDoc(id) {
-  window.location.hash = `doc/${encodeURIComponent(id)}`;
+function sanitizeDocRouteParams(params = null) {
+  if (!params) return null;
+
+  const resolved = {};
+
+  if (typeof params.focus === "string") {
+    const focus = params.focus.trim().slice(0, 120);
+    if (focus) {
+      resolved.focus = focus;
+    }
+  }
+
+  if (typeof params.anchor === "string") {
+    const anchor = params.anchor.trim().slice(0, 160);
+    if (anchor) {
+      resolved.anchor = anchor;
+    }
+  }
+
+  return Object.keys(resolved).length ? resolved : null;
+}
+
+function buildDocHash(id, params = null) {
+  const baseHash = `doc/${encodeURIComponent(id)}`;
+  const resolved = sanitizeDocRouteParams(params);
+  if (!resolved) return baseHash;
+
+  const search = new URLSearchParams();
+  Object.entries(resolved).forEach(([key, value]) => {
+    search.set(key, value);
+  });
+
+  const query = search.toString();
+  return query ? `${baseHash}?${query}` : baseHash;
+}
+
+function setHashForDoc(id, params = null, { replace = false } = {}) {
+  const hash = buildDocHash(id, params);
+  if (replace) {
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${hash}`);
+    return;
+  }
+  window.location.hash = hash;
 }
 
 function buildGraphHash(nodeId = null) {
@@ -1832,6 +1895,53 @@ function getRenderedDocHtml(item) {
   return wrapper.innerHTML;
 }
 
+function normalizeDocSearchText(text) {
+  return String(text || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function findDocFocusTarget(focus) {
+  const normalizedFocus = normalizeDocSearchText(focus);
+  if (!normalizedFocus) return null;
+
+  const candidates = dom.docContent.querySelectorAll("h2, h3, h4, h5, h6, p, li, blockquote, pre, table, figcaption");
+  return Array.from(candidates).find((element) =>
+    normalizeDocSearchText(element.textContent).includes(normalizedFocus),
+  ) || null;
+}
+
+function findDocAnchorTarget(anchor) {
+  if (!anchor) return null;
+  const target = document.getElementById(anchor);
+  if (!target || !dom.docContent.contains(target)) return null;
+  return target;
+}
+
+function scrollDocTargetIntoView(target) {
+  if (!target) return false;
+
+  const offset = window.innerWidth <= MOBILE_BREAKPOINT ? 96 : 118;
+  const top = window.scrollY + target.getBoundingClientRect().top - offset;
+  window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+  return true;
+}
+
+function applyDocRouteFocus(params = {}) {
+  const resolved = sanitizeDocRouteParams(params);
+  const target =
+    findDocFocusTarget(resolved?.focus) ||
+    findDocAnchorTarget(resolved?.anchor);
+
+  if (!target) {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    return;
+  }
+
+  scrollDocTargetIntoView(target);
+}
+
 function normalizeSourcePath(sourcePath) {
   return (sourcePath || "").replace(/\\/g, "/");
 }
@@ -1894,8 +2004,83 @@ function getCommentsConfig() {
   return state.payload.site.comments || {};
 }
 
+function getCommentQuickAskConfig() {
+  return getCommentsConfig().quickAsk || {};
+}
+
+function getCommentQuickAskProviders() {
+  const quickAsk = getCommentQuickAskConfig();
+  const providers = Array.isArray(quickAsk.providers)
+    ? quickAsk.providers
+      .map((provider) => ({
+        id: String(provider?.id || "").trim(),
+        label: String(provider?.label || "").trim(),
+        url: String(provider?.url || "").trim(),
+      }))
+      .filter((provider) => provider.id && provider.label && provider.url)
+    : [];
+
+  return providers.length ? providers : DEFAULT_COMMENT_QUICK_ASK_PROVIDERS;
+}
+
+function getDefaultCommentQuickAskProvider() {
+  const quickAsk = getCommentQuickAskConfig();
+  const providers = getCommentQuickAskProviders();
+  const preferredId = String(quickAsk.defaultProvider || "").trim();
+
+  return (
+    providers.find((provider) => provider.id === preferredId) ||
+    providers[0] ||
+    DEFAULT_COMMENT_QUICK_ASK_PROVIDERS[0]
+  );
+}
+
+function normalizeTwikooFieldConfig(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return null;
+}
+
 function isTwikooServiceUrl(envId) {
   return /^https?:\/\//i.test(String(envId || "").trim());
+}
+
+function isCommentFieldTarget(target) {
+  return (
+    target instanceof HTMLElement &&
+    /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) &&
+    target.closest("#comments-mount")
+  );
+}
+
+function setCommentFocusMode(active) {
+  document.documentElement.classList.toggle("is-comment-focus", active);
+  document.body.classList.toggle("is-comment-focus", active);
+}
+
+function clearCommentFocusTimer() {
+  if (!state.commentFocusTimer) return;
+  window.clearTimeout(state.commentFocusTimer);
+  state.commentFocusTimer = null;
+}
+
+function releaseCommentFocusModeSoon() {
+  clearCommentFocusTimer();
+  state.commentFocusTimer = window.setTimeout(() => {
+    if (!isCommentFieldTarget(document.activeElement)) {
+      setCommentFocusMode(false);
+    }
+    state.commentFocusTimer = null;
+  }, 80);
 }
 
 function getCommentsSetupItem() {
@@ -2459,8 +2644,14 @@ function buildNav() {
       }
 
       button.addEventListener("click", () => {
+        const focusParams = keyword ? { focus: keyword } : null;
+        const nextHash = buildDocHash(item.id, focusParams);
         closePanels();
-        setHashForDoc(item.id);
+        if (window.location.hash === `#${nextHash}`) {
+          renderDoc(item.id, focusParams).catch(console.error);
+          return;
+        }
+        setHashForDoc(item.id, focusParams);
       });
 
       list.appendChild(button);
@@ -2726,6 +2917,12 @@ function registerLabPlaygroundCleanup(cleanup) {
 }
 
 function cleanupLabPlaygrounds() {
+  if (state.assistantPending) {
+    state.assistantAbortController?.abort();
+    state.assistantPending = false;
+    state.assistantAbortController = null;
+  }
+
   state.labPlaygroundCleanups.forEach((cleanup) => {
     try {
       cleanup();
@@ -4996,9 +5193,654 @@ function buildPromptLiteText(values) {
   ].join("\n");
 }
 
+function getAssistantConfig() {
+  return state.payload?.site?.assistant || {};
+}
+
+function getAssistantSetupItem() {
+  const assistant = getAssistantConfig();
+  if (!assistant.setupSourcePath) return null;
+  return findItemBySourcePath(assistant.setupSourcePath);
+}
+
+function getAssistantSetupHref() {
+  const item = getAssistantSetupItem();
+  return item ? `#doc/${encodeURIComponent(item.id)}` : "";
+}
+
+function getAssistantContextLimit() {
+  return clamp(Number(getAssistantConfig().contextDocs) || 4, 1, 6);
+}
+
+function getAssistantSnippetLength() {
+  return clamp(Number(getAssistantConfig().snippetLength) || 260, 120, 480);
+}
+
+function getAssistantHistoryLimit() {
+  return clamp(Number(getAssistantConfig().maxTurns) || 6, 2, 10);
+}
+
+function getAssistantSuggestions() {
+  const suggestions = getAssistantConfig().suggestions;
+  return Array.isArray(suggestions)
+    ? suggestions.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 6)
+    : [];
+}
+
+function normalizeAssistantText(value, maxLength = 240) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+function extractAssistantKeywords(question) {
+  const rawSegments = String(question ?? "")
+    .toLowerCase()
+    .match(/[\u4e00-\u9fff]+|[a-z0-9][a-z0-9-]+/gi) || [];
+  const keywords = [];
+  const seen = new Set();
+  const pushKeyword = (value) => {
+    const normalized = String(value || "").trim();
+    if (!normalized) return;
+    const minLength = /^[\u4e00-\u9fff]+$/.test(normalized) ? 2 : 3;
+    if (normalized.length < minLength || seen.has(normalized)) return;
+    seen.add(normalized);
+    keywords.push(normalized);
+  };
+
+  for (const segment of rawSegments) {
+    if (keywords.length >= 12) break;
+    const normalized = segment.trim();
+    if (!normalized) continue;
+
+    if (/^[\u4e00-\u9fff]+$/.test(normalized)) {
+      if (normalized.length <= 4) {
+        pushKeyword(normalized);
+        continue;
+      }
+
+      pushKeyword(normalized.slice(0, 4));
+      pushKeyword(normalized.slice(-4));
+
+      for (let size = 4; size >= 2; size -= 1) {
+        const step = size > 2 ? size - 1 : 1;
+        for (let index = 0; index <= normalized.length - size; index += step) {
+          pushKeyword(normalized.slice(index, index + size));
+          if (keywords.length >= 12) break;
+        }
+        if (keywords.length >= 12) break;
+      }
+      continue;
+    }
+
+    pushKeyword(normalized);
+  }
+
+  return keywords.slice(0, 12);
+}
+
+function buildAssistantSnippet(text, keywords, maxLength = getAssistantSnippetLength()) {
+  const normalizedText = normalizeAssistantText(text, 4000);
+  if (!normalizedText) return "";
+
+  const lowered = normalizedText.toLowerCase();
+  const hit = [...keywords]
+    .sort((left, right) => right.length - left.length)
+    .find((keyword) => lowered.includes(keyword.toLowerCase()));
+
+  if (!hit) {
+    return normalizedText.length > maxLength
+      ? `${normalizedText.slice(0, maxLength).trim()}…`
+      : normalizedText;
+  }
+
+  const index = lowered.indexOf(hit.toLowerCase());
+  const radius = Math.max(48, Math.floor((maxLength - hit.length) / 2));
+  const start = Math.max(0, index - radius);
+  const end = Math.min(normalizedText.length, index + hit.length + radius);
+  const prefix = start > 0 ? "…" : "";
+  const suffix = end < normalizedText.length ? "…" : "";
+  return `${prefix}${normalizedText.slice(start, end).trim()}${suffix}`;
+}
+
+function scoreAssistantItem(item, keywords) {
+  if (!item || !keywords.length) return 0;
+
+  const titleText = `${getDisplayTitle(item)} ${item.title || ""}`.toLowerCase();
+  const headingText = (item.headings || []).map((heading) => heading.label).join(" ").toLowerCase();
+  const metaText = `${item.sectionTitle || ""} ${item.excerpt || ""} ${headingText}`.toLowerCase();
+  const bodyText = getItemSearchText(item).toLowerCase();
+  let score = 0;
+
+  keywords.forEach((keyword, index) => {
+    const weight = Math.min(keyword.length, 8);
+    if (titleText.includes(keyword)) score += 120 + weight * 8;
+    if (metaText.includes(keyword)) score += 52 + weight * 4;
+    if (bodyText.includes(keyword)) score += 20 + weight * 2;
+    if (index === 0 && bodyText.includes(keyword)) score += 10;
+  });
+
+  if (item.sectionId === "plain-book") score += 14;
+  if (item.sectionId === "book") score += 10;
+  if (item.sectionId === "overview") score += 6;
+
+  return score;
+}
+
+function buildAssistantFallbackContext() {
+  return [
+    getSectionEntry("plain-book"),
+    getSectionEntry("overview"),
+    getSectionEntry("ai-book"),
+  ]
+    .filter(Boolean)
+    .slice(0, getAssistantContextLimit())
+    .map((item) => ({
+      id: item.id,
+      title: getDisplayTitle(item),
+      sectionTitle: item.sectionTitle,
+      excerpt: item.excerpt || buildAssistantSnippet(getItemSearchText(item), [], getAssistantSnippetLength()),
+      url: `#doc/${encodeURIComponent(item.id)}`,
+      sourcePath: item.sourcePath,
+    }));
+}
+
+function buildAssistantContext(question) {
+  const keywords = extractAssistantKeywords(question);
+  const snippetLength = getAssistantSnippetLength();
+  const limit = getAssistantContextLimit();
+
+  const matches = state.payload.items
+    .map((item) => {
+      const score = scoreAssistantItem(item, keywords);
+      if (score <= 0) return null;
+      const bodyText = getItemSearchText(item);
+      return {
+        item,
+        score,
+        excerpt: buildAssistantSnippet(bodyText, keywords, snippetLength),
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => (
+      right.score - left.score
+      || left.item.order - right.item.order
+      || left.item.title.localeCompare(right.item.title, "zh-CN")
+    ))
+    .slice(0, limit)
+    .map(({ item, excerpt }) => ({
+      id: item.id,
+      title: getDisplayTitle(item),
+      sectionTitle: item.sectionTitle,
+      excerpt: excerpt || item.excerpt || "",
+      url: `#doc/${encodeURIComponent(item.id)}`,
+      sourcePath: item.sourcePath,
+    }));
+
+  return matches.length ? matches : buildAssistantFallbackContext();
+}
+
+function getAssistantConversationHistory() {
+  return state.assistantMessages
+    .filter((entry) => entry && (entry.role === "user" || entry.role === "assistant"))
+    .slice(-getAssistantHistoryLimit() * 2)
+    .map((entry) => ({
+      role: entry.role,
+      content: normalizeAssistantText(entry.content, entry.role === "user" ? 600 : 1800),
+    }))
+    .filter((entry) => entry.content);
+}
+
+function buildAssistantMessageMarkup(message) {
+  const isAssistant = message.role === "assistant";
+  const roleLabel = isAssistant ? "导读助手" : "你";
+  const roleMeta = isAssistant
+    ? message.pending ? "正在整理章节…" : "站内导读"
+    : "当前问题";
+  const content = message.content || (message.pending ? "正在读取相关章节…" : "这一轮暂时没有可显示内容。");
+  const sources = isAssistant && Array.isArray(message.sources) ? message.sources : [];
+
+  return `
+    <article
+      class="assistant-message is-${message.role}${message.pending ? " is-pending" : ""}"
+      data-assistant-message-id="${escapeHtml(message.id)}"
+    >
+      <div class="assistant-message-head">
+        <span class="assistant-message-role">${escapeHtml(roleLabel)}</span>
+        <span class="assistant-message-meta">${escapeHtml(roleMeta)}</span>
+      </div>
+      <div class="assistant-message-body">${escapeHtml(content)}</div>
+      ${sources.length ? `
+        <div class="assistant-source-grid">
+          ${sources.map((source) => `
+            <a class="assistant-source-card" href="${escapeHtml(source.url)}">
+              <small>${escapeHtml(source.sectionTitle || "站内章节")}</small>
+              <strong>${escapeHtml(source.title || "未命名章节")}</strong>
+              <p>${escapeHtml(source.excerpt || "点击跳到相关章节继续阅读。")}</p>
+            </a>
+          `).join("")}
+        </div>
+      ` : ""}
+    </article>
+  `;
+}
+
+function renderAssistantConversation() {
+  const container = dom.labContent.querySelector("#assistant-conversation");
+  if (!container) return;
+
+  const assistant = getAssistantConfig();
+  const messages = state.assistantMessages.length
+    ? state.assistantMessages
+    : [
+      {
+        id: "assistant-welcome",
+        role: "assistant",
+        content: assistant.greeting || "先问我一个概念该从哪里进入，我会把相关章节和阅读线一起带回来。",
+        sources: buildAssistantFallbackContext().slice(0, 2),
+      },
+    ];
+
+  container.innerHTML = messages.map((message) => buildAssistantMessageMarkup(message)).join("");
+  container.scrollTop = container.scrollHeight;
+}
+
+function renderAssistantStatus() {
+  const status = dom.labContent.querySelector("#assistant-status");
+  if (!status) return;
+
+  status.textContent = state.assistantStatus.message || "";
+  if (state.assistantStatus.message) {
+    status.dataset.tone = state.assistantStatus.tone || "info";
+  } else {
+    delete status.dataset.tone;
+  }
+}
+
+function setAssistantStatus(message, tone = "info") {
+  state.assistantStatus = {
+    message: message || "",
+    tone,
+  };
+  renderAssistantStatus();
+}
+
+function syncAssistantComposerState() {
+  const submitButton = dom.labContent.querySelector("#assistant-submit-button");
+  const stopButton = dom.labContent.querySelector("#assistant-stop-button");
+  const clearButton = dom.labContent.querySelector("#assistant-clear-button");
+  const textarea = dom.labContent.querySelector("#assistant-question");
+
+  if (submitButton) submitButton.disabled = state.assistantPending;
+  if (stopButton) stopButton.hidden = !state.assistantPending;
+  if (clearButton) clearButton.disabled = state.assistantPending || !state.assistantMessages.length;
+  if (textarea) textarea.disabled = false;
+}
+
+function updateAssistantMessageContent(messageId, content, { pending = false } = {}) {
+  const message = state.assistantMessages.find((entry) => entry.id === messageId);
+  if (!message) return;
+
+  message.content = content;
+  message.pending = pending;
+
+  const container = dom.labContent.querySelector("#assistant-conversation");
+  const item = container?.querySelector(`[data-assistant-message-id="${messageId}"]`);
+  if (!item) {
+    renderAssistantConversation();
+    return;
+  }
+
+  item.classList.toggle("is-pending", Boolean(pending));
+  const meta = item.querySelector(".assistant-message-meta");
+  if (meta && message.role === "assistant") {
+    meta.textContent = pending ? "正在整理章节…" : "站内导读";
+  }
+
+  const body = item.querySelector(".assistant-message-body");
+  if (body) {
+    body.textContent = content || (pending ? "正在读取相关章节…" : "这一轮暂时没有可显示内容。");
+  }
+
+  container.scrollTop = container.scrollHeight;
+}
+
+function extractAssistantResponseText(payload) {
+  if (!payload) return "";
+  if (typeof payload === "string") return payload;
+  if (typeof payload.response === "string") return payload.response;
+  if (typeof payload.output_text === "string") return payload.output_text;
+  if (typeof payload.result?.response === "string") return payload.result.response;
+
+  if (Array.isArray(payload.output)) {
+    return payload.output
+      .map((entry) => (
+        typeof entry === "string"
+          ? entry
+          : entry?.content?.map((part) => part.text || "").join("")
+      ))
+      .filter(Boolean)
+      .join("");
+  }
+
+  const choice = payload.choices?.[0];
+  if (choice?.delta?.content) {
+    return Array.isArray(choice.delta.content)
+      ? choice.delta.content.map((part) => part.text || "").join("")
+      : String(choice.delta.content);
+  }
+  if (choice?.message?.content) {
+    return Array.isArray(choice.message.content)
+      ? choice.message.content.map((part) => part.text || "").join("")
+      : String(choice.message.content);
+  }
+  if (typeof choice?.text === "string") return choice.text;
+
+  return "";
+}
+
+async function readAssistantResponse(response, onDelta) {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const payload = await response.json();
+    const text = extractAssistantResponseText(payload);
+    if (text) onDelta(text);
+    return;
+  }
+
+  if (contentType.includes("text/event-stream") && response.body) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    const flush = (chunk) => {
+      chunk
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.startsWith("data:"))
+        .forEach((line) => {
+          const payload = line.slice(5).trim();
+          if (!payload || payload === "[DONE]") return;
+          try {
+            const parsed = JSON.parse(payload);
+            const text = extractAssistantResponseText(parsed);
+            if (text) onDelta(text);
+          } catch {
+            onDelta(payload);
+          }
+        });
+    };
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const blocks = buffer.split("\n\n");
+      buffer = blocks.pop() || "";
+      blocks.forEach((block) => flush(block));
+    }
+
+    buffer += decoder.decode();
+    if (buffer.trim()) flush(buffer);
+    return;
+  }
+
+  const text = await response.text();
+  if (text) onDelta(text);
+}
+
+function buildAssistantPanelMarkup() {
+  const assistant = getAssistantConfig();
+  const hasEndpoint = Boolean(String(assistant.endpoint || "").trim());
+  const setupHref = getAssistantSetupHref();
+  const suggestions = getAssistantSuggestions();
+
+  return `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong assistant-chat-card">
+        <div class="assistant-panel-head">
+          <div>
+            <p class="eyebrow">Live Guide</p>
+            <h3>${escapeHtml(assistant.label || "站内导读助手")}</h3>
+            <p class="lab-section-copy">
+              ${escapeHtml(assistant.description || "先在站内筛出相关章节，再用较白话的方式给出最短可走通的阅读线。")}
+            </p>
+          </div>
+          <div class="assistant-chip-row">
+            <span class="graph-chip is-lit">Cloudflare Workers AI</span>
+            <span class="graph-chip">${getAssistantContextLimit()} 篇站内章节</span>
+            <span class="graph-chip ${hasEndpoint ? "is-lit" : "is-candidate"}">${hasEndpoint ? "已接入 Worker" : "待填 Worker"}</span>
+          </div>
+        </div>
+
+        <div id="assistant-conversation" class="assistant-conversation"></div>
+
+        <label class="lab-textarea assistant-composer">
+          <span>直接提问</span>
+          <textarea
+            id="assistant-question"
+            rows="4"
+            maxlength="360"
+            placeholder="${escapeHtml(assistant.placeholder || "例如：第一次该从哪一章进入？")}"
+          ></textarea>
+        </label>
+
+        <div class="lab-inline-actions assistant-actions">
+          <button id="assistant-submit-button" class="reader-button" type="button">开始追问</button>
+          <button id="assistant-stop-button" class="reader-button" type="button" hidden>停止回答</button>
+          <button id="assistant-clear-button" class="reader-button" type="button">清空对话</button>
+        </div>
+
+        <p id="assistant-status" class="lab-action-status assistant-status" aria-live="polite"></p>
+      </article>
+
+      <article class="lab-card assistant-guide-card">
+        <p class="eyebrow">Route Note</p>
+        <h3>怎样问，最容易让它把你带回章节</h3>
+        <div class="lab-mini-points assistant-mini-points">
+          <span>最好直接问概念、阅读顺序、章节落点或“从哪里进入”，不要一开始就让它泛泛谈哲学。</span>
+          <span>它现在优先从站内章节筛材料，不是外网搜索器，所以更适合做导读，不适合代替百科。</span>
+          <span>如果回答没有指出章节、边界或下一步入口，就继续追问，不要直接把它当结论。</span>
+        </div>
+
+        ${suggestions.length ? `
+          <div class="assistant-suggestion-shell">
+            <p class="assistant-section-label">可以直接这样问</p>
+            <div class="assistant-suggestion-grid">
+              ${suggestions.map((item) => `
+                <button class="lab-preset-button assistant-suggestion" type="button" data-assistant-suggestion="${escapeHtml(item)}">
+                  <strong>${escapeHtml(item)}</strong>
+                  <span>一键把问题送进导读助手</span>
+                </button>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
+
+        ${hasEndpoint ? `
+          <div class="assistant-setup-note">
+            <strong>当前已接入实时问答。</strong>
+            <p>如果后面要换模型、调额度或加来源限制，优先改 Worker，而不是把密钥塞回前端。</p>
+          </div>
+        ` : `
+          <div class="assistant-setup-note is-pending">
+            <strong>${escapeHtml(assistant.emptyMessage || "当前还没有接入 Worker。")}</strong>
+            <p>前端入口已经预留好了，下一步只要部署 Cloudflare Worker 并把地址回填到站点配置即可。</p>
+            ${setupHref ? `<a class="pill-button pill-button-ghost" href="${setupHref}">查看接入说明</a>` : ""}
+          </div>
+        `}
+      </article>
+    </section>
+  `;
+}
+
+function pruneAssistantConversation() {
+  const maxMessages = getAssistantHistoryLimit() * 2;
+  if (state.assistantMessages.length > maxMessages) {
+    state.assistantMessages = state.assistantMessages.slice(-maxMessages);
+  }
+}
+
+function resetAssistantConversation() {
+  state.assistantMessages = [];
+  setAssistantStatus("已清空当前对话。", "info");
+  renderAssistantConversation();
+  syncAssistantComposerState();
+}
+
+async function askAssistant(question) {
+  const assistant = getAssistantConfig();
+  const endpoint = String(assistant.endpoint || "").trim();
+  if (!endpoint) {
+    setAssistantStatus(assistant.emptyMessage || "当前还没有接入 Worker。", "warning");
+    return;
+  }
+
+  const normalizedQuestion = normalizeAssistantText(question, 360);
+  if (!normalizedQuestion) {
+    setAssistantStatus("先写下你想追问的问题。", "warning");
+    return;
+  }
+
+  const contextItems = buildAssistantContext(normalizedQuestion);
+  const history = getAssistantConversationHistory();
+  const messageSeed = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const userMessage = {
+    id: `user-${messageSeed}`,
+    role: "user",
+    content: normalizedQuestion,
+  };
+  const assistantMessage = {
+    id: `assistant-${messageSeed}`,
+    role: "assistant",
+    content: "",
+    pending: true,
+    sources: contextItems,
+  };
+
+  state.assistantMessages.push(userMessage, assistantMessage);
+  pruneAssistantConversation();
+  renderAssistantConversation();
+
+  const questionInput = dom.labContent.querySelector("#assistant-question");
+  if (questionInput) {
+    questionInput.value = "";
+    questionInput.focus();
+  }
+
+  state.assistantPending = true;
+  state.assistantAbortController?.abort();
+  state.assistantAbortController = new AbortController();
+  syncAssistantComposerState();
+  setAssistantStatus(`已筛出 ${contextItems.length} 篇相关章节，正在请求导读助手…`, "info");
+
+  let answer = "";
+
+  try {
+    const response = await fetch(endpoint, {
+      method: String(assistant.method || "POST").toUpperCase(),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question: normalizedQuestion,
+        history,
+        context: contextItems,
+        stream: assistant.stream !== false,
+      }),
+      signal: state.assistantAbortController.signal,
+    });
+
+    if (!response.ok) {
+      const errorType = response.headers.get("content-type") || "";
+      let detail = "";
+      if (errorType.includes("application/json")) {
+        const payload = await response.json();
+        detail = payload.detail || payload.error || "";
+      } else {
+        detail = (await response.text()).trim();
+      }
+      throw new Error(detail || `请求失败：${response.status}`);
+    }
+
+    await readAssistantResponse(response, (chunk) => {
+      answer += chunk;
+      updateAssistantMessageContent(assistantMessage.id, answer, { pending: true });
+    });
+
+    answer = normalizeAssistantText(answer, 6000);
+    if (!answer) {
+      answer = "这一轮没有返回可显示的文字。可以换一种更具体的问法，再追一次。";
+    }
+
+    updateAssistantMessageContent(assistantMessage.id, answer, { pending: false });
+    setAssistantStatus(`已结合 ${contextItems.length} 篇章节整理回答。`, "success");
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      updateAssistantMessageContent(
+        assistantMessage.id,
+        answer || "这一轮回答已被手动停止。你可以重新提问，或者把问题缩小一点再试。",
+        { pending: false },
+      );
+      setAssistantStatus("已停止当前回答。", "warning");
+    } else {
+      updateAssistantMessageContent(
+        assistantMessage.id,
+        "这次没有成功连到导读助手。请先检查 Worker 地址、跨域配置和 Cloudflare AI 绑定是否已经就绪。",
+        { pending: false },
+      );
+      setAssistantStatus(error?.message || "导读助手请求失败。", "warning");
+    }
+  } finally {
+    state.assistantPending = false;
+    state.assistantAbortController = null;
+    syncAssistantComposerState();
+  }
+}
+
+function bindAssistantPanel() {
+  renderAssistantConversation();
+  renderAssistantStatus();
+  syncAssistantComposerState();
+
+  const submitButton = dom.labContent.querySelector("#assistant-submit-button");
+  const stopButton = dom.labContent.querySelector("#assistant-stop-button");
+  const clearButton = dom.labContent.querySelector("#assistant-clear-button");
+  const questionInput = dom.labContent.querySelector("#assistant-question");
+
+  submitButton?.addEventListener("click", () => {
+    askAssistant(questionInput?.value || "");
+  });
+
+  stopButton?.addEventListener("click", () => {
+    state.assistantAbortController?.abort();
+  });
+
+  clearButton?.addEventListener("click", () => {
+    resetAssistantConversation();
+  });
+
+  questionInput?.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      askAssistant(questionInput.value);
+    }
+  });
+
+  dom.labContent.querySelectorAll("[data-assistant-suggestion]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const question = button.dataset.assistantSuggestion || "";
+      if (questionInput) questionInput.value = question;
+      askAssistant(question);
+    });
+  });
+}
+
 function renderLabPrompt() {
   dom.labNote.textContent =
-    "提示词页把理论方法压成一键可用的 AI 脚手架：重点不是替 AI 下结论，而是逼它按差异、边界、反馈、结构、验证的顺序工作。";
+    "AI 导读台把两件事接到一起：前半段把问题压成更稳的提示词，后半段则把实时问答重新带回站内章节与阅读线。";
   dom.labContent.innerHTML = `
     ${renderLabArchitectureSection("prompt")}
 
@@ -5072,9 +5914,9 @@ function renderLabPrompt() {
         <p class="eyebrow">Usage Route</p>
         <h3>怎么用这一页更顺手</h3>
         <div class="lab-mini-points">
-          <span>先套一个预设体验一下，再改成你自己的处境，通常会更容易问出像样的问题。</span>
-          <span>如果 AI 回答仍然很空，就继续缩小“对象”“目标”“时间”三项，不要先怪方法没用。</span>
-          <span>拿到回答后，再回理论学习页、交互检验页或研究推演页继续补边界、参数与验证。</span>
+          <span>先用上面的提示词生成器把问题缩紧，再把更具体的版本丢给导读助手，通常会更容易得到能继续读的回答。</span>
+          <span>如果回答仍然很空，就继续缩小“对象”“目标”“时间”三项，或者直接改问“这个概念在站内落到哪些章节”。</span>
+          <span>拿到回答后，不要停在聊天框里，直接点章节卡继续读，再回理论学习页、交互检验页或研究推演页补边界和验证。</span>
         </div>
         <div class="lab-inline-actions">
           <button class="reader-button" type="button" data-lab-nav="learn">回理论学习</button>
@@ -5126,6 +5968,8 @@ function renderLabPrompt() {
         <p id="prompt-reality-check" class="lab-lead"></p>
       </article>
     </section>
+
+    ${buildAssistantPanelMarkup()}
   `;
 
   const controlIds = Object.keys(LAB_CONTROL_DEFAULTS.prompt);
@@ -5180,6 +6024,7 @@ function renderLabPrompt() {
   });
 
   syncPromptState(false);
+  bindAssistantPanel();
 }
 
 function renderLabPlay() {
@@ -6522,6 +7367,56 @@ function setCommentCopyStatus(message) {
   }
 }
 
+function getDocHashUrl(item) {
+  return `#doc/${encodeURIComponent(item?.id || "")}`;
+}
+
+function getDocAbsoluteUrl(item) {
+  const fallback = `${window.location.href.split("#")[0]}${getDocHashUrl(item)}`;
+  const siteUrl = String(state.payload?.site?.siteUrl || "").trim();
+
+  if (!siteUrl) {
+    return fallback;
+  }
+
+  try {
+    return new URL(getDocHashUrl(item), siteUrl).toString();
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeCommentPromptSnippet(value, limit = 320) {
+  const compact = String(value || "").replace(/\s+/g, " ").trim();
+  if (!compact) return "";
+  if (compact.length <= limit) return compact;
+  return `${compact.slice(0, limit).trimEnd()}…`;
+}
+
+function buildCommentQuickAskPrompt(item) {
+  const chapterTitle = getDisplayTitle(item);
+  const excerpt = normalizeCommentPromptSnippet(item?.excerpt, 320);
+  const chapterUrl = getDocAbsoluteUrl(item);
+
+  return [
+    `我正在阅读《${chapterTitle}》这一章。`,
+    `章节链接：${chapterUrl}`,
+    item?.sourcePath ? `源文件：${item.sourcePath}` : "",
+    excerpt ? `章节摘要：${excerpt}` : "",
+    "",
+    "请不要泛泛赞美，也不要只复述标题。请按下面顺序帮助我：",
+    "1. 用 1 句话说清这章真正的主线。",
+    "2. 列出 2 个最关键的差异、边界或判断动作。",
+    "3. 指出 1 个最容易误解、最需要补桥或最该降强的地方。",
+    "4. 给出 1 个能落到现实里的具体用法。",
+    "5. 最后帮我写一段适合发在章节评论区的短评，控制在 120-180 字。",
+    "",
+    "如果仅凭这些信息还不够，请先明确指出你最想追问我的 1 个问题，再给暂定版本。",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function resolveLiveBookTemplateBody(template, item) {
   const replacements = {
     "{{chapterTitle}}": getDisplayTitle(item),
@@ -6534,13 +7429,65 @@ function resolveLiveBookTemplateBody(template, item) {
   }, template?.body || "");
 }
 
+function renderCommentTemplateCards(templates, item) {
+  if (!templates.length) {
+    return `<div class="comments-placeholder">结构化评论模板正在整理中。</div>`;
+  }
+
+  return templates
+    .map((template, index) => {
+      const body = resolveLiveBookTemplateBody(template, item);
+      return `
+        <article class="comment-template-card">
+          <p class="eyebrow">Structured Comment</p>
+          <h4>${escapeHtml(template.title || `模板 ${index + 1}`)}</h4>
+          <p>${escapeHtml(template.description || "")}</p>
+          <pre class="comment-template-preview">${escapeHtml(body)}</pre>
+          <div class="comment-template-actions">
+            <button class="reader-button comment-mini-button" type="button" data-template-index="${index}">复制模板</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+async function openCommentQuickAsk(provider, item) {
+  const prompt = buildCommentQuickAskPrompt(item);
+  const copied = await copyTextToClipboard(prompt);
+  let opened = null;
+
+  try {
+    opened = window.open(provider.url, "_blank", "noopener,noreferrer");
+    if (opened) {
+      opened.opener = null;
+    }
+  } catch {
+    opened = null;
+  }
+
+  if (!opened) {
+    window.location.href = provider.url;
+  }
+
+  setCommentCopyStatus(
+    copied
+      ? `已复制提问内容，并打开 ${provider.label}。到新页面粘贴后直接发送即可。`
+      : `已打开 ${provider.label}。当前环境不支持自动复制，请手动复制提问内容后发送。`,
+  );
+}
+
 function renderLiveBookCommentPanel(item) {
-  if (!dom.liveBookCommentPanel || !dom.commentTemplateGrid) return;
+  if (!dom.liveBookCommentPanel) return;
 
   const liveBook = getLiveBookConfig();
   const templates = getLiveBookTemplates();
   const workflow = getLiveBookWorkflow();
   const entryItem = getLiveBookEntryItem();
+  const quickAsk = getCommentQuickAskConfig();
+  const providers = getCommentQuickAskProviders();
+  const defaultProvider = getDefaultCommentQuickAskProvider();
+  const alternateProviders = providers.filter((provider) => provider.id !== defaultProvider?.id);
   const chapterTitle = getDisplayTitle(item);
   const threadLabel = `章节：${chapterTitle}\n线程：${getCommentPath(item)}`;
   const summary =
@@ -6549,47 +7496,117 @@ function renderLiveBookCommentPanel(item) {
   const badges = workflow.length
     ? workflow.map((step) => step.title).filter(Boolean).slice(0, 4)
     : ["读者评论入站", "AI 归并整理", "修改模块回写"];
+  const morePanelId = `comment-more-${item.id}`;
+  const templateCards = renderCommentTemplateCards(templates, item);
+  const buttonLabel = quickAsk.buttonLabel || "问AI";
+  const moreLabel = quickAsk.moreLabel || "更多";
+  const collapseLabel = quickAsk.collapseLabel || "收起";
 
   dom.liveBookCommentPanel.innerHTML = `
-    <div class="live-book-comment-head">
-      <div>
-        <p class="eyebrow">Living Book Loop</p>
-        <h4>这条评论会进入活书回写链路</h4>
-        <p>${escapeHtml(summary)}</p>
-      </div>
-      <div class="live-book-inline-actions">
-        ${entryItem
-          ? `<a class="pill-button pill-button-ghost" href="#doc/${encodeURIComponent(entryItem.id)}">查看活书说明</a>`
-          : ""}
-        <button class="pill-button" type="button" data-copy-comment-path="true">复制当前评论线程</button>
-      </div>
+    <div class="comment-compact-toolbar">
+      <button
+        class="reader-button comment-mini-button comment-mini-button-strong"
+        type="button"
+        data-ask-ai-provider="${escapeHtml(defaultProvider.id)}"
+      >
+        ${escapeHtml(buttonLabel)}
+      </button>
+      <button
+        class="reader-button comment-mini-button comment-mini-button-ghost"
+        type="button"
+        data-toggle-comment-more="true"
+        data-more-label="${escapeHtml(moreLabel)}"
+        data-collapse-label="${escapeHtml(collapseLabel)}"
+        aria-expanded="false"
+        aria-controls="${escapeHtml(morePanelId)}"
+      >
+        ${escapeHtml(moreLabel)}
+      </button>
     </div>
-    <div class="live-book-thread">${escapeHtml(threadLabel)}</div>
-    <div class="live-book-badges">
-      ${badges.map((label) => `<span class="live-book-badge">${escapeHtml(label)}</span>`).join("")}
+    <div
+      id="${escapeHtml(morePanelId)}"
+      class="comments-more-panel"
+      data-comment-more-panel="true"
+      hidden
+    >
+      <div class="feedback-guide feedback-guide-inline">
+        <h4>什么反馈最有价值</h4>
+        <ul class="feedback-list">
+          <li>哪一段最容易进入，哪一段最容易无感。</li>
+          <li>哪里需要补桥、补白话、补术语或降强度。</li>
+          <li>哪些内容应升为主线，哪些更适合转入专题或备忘录。</li>
+        </ul>
+      </div>
+      ${alternateProviders.length
+        ? `
+          <div class="comment-ai-provider-row">
+            <span class="comment-ai-provider-label">其他 AI</span>
+            ${alternateProviders
+              .map(
+                (provider) => `
+                  <button
+                    class="reader-button comment-mini-button"
+                    type="button"
+                    data-ask-ai-provider="${escapeHtml(provider.id)}"
+                  >
+                    ${escapeHtml(provider.label)}
+                  </button>
+                `,
+              )
+              .join("")}
+          </div>
+        `
+        : ""}
+      <div class="live-book-comment-head">
+        <div>
+          <p class="eyebrow">Living Book Loop</p>
+          <h4>这条评论会进入活书回写链路</h4>
+          <p>${escapeHtml(summary)}</p>
+        </div>
+        <div class="live-book-inline-actions">
+          ${entryItem
+            ? `<a class="reader-button comment-mini-button comment-mini-button-ghost" href="#doc/${encodeURIComponent(entryItem.id)}">查看活书说明</a>`
+            : ""}
+          <button class="reader-button comment-mini-button" type="button" data-copy-comment-path="true">复制线程</button>
+        </div>
+      </div>
+      <div class="live-book-thread">${escapeHtml(threadLabel)}</div>
+      <div class="live-book-badges">
+        ${badges.map((label) => `<span class="live-book-badge">${escapeHtml(label)}</span>`).join("")}
+      </div>
+      <div class="comment-template-grid">
+        ${templateCards}
+      </div>
     </div>
   `;
 
-  dom.commentTemplateGrid.innerHTML = templates.length
-    ? templates
-      .map((template, index) => {
-        const body = resolveLiveBookTemplateBody(template, item);
-        return `
-          <article class="comment-template-card">
-            <p class="eyebrow">Structured Comment</p>
-            <h4>${escapeHtml(template.title || `模板 ${index + 1}`)}</h4>
-            <p>${escapeHtml(template.description || "")}</p>
-            <pre class="comment-template-preview">${escapeHtml(body)}</pre>
-            <div class="comment-template-actions">
-              <button class="pill-button" type="button" data-template-index="${index}">复制模板</button>
-            </div>
-          </article>
-        `;
-      })
-      .join("")
-    : `<div class="comments-placeholder">结构化评论模板正在整理中。</div>`;
-
   setCommentCopyStatus("");
+
+  const moreToggleButton = dom.liveBookCommentPanel.querySelector('[data-toggle-comment-more="true"]');
+  const morePanel = dom.liveBookCommentPanel.querySelector('[data-comment-more-panel="true"]');
+
+  moreToggleButton?.addEventListener("click", () => {
+    if (!morePanel) return;
+    const expanded = moreToggleButton.getAttribute("aria-expanded") === "true";
+    const nextExpanded = !expanded;
+    morePanel.hidden = !nextExpanded;
+    moreToggleButton.setAttribute("aria-expanded", String(nextExpanded));
+    moreToggleButton.textContent = nextExpanded
+      ? moreToggleButton.dataset.collapseLabel || "收起"
+      : moreToggleButton.dataset.moreLabel || "更多";
+  });
+
+  dom.liveBookCommentPanel
+    .querySelectorAll("[data-ask-ai-provider]")
+    .forEach((button) => {
+      button.addEventListener("click", async () => {
+        const providerId = button.dataset.askAiProvider;
+        const provider =
+          providers.find((entry) => entry.id === providerId) || defaultProvider;
+        if (!provider) return;
+        await openCommentQuickAsk(provider, item);
+      });
+    });
 
   dom.liveBookCommentPanel
     .querySelector('[data-copy-comment-path="true"]')
@@ -6600,7 +7617,7 @@ function renderLiveBookCommentPanel(item) {
       );
     });
 
-  dom.commentTemplateGrid.querySelectorAll("[data-template-index]").forEach((button) => {
+  dom.liveBookCommentPanel.querySelectorAll("[data-template-index]").forEach((button) => {
     button.addEventListener("click", async () => {
       const index = Number(button.dataset.templateIndex);
       const template = templates[index];
@@ -6724,9 +7741,23 @@ async function mountTwikoo(item, comments) {
     lang: comments.lang || "zh-CN",
     path: getCommentPath(item),
   };
+  const displayedFields = normalizeTwikooFieldConfig(comments.displayedFields);
+  const requiredFields = normalizeTwikooFieldConfig(comments.requiredFields);
 
   if (comments.region && !isTwikooServiceUrl(comments.envId)) {
     options.region = comments.region;
+  }
+
+  if (displayedFields?.length) {
+    options.DISPLAYED_FIELDS = displayedFields;
+  }
+
+  if (requiredFields?.length) {
+    options.REQUIRED_FIELDS = requiredFields;
+  }
+
+  if (comments.commentPlaceholder) {
+    options.COMMENT_PLACEHOLDER = comments.commentPlaceholder;
   }
 
   await window.twikoo.init(options);
@@ -6756,8 +7787,8 @@ async function renderComments(item) {
 
   dom.commentsNote.textContent =
     liveBook.title
-      ? `评论区已接入 Twikoo。当前每个章节会使用独立评论线程，读者反馈会优先进入“${liveBook.title}”的整理与回写流程。`
-      : "评论区已接入 Twikoo。当前每个章节会使用独立评论线程，适合按章节收集阅读反馈、主线修订意见与结构调整建议。";
+      ? `按章节留言，或先点“问AI”把这一章带去外部模型继续追问。`
+      : "按章节留言，优先留下真正卡住你的地方。";
 
   try {
     await mountTwikoo(item, comments);
@@ -6835,7 +7866,7 @@ function updateReadingProgress() {
   dom.readerProgressBar.style.transform = `scaleX(${progress})`;
 }
 
-async function renderDoc(id) {
+async function renderDoc(id, params = {}) {
   const item = findItemById(id);
   if (!item) {
     renderHome();
@@ -6868,8 +7899,8 @@ async function renderDoc(id) {
 
   renderToc(item);
   renderPagination(item);
-  window.scrollTo({ top: 0, behavior: "auto" });
   await typesetMath();
+  applyDocRouteFocus(params);
   updateReadingProgress();
 }
 
@@ -6898,6 +7929,8 @@ function updateShell() {
 }
 
 async function route() {
+  clearCommentFocusTimer();
+  setCommentFocusMode(false);
   const routeState = getHashRoute();
   if (routeState.type === "home") {
     renderHome();
@@ -6912,7 +7945,7 @@ async function route() {
     await renderLab(routeState.page);
     return;
   }
-  await renderDoc(routeState.id);
+  await renderDoc(routeState.id, routeState.params);
 }
 
 function bindEvents() {
@@ -7000,6 +8033,17 @@ function bindEvents() {
     const button = event.target.closest("[data-lab-page]");
     if (!button) return;
     setHashForLab(button.dataset.labPage);
+  });
+
+  document.addEventListener("focusin", (event) => {
+    if (!isCommentFieldTarget(event.target)) return;
+    clearCommentFocusTimer();
+    setCommentFocusMode(true);
+  });
+
+  document.addEventListener("focusout", (event) => {
+    if (!isCommentFieldTarget(event.target)) return;
+    releaseCommentFocusModeSoon();
   });
 
   window.addEventListener("hashchange", () => {

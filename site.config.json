@@ -14,9 +14,64 @@
     "region": "",
     "lang": "zh-CN",
     "scriptUrl": "./assets/vendor/twikoo.all.min.js",
+    "displayedFields": ["nick", "mail"],
+    "requiredFields": ["nick"],
+    "hint": "昵称必填，邮箱可留空。",
+    "commentPlaceholder": "写下你最先读进去的一句、最卡的一处、想补的一座桥，或者这章在现实里怎么用。",
+    "quickAsk": {
+      "buttonLabel": "问AI",
+      "moreLabel": "更多",
+      "collapseLabel": "收起",
+      "defaultProvider": "deepseek",
+      "providers": [
+        {
+          "id": "deepseek",
+          "label": "DeepSeek",
+          "url": "https://chat.deepseek.com/"
+        },
+        {
+          "id": "kimi",
+          "label": "Kimi",
+          "url": "https://www.kimi.com/"
+        },
+        {
+          "id": "doubao",
+          "label": "豆包",
+          "url": "https://www.doubao.com/chat/"
+        },
+        {
+          "id": "chatgpt",
+          "label": "ChatGPT",
+          "url": "https://chatgpt.com/"
+        }
+      ]
+    },
     "deploymentTarget": "netlify",
     "serviceUrlExample": "https://your-site.netlify.app/.netlify/functions/twikoo",
     "setupSourcePath": "研究文稿/07_书稿/AI协作卷/第11章_把Twikoo评论迁到Netlify_为活书准备可持续反馈入口.md"
+  },
+  "assistant": {
+    "enabled": true,
+    "provider": "cloudflare-workers-ai",
+    "label": "站内导读助手",
+    "description": "先在站内筛出相关章节，再由 Cloudflare Workers AI 按差异、边界、反馈与验证的顺序回答。",
+    "endpoint": "",
+    "method": "POST",
+    "model": "@cf/meta/llama-3.1-8b-instruct-fast",
+    "stream": true,
+    "contextDocs": 4,
+    "snippetLength": 260,
+    "maxTurns": 6,
+    "greeting": "可以先问某个概念该从哪一章进入，也可以直接追问它在白话卷、主书稿和知识图谱里分别落到了哪里。",
+    "placeholder": "例如：落差这一网第一次该看哪几章？结构复制在站内主要落在哪些章节？",
+    "emptyMessage": "当前还没有填入 Cloudflare Worker 地址。先把 Worker 部署好，再把 endpoint 回填到 site.config.json。",
+    "setupSourcePath": "研究文稿/07_书稿/AI协作卷/第12章_把CloudflareWorkersAI接到站内导读助手.md",
+    "suggestions": [
+      "落差这一网第一次该从哪里读起？",
+      "结构复制除了基因，还在哪些章节被展开过？",
+      "白话卷里哪几章最适合先读，再接回主书稿？",
+      "如果我想理解层级为什么能跨层稳态，应该顺着哪条线读？"
+    ]
   },
   "liveBook": {
     "title": "活书计划",
