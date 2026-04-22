@@ -196,6 +196,11 @@ const LAB_PAGES = {
     intro:
       "从差结构条件出发，推演什么时候只会形成事件，什么时候能沉淀为结构、稳态甚至规则。",
   },
+  prompt: {
+    title: "AI 提示词页",
+    intro:
+      "把差结构学习法压成可直接投喂给 AI 的提示词生成器，让新读者先用 AI 跑起来，再回头补理论与案例。",
+  },
 };
 const LAB_INFER_DOMAINS = ["fluid", "disk", "galaxy", "ai"];
 const LAB_CONTROL_DEFAULTS = {
@@ -221,12 +226,164 @@ const LAB_CONTROL_DEFAULTS = {
     "infer-dissipation": 46,
     "infer-memory": 55,
   },
+  prompt: {
+    "prompt-scene": "study-plan",
+    "prompt-object": "初中物理",
+    "prompt-level": "会一点基础概念，但公式和现象总是分开记，做题时容易混。",
+    "prompt-goal": "请帮我快速构建一套能执行的学习计划，并把力、运动、压强、浮力、电学等关键概念拉通。",
+    "prompt-time": "每天 40 分钟，周末可额外投入 2 小时，预计连续学习 4 周。",
+    "prompt-output": "plan-table",
+    "prompt-focus": "不要空泛鼓励，优先找关键差异、易混边界、验证动作和复盘顺序。",
+  },
 };
+const LAB_PROMPT_SCENES = [
+  {
+    id: "study-plan",
+    label: "学习计划",
+    description: "适合第一次系统学一个新学科或新模块时使用。",
+    lead: "先找关键差异，再压成阶段计划和验证节奏。",
+    instruction:
+      "请优先拆出这个主题最该先分清的概念差异，再按阶段安排输入顺序、练习顺序和验证顺序。",
+    deliverables: [
+      "列出最关键的 3-6 组差异或易混点",
+      "给出阶段计划、每日/每周动作和节奏",
+      "把每一阶段对应的验证动作一起写清楚",
+    ],
+  },
+  {
+    id: "concept-bridge",
+    label: "概念拉通",
+    description: "适合已经学过一些内容，但总觉得知识点彼此断开时使用。",
+    lead: "先看差异如何分出边界，再把概念接成一张可迁移的图。",
+    instruction:
+      "请重点构建概念之间的主线、从属关系、对立关系和迁移线，不要只平铺定义。",
+    deliverables: [
+      "指出核心概念之间的区别与联系",
+      "标出最容易混淆的边界条件",
+      "给出一张从基础到综合的概念桥接图",
+    ],
+  },
+  {
+    id: "mistake-diagnosis",
+    label: "错题诊断",
+    description: "适合成绩不上不下、反复错在相似位置时使用。",
+    lead: "把错题当成差异暴露器，而不是只当成一道题。",
+    instruction:
+      "请优先识别哪些错误来自概念边界不清、哪些来自流程断裂、哪些来自验证缺失。",
+    deliverables: [
+      "分类诊断错误成因",
+      "给出对应的补救动作和再练顺序",
+      "设计一套下次做题前的自检清单",
+    ],
+  },
+  {
+    id: "life-stability",
+    label: "生活稳态",
+    description: "适合分析作息、情绪、关系、压力与能量分配时使用。",
+    lead: "不是追求完美平衡，而是找出哪些落差值得收纳成稳态。",
+    instruction:
+      "请把生活问题拆成能量差、时间差、反馈差和环境差，帮助我搭出能维持的结构。",
+    deliverables: [
+      "识别主要失稳源和被忽略的反馈",
+      "给出可持续的调整顺序",
+      "告诉我什么情况下先不要再改了",
+    ],
+  },
+  {
+    id: "income-path",
+    label: "能力变现",
+    description: "适合梳理挣钱、找切口、做能力组合时使用。",
+    lead: "先找市场差异和个人能力差，再决定路径而不是直接幻想结果。",
+    instruction:
+      "请优先分析我的能力、资源、时间和市场需求之间的差异，给出更现实的变现路线。",
+    deliverables: [
+      "识别最有价值的能力差与市场差",
+      "给出短中期可执行路线",
+      "说明每一步如何验证是否真有回报",
+    ],
+  },
+  {
+    id: "tempo-thinking",
+    label: "快慢思维",
+    description: "适合区分空想与充实、高低效思维，以及什么该快、什么该慢时使用。",
+    lead: "不是一味求快或一味求慢，而是给快思找边界、给慢思找承重结构。",
+    instruction:
+      "请优先区分哪些内容适合快思直推，哪些必须慢思校验；同时识别哪些只是空想打转，哪些已经具备被充实、被验证、被落地的条件。",
+    deliverables: [
+      "列出空想与充实思考的关键区别",
+      "指出高效思维与低效思维分别卡在哪里",
+      "给出快思触发条件、慢思检查清单和切换条件",
+    ],
+  },
+  {
+    id: "research-collab",
+    label: "研究协作",
+    description: "适合和 AI 一起沉淀理论、整理材料、推进专题时使用。",
+    lead: "把 AI 当协作接口，不把它当最终裁判。",
+    instruction:
+      "请把任务拆成差异识别、边界整理、证据归档、待验证点和下一步协作动作。",
+    deliverables: [
+      "列出当前最关键的问题差异与证据缺口",
+      "给出协作步骤、文件结构或提问顺序",
+      "明确哪些结论只是猜测，哪些已经较稳",
+    ],
+  },
+];
+const LAB_PROMPT_SCENE_MAP = Object.freeze(
+  Object.fromEntries(LAB_PROMPT_SCENES.map((scene) => [scene.id, scene])),
+);
+const LAB_PROMPT_OUTPUTS = [
+  {
+    id: "plan-table",
+    label: "计划表",
+    description: "优先输出阶段计划、时间安排和验证节点。",
+    instruction: "请优先给分阶段表格、每日动作、复盘节点和执行顺序。",
+  },
+  {
+    id: "concept-map",
+    label: "概念图",
+    description: "优先输出主线概念、边界关系和迁移线。",
+    instruction: "请优先给概念骨架、差异对照和一条能串联起来的主线。",
+  },
+  {
+    id: "action-checklist",
+    label: "行动清单",
+    description: "优先输出短而硬的动作，不要铺陈过多解释。",
+    instruction: "请优先给可执行清单、检查点和停止条件，不要长篇理论铺垫。",
+  },
+  {
+    id: "dual-loop",
+    label: "双模流程",
+    description: "优先输出快思触发、慢思校验和快慢切换条件。",
+    instruction: "请优先给快思/慢思双流程、切换触发器、停损线和复盘节点。",
+  },
+  {
+    id: "coach-dialogue",
+    label: "教练对话",
+    description: "优先输出可直接继续追问的对话式引导。",
+    instruction: "请优先以教练问答形式推进，每次只推进一层并保留下一轮提问口。",
+  },
+];
+const LAB_PROMPT_OUTPUT_MAP = Object.freeze(
+  Object.fromEntries(LAB_PROMPT_OUTPUTS.map((item) => [item.id, item])),
+);
+const LAB_CONTROL_OPTIONS = Object.freeze({
+  "infer-domain": LAB_INFER_DOMAINS,
+  "prompt-scene": LAB_PROMPT_SCENES.map((scene) => scene.id),
+  "prompt-output": LAB_PROMPT_OUTPUTS.map((item) => item.id),
+});
+const LAB_TEXT_LIMITS = Object.freeze({
+  "prompt-object": 48,
+  "prompt-level": 120,
+  "prompt-goal": 160,
+  "prompt-time": 100,
+  "prompt-focus": 180,
+});
 const LAB_ARCHITECTURE_LAYERS = [
   {
     title: "理论层",
     copy: "把落差、边界、反馈、稳态这些主轴压成可以连续阅读的理论语言。",
-    pages: ["learn"],
+    pages: ["learn", "prompt"],
   },
   {
     title: "变量层",
@@ -249,9 +406,14 @@ const LAB_ARCHITECTURE_LAYERS = [
     pages: ["infer"],
   },
   {
+    title: "协作层",
+    copy: "把方法压成可复制提示词、提问脚手架和协作顺序，让 AI 也按同一主线工作。",
+    pages: ["prompt"],
+  },
+  {
     title: "接口层",
     copy: "为真实求解器、观测数据、批量扫描和研究日志预留挂接位置。",
-    pages: ["learn", "play", "validate", "infer"],
+    pages: ["learn", "play", "validate", "infer", "prompt"],
   },
 ];
 const LAB_PAGE_ARCHITECTURE = {
@@ -286,6 +448,14 @@ const LAB_PAGE_ARCHITECTURE = {
     focus:
       "当前这页更偏向推演层与接口层：不是直接宣布结论，而是把下一步实验、采样和系统升级的方向挑出来。",
     hookTitle: "推演页后面能继续挂什么",
+  },
+  prompt: {
+    title: "把方法压成一段能直接拿去问 AI 的话，再看它怎样反过来帮人学习",
+    copy:
+      "提示词页负责把差结构学习法压成新读者可直接投喂 AI 的工作界面。重点不是把理论喊成大词，而是让 AI 先学会：找差异、收边界、看反馈、压结构、留验证。",
+    focus:
+      "当前这页更偏向理论层、协作层与接口层：先把方法变成一句能用的话，再把返回结果继续接回学习、检验和推演。",
+    hookTitle: "提示词页后面能继续挂什么",
   },
 };
 const LAB_EXTENSION_LAYERS = {
@@ -343,6 +513,20 @@ const LAB_EXTENSION_LAYERS = {
     {
       title: "跨域比对",
       copy: "把流体、天体与 AI 系统的推演结果并排比较，检验同一主轴的可迁移性。",
+    },
+  ],
+  prompt: [
+    {
+      title: "提示词模板库",
+      copy: "把学习、工作、研究、生活等高频场景继续扩成可复用模板，降低新读者的上手门槛。",
+    },
+    {
+      title: "结果回写接口",
+      copy: "把 AI 回答过的有效结构沉淀成案例、清单与知识图谱节点，而不是每次都从零开始问。",
+    },
+    {
+      title: "多模型对照",
+      copy: "同一提示词可以同时拿给不同模型比较，观察哪类模型更擅长找差异、收边界和给验证动作。",
     },
   ],
 };
@@ -462,6 +646,113 @@ const LAB_PRESETS = {
         "infer-feedback": 88,
         "infer-dissipation": 42,
         "infer-memory": 79,
+      },
+    },
+  ],
+  prompt: [
+    {
+      id: "physics-study",
+      label: "初中物理",
+      description: "让 AI 从差异出发，生成可执行的初中物理学习计划。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.prompt,
+        "prompt-scene": "study-plan",
+        "prompt-object": "初中物理",
+        "prompt-level": "会一点基础概念，但公式和现象总是分开记，做题时容易混。",
+        "prompt-goal": "请帮我快速构建一套能执行的学习计划，并把力、运动、压强、浮力、电学等关键概念拉通。",
+        "prompt-time": "每天 40 分钟，周末可额外投入 2 小时，预计连续学习 4 周。",
+        "prompt-output": "plan-table",
+        "prompt-focus": "不要空泛鼓励，优先找关键差异、易混边界、验证动作和复盘顺序。",
+      },
+    },
+    {
+      id: "concept-thread",
+      label: "概念拉通",
+      description: "适合把一门课里分散的概念重新接成一张主线图。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.prompt,
+        "prompt-scene": "concept-bridge",
+        "prompt-object": "牛顿力学与能量观点",
+        "prompt-level": "知道力、运动、功、能这些词，但总觉得它们各管各的。",
+        "prompt-goal": "请帮我把几个核心概念拉通，说明它们各自解决什么问题、在哪些条件下转换。",
+        "prompt-time": "希望一次输出一张能直接复习的概念桥接图，并附 3 个迁移例子。",
+        "prompt-output": "concept-map",
+        "prompt-focus": "优先区分概念边界和适用条件，不要只给定义堆砌。",
+      },
+    },
+    {
+      id: "mistake-repair",
+      label: "错题诊断",
+      description: "适合把反复犯错的位置还原成结构性短板。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.prompt,
+        "prompt-scene": "mistake-diagnosis",
+        "prompt-object": "初中电学错题",
+        "prompt-level": "做题时经常把串并联、电压、电流和电阻关系混在一起。",
+        "prompt-goal": "请帮我诊断错误类型，安排补救练习，并给一套下次做题前的自检流程。",
+        "prompt-time": "最近两周内准备做一次专题补漏，每天能抽 30 分钟。",
+        "prompt-output": "action-checklist",
+        "prompt-focus": "优先拆出真正的易混差异，而不是只说多做题。",
+      },
+    },
+    {
+      id: "life-reset",
+      label: "生活稳态",
+      description: "用差结构方法分析作息、情绪、精力与环境的关系。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.prompt,
+        "prompt-scene": "life-stability",
+        "prompt-object": "最近的作息与精力失稳",
+        "prompt-level": "知道自己状态不稳，但说不清到底是睡眠、工作、情绪还是环境在拖垮我。",
+        "prompt-goal": "请帮我找出主要失稳源，给出能维持两周以上的调整结构。",
+        "prompt-time": "希望先做一个 10 天的低摩擦调整方案，每天额外投入不超过 45 分钟。",
+        "prompt-output": "coach-dialogue",
+        "prompt-focus": "不要追求完美日程，优先识别真正关键的落差和反馈点。",
+      },
+    },
+    {
+      id: "income-route",
+      label: "能力变现",
+      description: "适合梳理个人能力、市场差异和现实变现路径。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.prompt,
+        "prompt-scene": "income-path",
+        "prompt-object": "写作 + AI 工具使用能力",
+        "prompt-level": "有一点表达和整理能力，也会用 AI，但还不知道怎样组合成能挣钱的服务。",
+        "prompt-goal": "请帮我分析现实切口，给出 1 个月和 3 个月两个层级的变现路线。",
+        "prompt-time": "平时每天最多投入 1 小时，预算有限，需要先做低成本验证。",
+        "prompt-output": "action-checklist",
+        "prompt-focus": "优先考虑现实需求、验证动作和失败成本，不要画太大的饼。",
+      },
+    },
+    {
+      id: "fast-slow-build",
+      label: "快慢思维",
+      description: "帮助区分空想/充实、高低效思维，并建立快慢切换规则。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.prompt,
+        "prompt-scene": "tempo-thinking",
+        "prompt-object": "我当前的学习、决策与思辨方式",
+        "prompt-level": "我有很多想法，但经常在空想、拖延、过快下判断或过慢不行动之间来回摆动。",
+        "prompt-goal": "请帮我构建一套更好的快慢思维结构，让我知道哪些问题要快，哪些问题要慢，怎样避免低效内耗。",
+        "prompt-time": "希望先形成一套一周内就能开始执行的双模思维流程，并能长期复用。",
+        "prompt-output": "dual-loop",
+        "prompt-focus": "重点区分空想与充实、高效与低效，并给快慢切换条件、止损线和复盘动作。",
+      },
+    },
+    {
+      id: "research-loop",
+      label: "研究协作",
+      description: "把 AI 作为理论沉淀与结构整理的协作接口。",
+      values: {
+        ...LAB_CONTROL_DEFAULTS.prompt,
+        "prompt-scene": "research-collab",
+        "prompt-object": "差结构学习法的一个待扩写专题",
+        "prompt-level": "我有一些片段、观点和争议点，但还没有把材料稳定压成章节骨架。",
+        "prompt-goal": "请帮我识别证据缺口、主轴差异和下一步写作/验证顺序。",
+        "prompt-time": "希望先产出一版专题骨架和待验证清单，后续再展开。",
+        "prompt-output": "plan-table",
+        "prompt-focus": "请把结论、猜测、证据缺口分开，不要替我假装已经论证完成。",
       },
     },
   ],
@@ -899,6 +1190,15 @@ function sanitizeRangeParamValue(value, fallback) {
   return clamp(Math.round(parsed), 0, 100);
 }
 
+function sanitizeLabTextValue(key, value, fallback) {
+  const maxLength = LAB_TEXT_LIMITS[key] || 120;
+  const normalized = String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+  return normalized || fallback;
+}
+
 function resolveLabParams(page, rawParams = {}) {
   const activePage = normalizeLabPage(page);
   const defaults = LAB_CONTROL_DEFAULTS[activePage];
@@ -911,8 +1211,12 @@ function resolveLabParams(page, rawParams = {}) {
         return [key, sanitizeRangeParamValue(rawParams[key], fallback)];
       }
 
-      if (key === "infer-domain") {
-        return [key, LAB_INFER_DOMAINS.includes(rawParams[key]) ? rawParams[key] : fallback];
+      if (LAB_CONTROL_OPTIONS[key]) {
+        return [key, LAB_CONTROL_OPTIONS[key].includes(rawParams[key]) ? rawParams[key] : fallback];
+      }
+
+      if (typeof fallback === "string") {
+        return [key, sanitizeLabTextValue(key, rawParams[key], fallback)];
       }
 
       return [key, rawParams[key] ?? fallback];
@@ -2091,11 +2395,19 @@ function getLabControlSnapshot(controlIds) {
       .map((id) => {
         const control = dom.labContent.querySelector(`#${id}`);
         if (!control) return null;
+
+        if (control.tagName === "SELECT") {
+          return [id, control.value];
+        }
+
+        if (control.tagName === "TEXTAREA" || control.type === "text") {
+          const fallback = LAB_CONTROL_DEFAULTS[state.activeLabPage]?.[id] ?? "";
+          return [id, sanitizeLabTextValue(id, control.value, fallback)];
+        }
+
         return [
           id,
-          control.tagName === "SELECT"
-            ? control.value
-            : sanitizeRangeParamValue(control.value, 0),
+          sanitizeRangeParamValue(control.value, 0),
         ];
       })
       .filter(Boolean),
@@ -4343,6 +4655,248 @@ function initPlayableLabSection() {
   initStructureSwarmPlayground();
 }
 
+function buildPromptFullText(values) {
+  const scene = LAB_PROMPT_SCENE_MAP[values["prompt-scene"]] || LAB_PROMPT_SCENE_MAP["study-plan"];
+  const output = LAB_PROMPT_OUTPUT_MAP[values["prompt-output"]] || LAB_PROMPT_OUTPUT_MAP["plan-table"];
+  const deliverables = scene.deliverables.map((item, index) => `${index + 1}. ${item}`).join("\n");
+
+  return [
+    "你现在是我的“差结构学习法”协作教练。",
+    "请把这套方法当作学习与分析方法，而不是终极存在论、万能解释词或空泛哲学口号。",
+    "",
+    `当前任务场景：${scene.label}`,
+    `任务对象：${values["prompt-object"]}`,
+    `我的当前水平 / 现状：${values["prompt-level"]}`,
+    `我的目标：${values["prompt-goal"]}`,
+    `我的时间与资源约束：${values["prompt-time"]}`,
+    `期望输出形态：${output.label}（${output.description}）`,
+    `额外关注：${values["prompt-focus"]}`,
+    "",
+    "请严格按下面的顺序工作：",
+    "1. 先识别关键差异：找出这个主题最值得先分清的 3-6 组不同、落差、对比，区分哪些是真差异，哪些只是噪声。",
+    "2. 再收边界：说明这些差异分别对应哪些概念边界、适用条件、易混条件和禁止混用点。",
+    "3. 再看流向与反馈：如果从我当前状态推进到目标状态，输入、练习、验证、复盘应该怎样流动？哪里最容易断流？",
+    "4. 再压结构：把内容整理成清晰的学习/行动结构，不要只给大词、口号或鸡汤。",
+    "5. 最后做验证：给出每一步的自测动作、纠错动作、停止条件和下一层入口。",
+    "",
+    `这个场景的额外要求：${scene.instruction}`,
+    "你至少要交付这些内容：",
+    deliverables,
+    "",
+    `输出偏好补充：${output.instruction}`,
+    "",
+    "通用要求：",
+    "- 先给总览，再给分阶段动作。",
+    "- 把重要概念或任务主线拉通，不要只堆定义。",
+    "- 标出 3 个最关键的易错差异或判断陷阱。",
+    "- 每一阶段都给一个可执行的验证动作。",
+    "- 如果信息不足，请先问我 3-5 个关键补充问题，再基于已有信息给出暂定版本。",
+    "- 不要空泛鼓励，不要假装我已经具备不存在的条件。",
+  ].join("\n");
+}
+
+function buildPromptLiteText(values) {
+  const scene = LAB_PROMPT_SCENE_MAP[values["prompt-scene"]] || LAB_PROMPT_SCENE_MAP["study-plan"];
+  const output = LAB_PROMPT_OUTPUT_MAP[values["prompt-output"]] || LAB_PROMPT_OUTPUT_MAP["plan-table"];
+
+  return [
+    `请把“差结构学习法”当作一种学习与分析方法，而不是终极解释。`,
+    `围绕“${values["prompt-object"]}”这个主题，在“${scene.label}”场景下帮助我。`,
+    `我的现状：${values["prompt-level"]}`,
+    `我的目标：${values["prompt-goal"]}`,
+    `我的时间约束：${values["prompt-time"]}`,
+    `请先找关键差异，再收边界，再看反馈与断流点，最后压成${output.label}。`,
+    `额外要求：${values["prompt-focus"]}`,
+    "输出时请给总览、阶段动作、3 个最关键的易错点，以及每一阶段的验证动作。",
+  ].join("\n");
+}
+
+function renderLabPrompt() {
+  dom.labNote.textContent =
+    "提示词页把理论方法压成一键可用的 AI 脚手架：重点不是替 AI 下结论，而是逼它按差异、边界、反馈、结构、验证的顺序工作。";
+  dom.labContent.innerHTML = `
+    ${renderLabArchitectureSection("prompt")}
+
+    <section class="lab-grid lab-grid-two">
+      ${renderLabToolkitCard(
+        "prompt",
+        "先选一个场景模板，再填成你自己的问题",
+        "这些预设不是标准答案，而是让你迅速体验：同一套方法怎样压成学习、生活、挣钱和研究里的不同提问方式。",
+      )}
+
+      <article class="lab-card lab-card-strong">
+        <p class="eyebrow">Prompt Builder</p>
+        <h3>把你的处境填进去，直接生成可复制提示词</h3>
+        <p class="lab-section-copy">
+          建议先写对象、现状、目标和时间，再补额外关注。这样 AI 更容易把“差异”落回到你的现实情境，而不是泛泛分析。
+        </p>
+        <div class="lab-controls prompt-builder-grid">
+          <label class="lab-select">
+            <span>使用场景</span>
+            <select id="prompt-scene">
+              ${LAB_PROMPT_SCENES.map((scene) => `<option value="${scene.id}">${scene.label}</option>`).join("")}
+            </select>
+          </label>
+          <label class="lab-select">
+            <span>输出偏好</span>
+            <select id="prompt-output">
+              ${LAB_PROMPT_OUTPUTS.map((item) => `<option value="${item.id}">${item.label}</option>`).join("")}
+            </select>
+          </label>
+          <label class="lab-text-field">
+            <span>对象 / 主题</span>
+            <input id="prompt-object" type="text" maxlength="48" />
+          </label>
+          <label class="lab-text-field">
+            <span>当前水平 / 现状</span>
+            <input id="prompt-level" type="text" maxlength="120" />
+          </label>
+          <label class="lab-text-field">
+            <span>目标</span>
+            <input id="prompt-goal" type="text" maxlength="160" />
+          </label>
+          <label class="lab-text-field">
+            <span>时间 / 资源</span>
+            <input id="prompt-time" type="text" maxlength="100" />
+          </label>
+          <label class="lab-textarea prompt-builder-full">
+            <span>额外关注</span>
+            <textarea id="prompt-focus" rows="4" maxlength="180"></textarea>
+          </label>
+        </div>
+        <div class="lab-flow prompt-method-flow">
+          <span>先找差异</span>
+          <span>再收边界</span>
+          <span>再看反馈</span>
+          <span>再压结构</span>
+          <span>最后做验证</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card">
+        <p class="eyebrow">Scene Focus</p>
+        <h3 id="prompt-scene-title"></h3>
+        <p id="prompt-scene-copy" class="lab-section-copy"></p>
+        <p id="prompt-scene-lead" class="lab-section-lead"></p>
+        <ul id="prompt-scene-points" class="lab-bullet-list"></ul>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Usage Route</p>
+        <h3>怎么用这一页更顺手</h3>
+        <div class="lab-mini-points">
+          <span>先套一个预设体验一下，再改成你自己的处境，通常会更容易问出像样的问题。</span>
+          <span>如果 AI 回答仍然很空，就继续缩小“对象”“目标”“时间”三项，不要先怪方法没用。</span>
+          <span>拿到回答后，再回理论学习页、交互检验页或研究推演页继续补边界、参数与验证。</span>
+        </div>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-lab-nav="learn">回理论学习</button>
+          <button class="reader-button" type="button" data-lab-nav="infer">接研究推演</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong prompt-preview-card">
+        <div class="prompt-preview-head">
+          <div>
+            <p class="eyebrow">Full Prompt</p>
+            <h3>完整版提示词</h3>
+          </div>
+          <button class="reader-button" type="button" data-prompt-copy="full">复制完整版</button>
+        </div>
+        <p class="lab-section-copy">适合第一次完整提问，能把差异、边界、反馈、结构和验证都压进同一轮对话。</p>
+        <pre id="prompt-full-output" class="lab-prompt-output"></pre>
+      </article>
+
+      <article class="lab-card prompt-preview-card">
+        <div class="prompt-preview-head">
+          <div>
+            <p class="eyebrow">Quick Prompt</p>
+            <h3>快问版提示词</h3>
+          </div>
+          <button class="reader-button" type="button" data-prompt-copy="lite">复制快问版</button>
+        </div>
+        <p class="lab-section-copy">适合临时追问、手机端提问，保留主轴但更短更快。</p>
+        <pre id="prompt-lite-output" class="lab-prompt-output is-lite"></pre>
+      </article>
+    </section>
+
+    <section class="lab-grid lab-grid-three">
+      <article class="lab-card">
+        <p class="eyebrow">Prompt Core</p>
+        <h3>这套提示词在逼 AI 做什么</h3>
+        <p id="prompt-core-summary" class="lab-lead"></p>
+      </article>
+      <article class="lab-card">
+        <p class="eyebrow">Output Bias</p>
+        <h3>当前输出偏好会强调什么</h3>
+        <p id="prompt-output-summary" class="lab-lead"></p>
+      </article>
+      <article class="lab-card">
+        <p class="eyebrow">Reality Check</p>
+        <h3>什么时候该继续追问</h3>
+        <p id="prompt-reality-check" class="lab-lead"></p>
+      </article>
+    </section>
+  `;
+
+  const controlIds = Object.keys(LAB_CONTROL_DEFAULTS.prompt);
+  setLabControlValues(state.labParams);
+
+  const syncPromptDetails = () => {
+    const scene = LAB_PROMPT_SCENE_MAP[state.labParams["prompt-scene"]] || LAB_PROMPT_SCENE_MAP["study-plan"];
+    const output = LAB_PROMPT_OUTPUT_MAP[state.labParams["prompt-output"]] || LAB_PROMPT_OUTPUT_MAP["plan-table"];
+    const scenePoints = dom.labContent.querySelector("#prompt-scene-points");
+
+    dom.labContent.querySelector("#prompt-scene-title").textContent = scene.label;
+    dom.labContent.querySelector("#prompt-scene-copy").textContent = scene.description;
+    dom.labContent.querySelector("#prompt-scene-lead").textContent = scene.lead;
+    scenePoints.innerHTML = scene.deliverables.map((item) => `<li>${item}</li>`).join("");
+    dom.labContent.querySelector("#prompt-full-output").textContent = buildPromptFullText(state.labParams);
+    dom.labContent.querySelector("#prompt-lite-output").textContent = buildPromptLiteText(state.labParams);
+    dom.labContent.querySelector("#prompt-core-summary").textContent =
+      `这次 AI 会围绕“${state.labParams["prompt-object"]}”先找差异、收边界、看反馈，再把内容压成可执行结构，而不是直接给鸡汤式建议。`;
+    dom.labContent.querySelector("#prompt-output-summary").textContent =
+      `${output.label}模式会更强调：${output.description}`;
+    dom.labContent.querySelector("#prompt-reality-check").textContent =
+      "如果 AI 没有明确说出关键差异、边界条件、验证动作或停止条件，就继续追问，不要直接照单执行。";
+  };
+
+  const syncPromptState = (replaceHash = true) => {
+    state.labParams = resolveLabParams("prompt", getLabControlSnapshot(controlIds));
+    syncPromptDetails();
+    if (replaceHash) {
+      setHashForLab("prompt", state.labParams, { replace: true });
+    }
+  };
+
+  dom.labContent
+    .querySelectorAll("input, select, textarea")
+    .forEach((input) => input.addEventListener("input", () => syncPromptState()));
+
+  bindLabToolkit("prompt", (values) => {
+    setLabControlValues(resolveLabParams("prompt", values));
+    syncPromptState();
+  });
+
+  dom.labContent.querySelectorAll("[data-prompt-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const targetId = button.dataset.promptCopy === "lite" ? "#prompt-lite-output" : "#prompt-full-output";
+      const text = dom.labContent.querySelector(targetId)?.textContent || "";
+      const copied = await copyTextToClipboard(text);
+      setLabActionStatus(
+        copied ? "已复制提示词。" : "当前环境不支持自动复制，请手动复制。",
+        copied ? "success" : "warning",
+      );
+    });
+  });
+
+  syncPromptState(false);
+}
+
 function renderLabPlay() {
   dom.labNote.textContent =
     "游戏页把差异、流向、结构和判断压成可玩的反馈回路：你会直接看到得分、连击、成环与失稳，而不是只在文字里理解它们。";
@@ -5144,6 +5698,8 @@ function renderLabPage(page) {
     renderLabPlay();
   } else if (activePage === "validate") {
     renderLabValidate();
+  } else if (activePage === "prompt") {
+    renderLabPrompt();
   } else {
     renderLabInfer();
   }
