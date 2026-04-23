@@ -1161,6 +1161,18 @@ const dom = {
   openGraphLaunchButton: document.getElementById("open-graph-launch-button"),
   openLabButton: document.getElementById("open-lab-button"),
   openCatalogButton: document.getElementById("open-catalog-button"),
+  homeSearchButton: document.getElementById("home-search-button"),
+  homeGraphShortcutButton: document.getElementById("home-graph-shortcut-button"),
+  homeThemeShortcutButton: document.getElementById("home-theme-shortcut-button"),
+  homeLabShortcutButton: document.getElementById("home-lab-shortcut-button"),
+  homeStartButton: document.getElementById("home-start-button"),
+  homeCatalogButton: document.getElementById("home-catalog-button"),
+  appHomeHeroTitle: document.getElementById("app-home-hero-title"),
+  appHomeHeroText: document.getElementById("app-home-hero-text"),
+  appHomeFeaturedVolumeTitle: document.getElementById("app-home-featured-volume-title"),
+  appHomeFeaturedVolumeCopy: document.getElementById("app-home-featured-volume-copy"),
+  appHomeFeaturedVolumeMeta: document.getElementById("app-home-featured-volume-meta"),
+  appHomeFeaturedVolumeLinks: document.getElementById("app-home-featured-volume-links"),
   mobileHomeButton: document.getElementById("mobile-home-button"),
   mobileCatalogButton: document.getElementById("mobile-catalog-button"),
   mobileFontButton: document.getElementById("mobile-font-button"),
@@ -2657,6 +2669,29 @@ function buildFeaturedVolume() {
     `;
     dom.featuredVolumeLinks.appendChild(link);
   });
+
+  syncAppHomeMirror();
+}
+
+function syncAppHomeMirror() {
+  if (dom.appHomeHeroTitle) {
+    dom.appHomeHeroTitle.textContent = dom.heroTitle?.textContent || "";
+  }
+  if (dom.appHomeHeroText) {
+    dom.appHomeHeroText.textContent = dom.heroText?.textContent || "";
+  }
+  if (dom.appHomeFeaturedVolumeTitle) {
+    dom.appHomeFeaturedVolumeTitle.textContent = dom.featuredVolumeTitle?.textContent || "";
+  }
+  if (dom.appHomeFeaturedVolumeCopy) {
+    dom.appHomeFeaturedVolumeCopy.textContent = dom.featuredVolumeCopy?.textContent || "";
+  }
+  if (dom.appHomeFeaturedVolumeMeta) {
+    dom.appHomeFeaturedVolumeMeta.innerHTML = dom.featuredVolumeMeta?.innerHTML || "";
+  }
+  if (dom.appHomeFeaturedVolumeLinks) {
+    dom.appHomeFeaturedVolumeLinks.innerHTML = dom.featuredVolumeLinks?.innerHTML || "";
+  }
 }
 
 function buildCardDeckHomeSection() {
@@ -8222,6 +8257,7 @@ async function renderGraph(nodeId) {
 
   document.title = `${state.payload.site.title} · 知识图谱`;
   document.body.classList.remove("is-reading");
+  document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = "知识图谱";
   dom.homeView.classList.add("hidden");
   dom.deckView.classList.add("hidden");
@@ -8269,6 +8305,7 @@ async function renderDeck(deckId = null, params = {}, options = {}) {
 
   document.title = `${state.payload.site.title} 路 ${deck.title || "牌组"}`;
   document.body.classList.remove("is-reading");
+  document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = deck.title || "牌组";
   dom.homeView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
@@ -8311,6 +8348,8 @@ function renderHome() {
 
   document.title = `${state.payload.site.title} · 在线书稿`;
   document.body.classList.remove("is-reading");
+  document.body.classList.add("is-home-hub");
+  syncAppHomeMirror();
   dom.viewTitle.textContent = "分卷书架";
   dom.homeView.classList.remove("hidden");
   dom.deckView.classList.add("hidden");
@@ -8340,6 +8379,7 @@ async function renderLab(page) {
   state.labParams = resolveLabParams(activePage, state.labParams);
   document.title = `${state.payload.site.title} · ${LAB_PAGES[activePage].title}`;
   document.body.classList.remove("is-reading");
+  document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = "理论实验台";
   dom.homeView.classList.add("hidden");
   dom.deckView.classList.add("hidden");
@@ -8993,6 +9033,7 @@ async function renderDoc(id, params = {}) {
   state.activeLabPage = null;
   state.activePrimaryView = "home";
   document.body.classList.add("is-reading");
+  document.body.classList.remove("is-home-hub");
   dom.homeView.classList.add("hidden");
   dom.deckView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
@@ -9144,6 +9185,55 @@ function bindEvents() {
   });
   dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
   dom.liveBookOpenCatalog?.addEventListener("click", () => setDrawerOpen(true));
+  dom.homeCatalogButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
+    setDrawerOpen(true);
+  });
+  dom.homeStartButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
+    const item = getPrimaryStartItem();
+    if (item) setHashForDoc(item.id);
+  });
+  dom.homeSearchButton?.addEventListener("click", () => {
+    setAssistantOpen(false);
+    setTocOpen(false);
+    setMobileFontPanelOpen(false);
+    setDrawerOpen(true);
+    window.requestAnimationFrame(() => dom.searchInput?.focus());
+  });
+  dom.homeGraphShortcutButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
+    setHashForGraph(state.activeGraphNodeId || getGraphDefaultNode()?.id || null);
+  });
+  dom.homeLabShortcutButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
+    setHashForLab(state.activeLabPage || "play");
+  });
+  dom.homeThemeShortcutButton?.addEventListener("click", cycleTheme);
+  document.querySelectorAll("[data-home-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll("[data-home-tab]").forEach((tab) => {
+        tab.classList.toggle("is-active", tab === button);
+      });
+
+      if (button.dataset.homeTab === "start") {
+        const item = getPrimaryStartItem();
+        if (item) setHashForDoc(item.id);
+        return;
+      }
+
+      if (button.dataset.homeTab === "continue") {
+        dom.appHomeFeaturedVolumeLinks?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
 
   dom.mobileHomeButton?.addEventListener("click", () => {
     closeNavigationPanels();
@@ -9262,6 +9352,7 @@ async function init() {
   renderAssistantShell();
   buildStarterLinks();
   buildFeaturedVolume();
+  syncAppHomeMirror();
   buildCardDeckHomeSection();
   buildLiveBookHomeSection();
   buildGraphPreview();

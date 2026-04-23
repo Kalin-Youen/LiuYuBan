@@ -91,7 +91,84 @@
       <main class="reader-main">
         <section id="home-view" class="home-view app-home-view">
           <div class="hero-card hero-card-featured app-shelf-home-card">
-            <div class="hero-layout">
+            <div class="app-home-shell">
+              <div class="app-home-topbar">
+                <div class="app-home-tabs" aria-label="首页筛选">
+                  <button class="app-home-tab is-active" type="button" data-home-tab="recommend">推荐</button>
+                  <button class="app-home-tab" type="button" data-home-tab="start">首读</button>
+                  <button class="app-home-tab" type="button" data-home-tab="continue">连读</button>
+                </div>
+
+                <div class="app-home-topbar-actions">
+                  <button id="home-search-button" class="app-home-top-button" type="button" aria-label="打开目录并搜索">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="6.8"></circle>
+                      <path d="M20 20l-4.2-4.2"></path>
+                    </svg>
+                  </button>
+                  <button id="home-graph-shortcut-button" class="app-home-top-button" type="button" aria-label="打开知识图谱">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="6" cy="6" r="2.2"></circle>
+                      <circle cx="18" cy="6" r="2.2"></circle>
+                      <circle cx="12" cy="18" r="2.2"></circle>
+                      <path d="M8 7.2l2.7 8"></path>
+                      <path d="M16 7.2l-2.7 8"></path>
+                      <path d="M8.2 6h7.6"></path>
+                    </svg>
+                  </button>
+                  <button id="home-theme-shortcut-button" class="app-home-top-button" type="button" aria-label="切换主题">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="3.2"></circle>
+                      <path d="M12 2.6v2.1"></path>
+                      <path d="M12 19.3v2.1"></path>
+                      <path d="M4.6 4.6l1.5 1.5"></path>
+                      <path d="M17.9 17.9l1.5 1.5"></path>
+                      <path d="M2.6 12h2.1"></path>
+                      <path d="M19.3 12h2.1"></path>
+                      <path d="M4.6 19.4l1.5-1.5"></path>
+                      <path d="M17.9 6.1l1.5-1.5"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <article class="app-home-feature-story">
+                <div class="app-home-feature-head">
+                  <p class="eyebrow">Featured Book</p>
+                  <h2 id="app-home-hero-title"></h2>
+                  <p id="app-home-hero-text" class="hero-text app-home-hero-text"></p>
+                </div>
+
+                <div class="app-home-feature-layout">
+                  <div class="app-home-book-cover">
+                    <span class="app-home-book-cover-badge">Now Reading</span>
+                    <strong id="app-home-featured-volume-title"></strong>
+                  </div>
+
+                  <div class="app-home-feature-panel">
+                    <p id="app-home-featured-volume-copy" class="app-home-feature-copy"></p>
+                    <div id="app-home-featured-volume-meta" class="spotlight-meta app-home-meta-row"></div>
+
+                    <div class="hero-actions app-home-primary-actions">
+                      <button id="home-start-button" class="pill-button" type="button">开始阅读</button>
+                      <button id="home-catalog-button" class="pill-button pill-button-ghost" type="button">查看全部入口</button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <section class="app-home-feed-section" aria-label="继续阅读">
+                <div class="app-home-feed-head">
+                  <div>
+                    <p class="eyebrow">Continue Reading</p>
+                    <h3>推荐入口</h3>
+                  </div>
+                  <button id="home-lab-shortcut-button" class="app-home-feed-button" type="button">试验台</button>
+                </div>
+
+                <div id="app-home-featured-volume-links" class="spotlight-links app-home-feed-list"></div>
+              </section>
+
               <div class="hero-copy-block">
                 <p class="eyebrow">Bookshelf</p>
                 <h2 id="hero-title"></h2>
