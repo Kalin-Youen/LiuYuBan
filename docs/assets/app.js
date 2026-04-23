@@ -1038,6 +1038,8 @@ const state = {
   filteredItems: [],
   searchTextCache: new Map(),
   activeId: null,
+  activeDeckId: null,
+  activeDeckCardId: null,
   activeGraphNodeId: null,
   activeLabPage: null,
   labParams: {},
@@ -1050,6 +1052,8 @@ const state = {
     message: "",
     tone: "info",
   },
+  assistantOpen: false,
+  activePrimaryView: "home",
   drawerOpen: false,
   tocOpen: false,
   mobileFontPanelOpen: false,
@@ -1064,6 +1068,23 @@ const state = {
 
 const dom = {
   pageOverlay: document.getElementById("page-overlay"),
+  assistantLauncher: document.getElementById("assistant-launcher"),
+  assistantLauncherContext: document.getElementById("assistant-launcher-context"),
+  assistantPanel: document.getElementById("assistant-panel"),
+  assistantPanelTitle: document.getElementById("assistant-panel-title"),
+  assistantPanelDescription: document.getElementById("assistant-panel-description"),
+  assistantCloseButton: document.getElementById("assistant-close-button"),
+  assistantContextTitle: document.getElementById("assistant-context-title"),
+  assistantContextBadge: document.getElementById("assistant-context-badge"),
+  assistantContextCopy: document.getElementById("assistant-context-copy"),
+  assistantContextChips: document.getElementById("assistant-context-chips"),
+  assistantQuickActions: document.getElementById("assistant-quick-actions"),
+  assistantConversation: document.getElementById("assistant-conversation"),
+  assistantQuestion: document.getElementById("assistant-question"),
+  assistantSubmitButton: document.getElementById("assistant-submit-button"),
+  assistantStopButton: document.getElementById("assistant-stop-button"),
+  assistantClearButton: document.getElementById("assistant-clear-button"),
+  assistantStatus: document.getElementById("assistant-status"),
   catalogDrawer: document.getElementById("catalog-drawer"),
   tocDrawer: document.getElementById("toc-drawer"),
   siteTitle: document.getElementById("site-title"),
@@ -1075,7 +1096,12 @@ const dom = {
   viewTitle: document.getElementById("view-title"),
   homeButton: document.getElementById("home-button"),
   graphButton: document.getElementById("graph-button"),
+  tabHomeButton: document.getElementById("tab-home-button"),
+  tabLabButton: document.getElementById("tab-lab-button"),
+  tabGraphButton: document.getElementById("tab-graph-button"),
+  tabAiButton: document.getElementById("tab-ai-button"),
   homeView: document.getElementById("home-view"),
+  deckView: document.getElementById("deck-view"),
   graphView: document.getElementById("graph-view"),
   labView: document.getElementById("lab-view"),
   docView: document.getElementById("doc-view"),
@@ -1094,6 +1120,9 @@ const dom = {
   liveBookHomeCards: document.getElementById("live-book-home-cards"),
   starterLinks: document.getElementById("starter-links"),
   lightSeriesLinks: document.getElementById("light-series-links"),
+  cardDeckSection: document.getElementById("card-deck-section"),
+  cardDeckSummary: document.getElementById("card-deck-summary"),
+  cardDeckGrid: document.getElementById("card-deck-grid"),
   systemLinks: document.getElementById("system-links"),
   quickLinks: document.getElementById("quick-links"),
   featuredVolumeTitle: document.getElementById("featured-volume-title"),
@@ -1119,6 +1148,7 @@ const dom = {
   docContent: document.getElementById("doc-content"),
   docToc: document.getElementById("doc-toc"),
   docPagination: document.getElementById("doc-pagination"),
+  deckContent: document.getElementById("deck-content"),
   catalogButton: document.getElementById("catalog-button"),
   tocButton: document.getElementById("toc-button"),
   labButton: document.getElementById("lab-button"),
@@ -1281,6 +1311,12 @@ function getHashRoute() {
   const hash = decodeURIComponent(path);
 
   if (!hash) return { type: "home" };
+  if (hash === "deck") {
+    return { type: "deck", deckId: null, params };
+  }
+  if (hash.startsWith("deck/")) {
+    return { type: "deck", deckId: hash.slice(5), params };
+  }
   if (hash.startsWith("doc/")) {
     return { type: "doc", id: hash.slice(4), params };
   }
@@ -1291,7 +1327,7 @@ function getHashRoute() {
     return { type: "graph", nodeId: hash.slice(6) };
   }
   if (hash === "lab") {
-    return { type: "lab", page: "learn", params: {} };
+    return { type: "lab", page: "play", params: {} };
   }
   if (hash.startsWith("lab/")) {
     return { type: "lab", page: normalizeLabPage(hash.slice(4)), params };
@@ -1337,6 +1373,45 @@ function buildDocHash(id, params = null) {
 
 function setHashForDoc(id, params = null, { replace = false } = {}) {
   const hash = buildDocHash(id, params);
+  if (replace) {
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${hash}`);
+    return;
+  }
+  window.location.hash = hash;
+}
+
+function sanitizeDeckRouteParams(params = null) {
+  if (!params) return null;
+
+  const resolved = {};
+
+  if (typeof params.card === "string") {
+    const card = params.card.trim().slice(0, 120);
+    if (card) {
+      resolved.card = card;
+    }
+  }
+
+  return Object.keys(resolved).length ? resolved : null;
+}
+
+function buildDeckHash(deckId = null, params = null) {
+  const normalizedDeckId = String(deckId || "").trim();
+  const baseHash = normalizedDeckId ? `deck/${encodeURIComponent(normalizedDeckId)}` : "deck";
+  const resolved = sanitizeDeckRouteParams(params);
+  if (!resolved) return baseHash;
+
+  const search = new URLSearchParams();
+  Object.entries(resolved).forEach(([key, value]) => {
+    search.set(key, value);
+  });
+
+  const query = search.toString();
+  return query ? `${baseHash}?${query}` : baseHash;
+}
+
+function setHashForDeck(deckId = null, params = null, { replace = false } = {}) {
+  const hash = buildDeckHash(deckId, params);
   if (replace) {
     history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${hash}`);
     return;
@@ -1392,6 +1467,13 @@ function closePanels() {
   setDrawerOpen(false);
   setTocOpen(false);
   setMobileFontPanelOpen(false);
+  setAssistantOpen(false);
+}
+
+function closeNavigationPanels() {
+  setDrawerOpen(false);
+  setTocOpen(false);
+  setMobileFontPanelOpen(false);
 }
 
 function setDrawerOpen(open) {
@@ -1408,19 +1490,44 @@ function setTocOpen(open) {
 
 function setMobileFontPanelOpen(open) {
   state.mobileFontPanelOpen = open;
-  dom.mobileFontPanel.classList.toggle("hidden", !open);
-  dom.mobileFontPanel.setAttribute("aria-hidden", String(!open));
-  dom.mobileFontButton.classList.toggle("is-active", open);
+  dom.mobileFontPanel?.classList.toggle("hidden", !open);
+  dom.mobileFontPanel?.setAttribute("aria-hidden", String(!open));
+  dom.mobileFontButton?.classList.toggle("is-active", open);
   syncOverlay();
 }
 
+function setAssistantOpen(open, { focusInput = false } = {}) {
+  if (open) {
+    setDrawerOpen(false);
+    setTocOpen(false);
+    setMobileFontPanelOpen(false);
+  }
+
+  state.assistantOpen = open;
+  dom.assistantPanel?.classList.toggle("is-open", open);
+  dom.assistantPanel?.setAttribute("aria-hidden", String(!open));
+  dom.assistantLauncher?.setAttribute("aria-expanded", String(open));
+  dom.assistantLauncher?.classList.toggle("is-active", open);
+  syncOverlay();
+  syncViewButtons();
+
+  if (open) {
+    renderAssistantShell();
+    if (focusInput) {
+      window.requestAnimationFrame(() => {
+        dom.assistantQuestion?.focus();
+      });
+    }
+  }
+}
+
 function syncOverlay() {
-  const visible = state.drawerOpen || state.tocOpen || state.mobileFontPanelOpen;
+  const visible = state.drawerOpen || state.tocOpen || state.mobileFontPanelOpen || state.assistantOpen;
   dom.pageOverlay.classList.toggle("hidden", !visible);
   dom.pageOverlay.classList.toggle("is-visible", visible);
   document.body.classList.toggle(
     "lock-scroll",
-    window.innerWidth <= MOBILE_BREAKPOINT && (state.drawerOpen || state.tocOpen),
+    window.innerWidth <= MOBILE_BREAKPOINT && (state.drawerOpen || state.tocOpen || state.assistantOpen),
   );
 }
 
@@ -1962,6 +2069,120 @@ function findItemBySourcePath(sourcePath) {
   );
 }
 
+function getCardDeckPayload() {
+  return state.payload?.cardDecks || { featuredDeckId: "", decks: [] };
+}
+
+function getCardDecks() {
+  const decks = getCardDeckPayload().decks;
+  return Array.isArray(decks) ? decks : [];
+}
+
+function getFeaturedCardDeck() {
+  const payload = getCardDeckPayload();
+  return (
+    findCardDeckById(payload.featuredDeckId) ||
+    getCardDecks()[0] ||
+    null
+  );
+}
+
+function findCardDeckById(deckId) {
+  if (!deckId) return null;
+  return getCardDecks().find((deck) => deck.id === deckId) || null;
+}
+
+function findDeckCard(deck, cardId) {
+  if (!deck || !cardId || !Array.isArray(deck.cards)) return null;
+  return deck.cards.find((card) => card.id === cardId) || null;
+}
+
+function findDeckSuit(deck, suitId) {
+  if (!deck || !suitId || !Array.isArray(deck.suits)) return null;
+  return deck.suits.find((suit) => suit.id === suitId) || null;
+}
+
+function findDeckLayer(deck, layerId) {
+  if (!deck || !layerId || !Array.isArray(deck.layers)) return null;
+  return deck.layers.find((layer) => layer.id === layerId) || null;
+}
+
+function findDeckSpread(deck, spreadId) {
+  if (!deck || !spreadId || !Array.isArray(deck.spreads)) return null;
+  return deck.spreads.find((spread) => spread.id === spreadId) || null;
+}
+
+function findDeckGuideScenario(deck, guideId) {
+  if (!deck || !guideId || !Array.isArray(deck.guideScenarios)) return null;
+  return deck.guideScenarios.find((guide) => guide.id === guideId) || null;
+}
+
+function getDeckEntryCard(deck, requestedCardId = null) {
+  return (
+    findDeckCard(deck, requestedCardId) ||
+    findDeckCard(deck, deck?.entryCardId) ||
+    deck?.cards?.[0] ||
+    null
+  );
+}
+
+function getDeckSourceItem(deck) {
+  return findItemBySourcePath(deck?.sourcePath);
+}
+
+function getDeckCardSourceItem(deck, card) {
+  return findItemBySourcePath(card?.sourcePath || deck?.sourcePath);
+}
+
+function getDeckCardDocHash(deck, card) {
+  const sourceItem = getDeckCardSourceItem(deck, card);
+  if (!sourceItem) return "";
+
+  const focus = String(card?.focus || "").trim();
+  return buildDocHash(sourceItem.id, focus ? { focus } : null);
+}
+
+function buildDeckCardAssistantQuestion(deck, card) {
+  const prompt = String(card?.assistantPrompt || deck?.assistantPrompt || "").trim();
+  if (prompt) return prompt;
+
+  const deckTitle = deck?.title || "未命名牌组";
+  const cardTitle = card?.title || "当前卡片";
+  return `我正在看《${deckTitle}》里的“${cardTitle}”。请先说清主线，再给一个我今天能立刻执行的动作。`;
+}
+
+function buildDeckCardBadgeLabel(deck, card) {
+  const suit = findDeckSuit(deck, card?.suit);
+  const layer = findDeckLayer(deck, card?.layer);
+  return [suit?.label, layer?.shortLabel].filter(Boolean).join(" · ") || "牌组卡片";
+}
+
+function scrollDeckDetailIntoView({ smooth = false } = {}) {
+  const target = document.getElementById("deck-card-detail");
+  if (!target) return;
+
+  const offset = window.innerWidth <= MOBILE_BREAKPOINT ? 96 : 118;
+  const top = window.scrollY + target.getBoundingClientRect().top - offset;
+  window.scrollTo({
+    top: Math.max(0, top),
+    behavior: smooth ? "smooth" : "auto",
+  });
+}
+
+function openDeckCard(deck, cardId, { smooth = true } = {}) {
+  if (!deck || !cardId) return;
+
+  const nextHash = buildDeckHash(deck.id, { card: cardId });
+  closeNavigationPanels();
+
+  if (window.location.hash === `#${nextHash}`) {
+    renderDeck(deck.id, { card: cardId }, { scrollToDetail: smooth }).catch(console.error);
+    return;
+  }
+
+  setHashForDeck(deck.id, { card: cardId });
+}
+
 function getAlternateVersionLabel(item) {
   if (item?.sectionId === "plain-book") return "正文版";
   if (item?.sectionId === "book") return "白话版";
@@ -2239,13 +2460,13 @@ function syncFontControls(fontSize) {
   const atMin = fontSize <= FONT_MIN;
   const atMax = fontSize >= FONT_MAX;
 
-  dom.fontSizeIndicator.textContent = label;
-  dom.mobileFontSizeIndicator.textContent = label;
-  dom.fontDownButton.disabled = atMin;
-  dom.fontUpButton.disabled = atMax;
-  dom.mobileFontDownButton.disabled = atMin;
-  dom.mobileFontUpButton.disabled = atMax;
-  dom.fontResetButton.disabled = !state.preferences.hasCustomFontSize;
+  if (dom.fontSizeIndicator) dom.fontSizeIndicator.textContent = label;
+  if (dom.mobileFontSizeIndicator) dom.mobileFontSizeIndicator.textContent = label;
+  if (dom.fontDownButton) dom.fontDownButton.disabled = atMin;
+  if (dom.fontUpButton) dom.fontUpButton.disabled = atMax;
+  if (dom.mobileFontDownButton) dom.mobileFontDownButton.disabled = atMin;
+  if (dom.mobileFontUpButton) dom.mobileFontUpButton.disabled = atMax;
+  if (dom.fontResetButton) dom.fontResetButton.disabled = !state.preferences.hasCustomFontSize;
 }
 
 function applyPreferences() {
@@ -2438,6 +2659,71 @@ function buildFeaturedVolume() {
   });
 }
 
+function buildCardDeckHomeSection() {
+  if (!dom.cardDeckSection || !dom.cardDeckGrid || !dom.cardDeckSummary) return;
+
+  const decks = getCardDecks();
+  const featuredDeck = getFeaturedCardDeck();
+  const hasDecks = decks.length > 0;
+
+  dom.cardDeckSection.hidden = !hasDecks;
+  if (!hasDecks) return;
+
+  dom.cardDeckSummary.textContent =
+    featuredDeck?.summary ||
+    "先把章节压成卡片，再把卡片排成可进入、可迁移的学习路径。";
+
+  dom.cardDeckGrid.innerHTML = decks
+    .map((deck, index) => {
+      const sourceItem = getDeckSourceItem(deck);
+      const statLabels = [
+        `${deck?.stats?.cardCount || deck.cards.length} 张牌`,
+        `${deck?.stats?.suitCount || deck.suits.length} 个花色`,
+        `${deck?.stats?.layerCount || deck.layers.length} 层`,
+      ];
+      const previewCards = (deck.cards || []).slice(0, 3);
+
+      return `
+        <article class="deck-home-card">
+          <p class="eyebrow">${escapeHtml(deck.eyebrow || `Deck ${formatSerialIndex(index)}`)}</p>
+          <h4>${escapeHtml(deck.title || "未命名牌组")}</h4>
+          <p class="deck-home-copy">${escapeHtml(deck.subtitle || deck.summary || "")}</p>
+          <p class="deck-home-summary">${escapeHtml(deck.description || deck.summary || "")}</p>
+          <div class="deck-home-chip-row">
+            ${statLabels.map((label) => `<span class="deck-meta-chip">${escapeHtml(label)}</span>`).join("")}
+          </div>
+          <div class="deck-home-preview-list">
+            ${previewCards
+              .map(
+                (card) => `
+                  <button class="deck-home-preview" type="button" data-deck-home-open="${escapeHtml(deck.id)}" data-deck-card="${escapeHtml(card.id)}">
+                    <span>${escapeHtml(buildDeckCardBadgeLabel(deck, card))}</span>
+                    <strong>${escapeHtml(card.title || "")}</strong>
+                  </button>
+                `,
+              )
+              .join("")}
+          </div>
+          <div class="hero-actions deck-home-actions">
+            <a class="pill-button" href="#${buildDeckHash(deck.id, { card: deck.entryCardId || deck.cards?.[0]?.id || "" })}">展开牌组</a>
+            ${sourceItem ? `<a class="pill-button pill-button-ghost" href="#${getDeckCardDocHash(deck, getDeckEntryCard(deck))}">回原章</a>` : ""}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  dom.cardDeckGrid
+    .querySelectorAll("[data-deck-home-open]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        const deck = findCardDeckById(button.dataset.deckHomeOpen);
+        const cardId = button.dataset.deckCard;
+        openDeckCard(deck, cardId, { smooth: false });
+      });
+    });
+}
+
 function buildLiveBookHomeSection() {
   if (!dom.liveBookSection) return;
 
@@ -2537,6 +2823,359 @@ function buildSystemLinks() {
     `;
     dom.systemLinks.appendChild(link);
   });
+}
+
+function buildDeckSuitChipMarkup(deck, suitId) {
+  const suit = findDeckSuit(deck, suitId);
+  if (!suit) {
+    return `<span class="deck-meta-chip">未分类</span>`;
+  }
+
+  const label = [suit.symbol, suit.label].filter(Boolean).join(" ");
+  const accent = suit.accent || "var(--accent)";
+  const soft = suit.soft || "rgba(139, 63, 52, 0.12)";
+
+  return `
+    <span class="deck-meta-chip deck-meta-chip-suit" style="--deck-accent:${accent}; --deck-soft:${soft};">
+      ${escapeHtml(label || suit.label)}
+    </span>
+  `;
+}
+
+function buildDeckLayerChipMarkup(deck, layerId) {
+  const layer = findDeckLayer(deck, layerId);
+  if (!layer) {
+    return `<span class="deck-meta-chip">未分层</span>`;
+  }
+
+  const label = [layer.shortLabel, layer.label].filter(Boolean).join(" · ");
+  return `<span class="deck-meta-chip">${escapeHtml(label)}</span>`;
+}
+
+function buildDeckCardTileMarkup(deck, card, index, activeCardId) {
+  return `
+    <button
+      class="deck-card-tile${card.id === activeCardId ? " is-active" : ""}"
+      type="button"
+      data-deck-card-id="${escapeHtml(card.id)}"
+    >
+      <span class="deck-card-tile-index">${formatSerialIndex(index)}</span>
+      <span class="deck-card-tile-copy">
+        <span class="deck-card-tile-meta">${escapeHtml(buildDeckCardBadgeLabel(deck, card))}</span>
+        <strong>${escapeHtml(card.title || "")}</strong>
+        <p>${escapeHtml(card.lead || "")}</p>
+      </span>
+    </button>
+  `;
+}
+
+function buildDeckSpreadMarkup(deck, spread, index) {
+  const spreadCards = (spread.cardIds || [])
+    .map((cardId) => findDeckCard(deck, cardId))
+    .filter(Boolean);
+
+  return `
+    <article class="deck-spread-card">
+      <p class="eyebrow">Spread ${formatSerialIndex(index)}</p>
+      <h4>${escapeHtml(spread.title || "")}</h4>
+      <p>${escapeHtml(spread.description || "")}</p>
+      <div class="deck-spread-sequence">
+        ${spreadCards
+          .map(
+            (card) => `
+              <button
+                class="deck-spread-node"
+                type="button"
+                data-deck-card-id="${escapeHtml(card.id)}"
+              >
+                <span>${escapeHtml(findDeckSuit(deck, card.suit)?.symbol || "•")}</span>
+                <strong>${escapeHtml(card.title || "")}</strong>
+              </button>
+            `,
+          )
+          .join("")}
+      </div>
+      ${spread.rationale ? `<p class="deck-spread-rationale">${escapeHtml(spread.rationale)}</p>` : ""}
+    </article>
+  `;
+}
+
+function buildDeckGuideMarkup(deck, guide) {
+  const spread = findDeckSpread(deck, guide.spreadId);
+  const entryCardId = spread?.cardIds?.[0] || deck.entryCardId || deck.cards?.[0]?.id || "";
+
+  return `
+    <article class="deck-guide-card">
+      <p class="eyebrow">Guide Scenario</p>
+      <h4>${escapeHtml(guide.title || "")}</h4>
+      <p>${escapeHtml(guide.description || "")}</p>
+      ${Array.isArray(guide.steps) && guide.steps.length
+        ? `
+          <ol class="deck-guide-steps">
+            ${guide.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+          </ol>
+        `
+        : ""}
+      <div class="hero-actions deck-guide-actions">
+        ${entryCardId
+          ? `
+            <button
+              class="pill-button pill-button-ghost"
+              type="button"
+              data-deck-card-id="${escapeHtml(entryCardId)}"
+            >
+              按这条路径看
+            </button>
+          `
+          : ""}
+        ${guide.assistantPrompt
+          ? `
+            <button
+              class="reader-button"
+              type="button"
+              data-deck-guide-ask="${escapeHtml(guide.id)}"
+            >
+              问 AI 导读
+            </button>
+          `
+          : ""}
+      </div>
+    </article>
+  `;
+}
+
+function buildDeckDetailMarkup(deck, activeCard) {
+  if (!activeCard) {
+    return `
+      <article id="deck-card-detail" class="deck-card-detail-card">
+        <p class="empty-state">当前牌组还没有可展示的卡片。</p>
+      </article>
+    `;
+  }
+
+  const docHash = getDeckCardDocHash(deck, activeCard);
+  const relatedCards = (activeCard.relatedIds || [])
+    .map((cardId) => findDeckCard(deck, cardId))
+    .filter(Boolean);
+
+  return `
+    <article id="deck-card-detail" class="deck-card-detail-card">
+      <div class="deck-card-detail-head">
+        <div>
+          <p class="eyebrow">${escapeHtml(deck.title || "Card Deck")}</p>
+          <h3>${escapeHtml(activeCard.title || "")}</h3>
+        </div>
+        <div class="deck-card-detail-meta">
+          ${buildDeckSuitChipMarkup(deck, activeCard.suit)}
+          ${buildDeckLayerChipMarkup(deck, activeCard.layer)}
+        </div>
+      </div>
+
+      <div class="deck-card-detail-body">
+        <section class="deck-detail-section">
+          <h4>主线</h4>
+          <p>${escapeHtml(activeCard.lead || "")}</p>
+        </section>
+        <section class="deck-detail-section">
+          <h4>例子</h4>
+          <p>${escapeHtml(activeCard.example || "")}</p>
+        </section>
+        <section class="deck-detail-section">
+          <h4>常见误读</h4>
+          <p>${escapeHtml(activeCard.misread || "")}</p>
+        </section>
+        <section class="deck-detail-section">
+          <h4>立即动作</h4>
+          <p>${escapeHtml(activeCard.action || "")}</p>
+        </section>
+      </div>
+
+      ${activeCard.focus ? `<p class="deck-inline-note">对应原文：${escapeHtml(activeCard.focus)}</p>` : ""}
+
+      <div class="hero-actions deck-detail-actions">
+        <button
+          class="pill-button"
+          type="button"
+          data-deck-ask-ai="${escapeHtml(activeCard.id)}"
+        >
+          问 AI
+        </button>
+        ${docHash ? `<a class="pill-button pill-button-ghost" href="#${docHash}">回原文</a>` : ""}
+      </div>
+
+      ${relatedCards.length
+        ? `
+          <div class="deck-related-row">
+            <span class="deck-related-label">连着看</span>
+            <div class="deck-related-list">
+              ${relatedCards
+                .map(
+                  (card) => `
+                    <button
+                      class="deck-related-link"
+                      type="button"
+                      data-deck-card-id="${escapeHtml(card.id)}"
+                    >
+                      ${escapeHtml(card.title || "")}
+                    </button>
+                  `,
+                )
+                .join("")}
+            </div>
+          </div>
+        `
+        : ""}
+    </article>
+  `;
+}
+
+function buildDeckViewMarkup(deck, activeCard) {
+  const sourceItem = getDeckSourceItem(deck);
+  const sourceHash = sourceItem ? buildDocHash(sourceItem.id) : "";
+  const activeCardId = activeCard?.id || "";
+  const statLabels = [
+    `${deck?.stats?.cardCount || deck.cards.length} 张牌`,
+    `${deck?.stats?.spreadCount || deck.spreads.length} 种摆法`,
+    `${deck?.stats?.guideCount || deck.guideScenarios.length} 个导读场景`,
+  ];
+
+  return `
+    <div class="hero-card deck-hero-card">
+      <p class="eyebrow">${escapeHtml(deck.eyebrow || "Learning Deck")}</p>
+      <h2>${escapeHtml(deck.title || "")}</h2>
+      <p class="hero-text">${escapeHtml(deck.description || deck.summary || "")}</p>
+      ${deck.subtitle ? `<p class="deck-hero-subtitle">${escapeHtml(deck.subtitle)}</p>` : ""}
+      <div class="deck-meta-row">
+        ${statLabels.map((label) => `<span class="deck-meta-chip">${escapeHtml(label)}</span>`).join("")}
+      </div>
+      <div class="hero-actions deck-hero-actions">
+        <button class="pill-button" type="button" data-deck-ask-root="true">问 AI 导读整副牌</button>
+        ${sourceHash ? `<a class="pill-button pill-button-ghost" href="#${sourceHash}">回原章</a>` : ""}
+      </div>
+    </div>
+
+    <div class="deck-structure-grid">
+      <article class="deck-panel-card">
+        <p class="eyebrow">Suits</p>
+        <h3>四个花色</h3>
+        <div class="deck-spectrum-list">
+          ${(deck.suits || [])
+            .map(
+              (suit) => `
+                <div class="deck-spectrum-item">
+                  ${buildDeckSuitChipMarkup(deck, suit.id)}
+                  <p>${escapeHtml(suit.summary || "")}</p>
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+      </article>
+
+      <article class="deck-panel-card">
+        <p class="eyebrow">Layers</p>
+        <h3>三层路径</h3>
+        <div class="deck-spectrum-list">
+          ${(deck.layers || [])
+            .map(
+              (layer) => `
+                <div class="deck-spectrum-item">
+                  ${buildDeckLayerChipMarkup(deck, layer.id)}
+                  <p>${escapeHtml(layer.summary || "")}</p>
+                </div>
+              `,
+            )
+            .join("")}
+        </div>
+      </article>
+    </div>
+
+    ${(deck.spreads || []).length
+      ? `
+        <section class="deck-section-card">
+          <div class="section-heading">
+            <p class="eyebrow">Spreads</p>
+            <h3>先按摆法进入</h3>
+            <p class="section-copy">一副牌不只是一张张看，也可以按情境排成一条学习路径。</p>
+          </div>
+          <div class="deck-spread-grid">
+            ${(deck.spreads || []).map((spread, index) => buildDeckSpreadMarkup(deck, spread, index)).join("")}
+          </div>
+        </section>
+      `
+      : ""}
+
+    ${(deck.guideScenarios || []).length
+      ? `
+        <section class="deck-section-card">
+          <div class="section-heading">
+            <p class="eyebrow">Guide</p>
+            <h3>三种进入场景</h3>
+            <p class="section-copy">先按真实情境进牌，再决定回原文、继续摆牌还是直接问 AI。</p>
+          </div>
+          <div class="deck-guide-grid">
+            ${(deck.guideScenarios || []).map((guide) => buildDeckGuideMarkup(deck, guide)).join("")}
+          </div>
+        </section>
+      `
+      : ""}
+
+    <section class="deck-section-card deck-browser-section">
+      <div class="section-heading">
+        <p class="eyebrow">Card Browser</p>
+        <h3>选一张牌，立刻用起来</h3>
+        <p class="section-copy">左边翻牌，右边看这张牌的主线、误读和立即动作。</p>
+      </div>
+      <div class="deck-browser-grid">
+        <div class="deck-card-grid">
+          ${(deck.cards || []).map((card, index) => buildDeckCardTileMarkup(deck, card, index, activeCardId)).join("")}
+        </div>
+        ${buildDeckDetailMarkup(deck, activeCard)}
+      </div>
+    </section>
+  `;
+}
+
+function bindDeckViewEvents(deck) {
+  if (!dom.deckContent) return;
+
+  dom.deckContent
+    .querySelectorAll("[data-deck-card-id]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        openDeckCard(deck, button.dataset.deckCardId);
+      });
+    });
+
+  dom.deckContent
+    .querySelector('[data-deck-ask-root="true"]')
+    ?.addEventListener("click", () => {
+      askAssistant(deck.assistantPrompt || `请带我进入《${deck.title || "当前牌组"}》这副牌。`).catch(console.error);
+    });
+
+  dom.deckContent
+    .querySelectorAll("[data-deck-ask-ai]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        const card = findDeckCard(deck, button.dataset.deckAskAi);
+        if (!card) return;
+        askAssistant(buildDeckCardAssistantQuestion(deck, card)).catch(console.error);
+      });
+    });
+
+  dom.deckContent
+    .querySelectorAll("[data-deck-guide-ask]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        const guide = findDeckGuideScenario(deck, button.dataset.deckGuideAsk);
+        if (!guide) return;
+        askAssistant(
+          guide.assistantPrompt
+            || deck.assistantPrompt
+            || `请带我进入《${deck.title || "当前牌组"}》这副牌。`,
+        ).catch(console.error);
+      });
+    });
 }
 
 function getItemSearchText(item) {
@@ -2718,7 +3357,7 @@ function buildNav() {
       button.addEventListener("click", () => {
         const focusParams = keyword ? { focus: keyword } : null;
         const nextHash = buildDocHash(item.id, focusParams);
-        closePanels();
+        closeNavigationPanels();
         if (window.location.hash === `#${nextHash}`) {
           renderDoc(item.id, focusParams).catch(console.error);
           return;
@@ -2739,8 +3378,14 @@ function buildNav() {
 }
 
 function syncViewButtons() {
-  dom.graphButton.classList.toggle("is-active", Boolean(state.activeGraphNodeId));
-  dom.labButton.classList.toggle("is-active", Boolean(state.activeLabPage));
+  dom.graphButton?.classList.toggle("is-active", Boolean(state.activeGraphNodeId));
+  dom.labButton?.classList.toggle("is-active", Boolean(state.activeLabPage));
+
+  const activeTab = state.assistantOpen ? "ai" : state.activePrimaryView;
+  dom.tabHomeButton?.classList.toggle("is-active", activeTab === "home");
+  dom.tabLabButton?.classList.toggle("is-active", activeTab === "lab");
+  dom.tabGraphButton?.classList.toggle("is-active", activeTab === "graph");
+  dom.tabAiButton?.classList.toggle("is-active", activeTab === "ai");
 }
 
 function setRangeOutput(id, label) {
@@ -2989,12 +3634,6 @@ function registerLabPlaygroundCleanup(cleanup) {
 }
 
 function cleanupLabPlaygrounds() {
-  if (state.assistantPending) {
-    state.assistantAbortController?.abort();
-    state.assistantPending = false;
-    state.assistantAbortController = null;
-  }
-
   state.labPlaygroundCleanups.forEach((cleanup) => {
     try {
       cleanup();
@@ -5400,38 +6039,216 @@ function scoreAssistantItem(item, keywords) {
   return score;
 }
 
+function buildAssistantContextEntry(item, keywords = [], excerptOverride = "") {
+  const bodyText = getItemSearchText(item);
+  return {
+    id: item.id,
+    title: getDisplayTitle(item),
+    sectionTitle: item.sectionTitle,
+    excerpt: excerptOverride || item.excerpt || buildAssistantSnippet(bodyText, keywords, getAssistantSnippetLength()),
+    url: `#doc/${encodeURIComponent(item.id)}`,
+    sourcePath: item.sourcePath,
+  };
+}
+
+function collectAssistantItems(candidates) {
+  const seen = new Set();
+  const items = [];
+  candidates.flat().forEach((item) => {
+    if (!item?.id || seen.has(item.id)) return;
+    seen.add(item.id);
+    items.push(item);
+  });
+  return items;
+}
+
+function getAssistantRouteContext() {
+  if (state.activeId) {
+    const item = findItemById(state.activeId);
+    const sequence = getReadingSequence();
+    const currentIndex = sequence.findIndex((entry) => entry.id === item?.id);
+    const prev = currentIndex > 0 ? sequence[currentIndex - 1] : null;
+    const next = currentIndex >= 0 ? sequence[currentIndex + 1] : null;
+    const alternate = getAlternateVersionItem(item);
+    const title = getDisplayTitle(item);
+
+    return {
+      badge: item?.sectionTitle || "章节",
+      title: title || "当前章节",
+      copy:
+        item?.excerpt
+        || buildAssistantSnippet(getItemSearchText(item), [], 180)
+        || "可以直接追问这一章的主线、误区和下一步阅读入口。",
+      chips: collectAssistantItems([item, alternate, prev, next]).map((entry) => getDisplayTitle(entry)).slice(0, 3),
+      actions: [
+        `这一章真正的主线是什么？`,
+        `从《${title}》继续往下该读哪里？`,
+        `这章最容易误解的地方是什么？`,
+        `和这一章最相关的图谱节点有哪些？`,
+      ],
+      items: collectAssistantItems([item, alternate, prev, next]),
+      launcherLabel: title || "当前章节",
+    };
+  }
+
+  if (state.activeGraphNodeId) {
+    const node = findGraphNodeById(state.activeGraphNodeId);
+    const chapterItems = getGraphNodeItems(node, { limit: getAssistantContextLimit() });
+    const relatedItems = getGraphCandidateNodes(node)
+      .slice(0, 3)
+      .flatMap((entry) => getGraphNodeItems(entry, { limit: 2 }));
+
+    return {
+      badge: getGraphStatusLabel(node?.status),
+      title: node?.label || "当前图谱节点",
+      copy:
+        node?.description
+        || `这个节点目前${getGraphNodeCountLabel(node)}，适合直接追问它该从哪些章节进入。`,
+      chips: [
+        getGraphKindLabel(node?.kind),
+        node?.familyLabel,
+        getGraphNodeCountLabel(node),
+      ].filter(Boolean),
+      actions: [
+        `节点“${node?.label || "当前节点"}”第一次该从哪里进入？`,
+        `“${node?.label || "当前节点"}”和相邻节点差别是什么？`,
+        `哪些章节已经谈到了“${node?.label || "当前节点"}”？`,
+        `顺着“${node?.label || "当前节点"}”继续往下读`,
+      ],
+      items: collectAssistantItems([chapterItems, relatedItems]),
+      launcherLabel: node?.label || "图谱节点",
+    };
+  }
+
+  if (state.activeDeckId) {
+    const deck = findCardDeckById(state.activeDeckId);
+    const card = getDeckEntryCard(deck, state.activeDeckCardId);
+    const relatedCards = (card?.relatedIds || [])
+      .map((cardId) => findDeckCard(deck, cardId))
+      .filter(Boolean);
+
+    return {
+      badge: buildDeckCardBadgeLabel(deck, card),
+      title: card?.title || deck?.title || "当前牌组",
+      copy:
+        card?.lead
+        || deck?.summary
+        || "可以直接围绕当前卡片追问主线、误读和下一步，再跳回原文继续压结构。",
+      chips: [
+        deck?.title,
+        findDeckSuit(deck, card?.suit)?.label,
+        findDeckLayer(deck, card?.layer)?.label,
+      ].filter(Boolean),
+      actions: [
+        `把“${card?.title || "这张牌"}”翻成一个今天能执行的动作`,
+        `“${card?.title || "这张牌"}”最容易被误解成什么？`,
+        relatedCards[0]
+          ? `我该把“${card?.title || "这张牌"}”和“${relatedCards[0].title}”连起来怎么用？`
+          : "这张牌下一张最该接哪张？",
+        "回到原文时，我最该补哪一个边界或条件？",
+      ],
+      items: collectAssistantItems([
+        getDeckCardSourceItem(deck, card),
+        getDeckSourceItem(deck),
+        getSectionEntry("extension-book"),
+        getSectionEntry("plain-book"),
+        getSectionEntry("ai-book"),
+      ]),
+      launcherLabel: card?.title || deck?.title || "当前牌组",
+    };
+  }
+
+  if (state.activeLabPage) {
+    const page = LAB_PAGES[state.activeLabPage] || LAB_PAGES.learn;
+    const isPromptPage = state.activeLabPage === "prompt";
+
+    return {
+      badge: "实验台",
+      title: page.title,
+      copy: page.intro || "这里更适合把问题压紧，再回到正文或图谱继续阅读。",
+      chips: [page.title, isPromptPage ? "提示词" : "实验页", "可跳回正文"],
+      actions: isPromptPage
+        ? [
+          "把我现在的问题压成一句更好追问的话",
+          "我应该怎么问，才能让它带回章节入口？",
+          "先给我一条最短阅读线",
+          "适合从哪一卷开始追问？",
+        ]
+        : [
+          "这一页最该配合哪几章一起看？",
+          "从实验页回到正文，该读哪里？",
+          "把这一页的主线翻成白话",
+          "它在整站里对应哪些章节？",
+        ],
+      items: collectAssistantItems([
+        getAssistantSetupItem(),
+        getSectionEntry("plain-book"),
+        getSectionEntry("overview"),
+        getSectionEntry("ai-book"),
+      ]),
+      launcherLabel: page.title,
+    };
+  }
+
+  const startItem = getPrimaryStartItem();
+  return {
+    badge: "首页",
+    title: "分卷书架",
+    copy: "适合先问第一次从哪里读起，或让它给你一条最短的进入路径。",
+    chips: ["白话卷", "知识图谱", "轻内容", "评论回填"],
+    actions: [
+      "第一次来先从哪里读？",
+      "给我一条最短阅读线",
+      "先看白话卷还是知识图谱？",
+      "哪些节点最适合先进入？",
+    ],
+    items: collectAssistantItems([
+      startItem,
+      getSectionEntry("plain-book"),
+      getSectionEntry("overview"),
+      getSectionEntry("light-series"),
+      getSectionEntry("ai-book"),
+    ]),
+    launcherLabel: "当前页面",
+  };
+}
+
 function buildAssistantFallbackContext() {
-  return [
-    getSectionEntry("plain-book"),
-    getSectionEntry("overview"),
-    getSectionEntry("ai-book"),
-  ]
-    .filter(Boolean)
+  const contextItems = getAssistantRouteContext().items;
+  const fallbackItems = contextItems.length
+    ? contextItems
+    : collectAssistantItems([
+      getSectionEntry("plain-book"),
+      getSectionEntry("overview"),
+      getSectionEntry("ai-book"),
+    ]);
+
+  return fallbackItems
     .slice(0, getAssistantContextLimit())
-    .map((item) => ({
-      id: item.id,
-      title: getDisplayTitle(item),
-      sectionTitle: item.sectionTitle,
-      excerpt: item.excerpt || buildAssistantSnippet(getItemSearchText(item), [], getAssistantSnippetLength()),
-      url: `#doc/${encodeURIComponent(item.id)}`,
-      sourcePath: item.sourcePath,
-    }));
+    .map((item) => buildAssistantContextEntry(item));
 }
 
 function buildAssistantContext(question) {
   const keywords = extractAssistantKeywords(question);
-  const snippetLength = getAssistantSnippetLength();
   const limit = getAssistantContextLimit();
+  const prioritizedItems = getAssistantRouteContext().items;
+  const prioritizedIds = new Set(prioritizedItems.map((item) => item.id));
 
   const matches = state.payload.items
     .map((item) => {
-      const score = scoreAssistantItem(item, keywords);
+      let score = scoreAssistantItem(item, keywords);
+      if (prioritizedIds.has(item.id)) {
+        score += keywords.length ? 360 : 3200;
+      }
+      if (score <= 0 && prioritizedIds.has(item.id)) {
+        score = 2400;
+      }
       if (score <= 0) return null;
       const bodyText = getItemSearchText(item);
       return {
         item,
         score,
-        excerpt: buildAssistantSnippet(bodyText, keywords, snippetLength),
+        excerpt: buildAssistantSnippet(bodyText, keywords, getAssistantSnippetLength()),
       };
     })
     .filter(Boolean)
@@ -5441,16 +6258,14 @@ function buildAssistantContext(question) {
       || left.item.title.localeCompare(right.item.title, "zh-CN")
     ))
     .slice(0, limit)
-    .map(({ item, excerpt }) => ({
-      id: item.id,
-      title: getDisplayTitle(item),
-      sectionTitle: item.sectionTitle,
-      excerpt: excerpt || item.excerpt || "",
-      url: `#doc/${encodeURIComponent(item.id)}`,
-      sourcePath: item.sourcePath,
-    }));
+    .map(({ item, excerpt }) => buildAssistantContextEntry(item, keywords, excerpt));
 
-  return matches.length ? matches : buildAssistantFallbackContext();
+  if (matches.length) return matches;
+
+  const prioritizedEntries = prioritizedItems
+    .slice(0, limit)
+    .map((item) => buildAssistantContextEntry(item, keywords));
+  return prioritizedEntries.length ? prioritizedEntries : buildAssistantFallbackContext();
 }
 
 function getAssistantConversationHistory() {
@@ -5499,7 +6314,7 @@ function buildAssistantMessageMarkup(message) {
 }
 
 function renderAssistantConversation() {
-  const container = dom.labContent.querySelector("#assistant-conversation");
+  const container = dom.assistantConversation;
   if (!container) return;
 
   const assistant = getAssistantConfig();
@@ -5519,7 +6334,7 @@ function renderAssistantConversation() {
 }
 
 function renderAssistantStatus() {
-  const status = dom.labContent.querySelector("#assistant-status");
+  const status = dom.assistantStatus;
   if (!status) return;
 
   status.textContent = state.assistantStatus.message || "";
@@ -5538,11 +6353,66 @@ function setAssistantStatus(message, tone = "info") {
   renderAssistantStatus();
 }
 
+function getAssistantQuickActionItems() {
+  const merged = [...getAssistantRouteContext().actions, ...getAssistantSuggestions()];
+  const seen = new Set();
+  return merged.filter((item) => {
+    const normalized = String(item || "").trim();
+    if (!normalized || seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  }).slice(0, 4);
+}
+
+function renderAssistantShell() {
+  const assistant = getAssistantConfig();
+  const routeContext = getAssistantRouteContext();
+
+  if (dom.assistantPanelTitle) {
+    dom.assistantPanelTitle.textContent = assistant.label || "站内导读助手";
+  }
+  if (dom.assistantPanelDescription) {
+    dom.assistantPanelDescription.textContent =
+      assistant.description || "优先结合当前页面和站内章节，给出更像对话而不是检索结果的阅读引导。";
+  }
+  if (dom.assistantLauncherContext) {
+    dom.assistantLauncherContext.textContent = routeContext.launcherLabel || "可直接追问当前页面";
+  }
+  if (dom.assistantContextTitle) {
+    dom.assistantContextTitle.textContent = routeContext.title || "当前页面";
+  }
+  if (dom.assistantContextBadge) {
+    dom.assistantContextBadge.textContent = routeContext.badge || "当前页";
+  }
+  if (dom.assistantContextCopy) {
+    dom.assistantContextCopy.textContent = routeContext.copy || "";
+  }
+  if (dom.assistantContextChips) {
+    dom.assistantContextChips.innerHTML = routeContext.chips
+      .map((item) => `<span class="graph-chip">${escapeHtml(item)}</span>`)
+      .join("");
+  }
+  if (dom.assistantQuickActions) {
+    dom.assistantQuickActions.innerHTML = getAssistantQuickActionItems()
+      .map((item) => (
+        `<button class="assistant-quick-action" type="button" data-assistant-suggestion="${escapeHtml(item)}">${escapeHtml(item)}</button>`
+      ))
+      .join("");
+  }
+  if (dom.assistantQuestion) {
+    dom.assistantQuestion.placeholder = assistant.placeholder || "例如：这一页真正的主线是什么？";
+  }
+
+  renderAssistantConversation();
+  renderAssistantStatus();
+  syncAssistantComposerState();
+}
+
 function syncAssistantComposerState() {
-  const submitButton = dom.labContent.querySelector("#assistant-submit-button");
-  const stopButton = dom.labContent.querySelector("#assistant-stop-button");
-  const clearButton = dom.labContent.querySelector("#assistant-clear-button");
-  const textarea = dom.labContent.querySelector("#assistant-question");
+  const submitButton = dom.assistantSubmitButton;
+  const stopButton = dom.assistantStopButton;
+  const clearButton = dom.assistantClearButton;
+  const textarea = dom.assistantQuestion;
 
   if (submitButton) submitButton.disabled = state.assistantPending;
   if (stopButton) stopButton.hidden = !state.assistantPending;
@@ -5557,7 +6427,7 @@ function updateAssistantMessageContent(messageId, content, { pending = false } =
   message.content = content;
   message.pending = pending;
 
-  const container = dom.labContent.querySelector("#assistant-conversation");
+  const container = dom.assistantConversation;
   const item = container?.querySelector(`[data-assistant-message-id="${messageId}"]`);
   if (!item) {
     renderAssistantConversation();
@@ -5748,6 +6618,42 @@ function buildAssistantPanelMarkup() {
   `;
 }
 
+function buildAssistantPromptEntryMarkup() {
+  const assistant = getAssistantConfig();
+  const hasEndpoint = Boolean(String(assistant.endpoint || "").trim());
+
+  return `
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card lab-card-strong assistant-prompt-entry-card">
+        <p class="eyebrow">Live Guide</p>
+        <h3>实时导读已经改成全站悬浮窗</h3>
+        <p class="lab-section-copy">
+          问答不再塞在这个实验页里。现在你在任意章节、图谱节点、首页或实验页，都可以直接打开右下角导读窗继续追问。
+        </p>
+        <div class="assistant-chip-row">
+          <span class="graph-chip is-lit">全站可用</span>
+          <span class="graph-chip">自动带当前页上下文</span>
+          <span class="graph-chip ${hasEndpoint ? "is-lit" : "is-candidate"}">${hasEndpoint ? "已接入 Worker" : "待填 Worker"}</span>
+        </div>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-open-assistant="true">打开实时导读</button>
+          <a class="reader-button" href="#graph/core-02">先从图谱节点试问</a>
+        </div>
+      </article>
+
+      <article class="lab-card">
+        <p class="eyebrow">Use It</p>
+        <h3>${escapeHtml(assistant.label || "站内导读助手")}</h3>
+        <div class="lab-mini-points">
+          <span>先在当前页里追问主线、入口、误区和下一步，而不是让它泛泛讲理论。</span>
+          <span>回答里出现章节卡片后，直接点进去读，再回来继续追问，才有连续感。</span>
+          <span>提示词页现在更适合先压缩问题，再交给右侧导读窗完成真正的站内导航。</span>
+        </div>
+      </article>
+    </section>
+  `;
+}
+
 function pruneAssistantConversation() {
   const maxMessages = getAssistantHistoryLimit() * 2;
   if (state.assistantMessages.length > maxMessages) {
@@ -5766,16 +6672,19 @@ async function askAssistant(question) {
   const assistant = getAssistantConfig();
   const endpoint = String(assistant.endpoint || "").trim();
   if (!endpoint) {
+    setAssistantOpen(true, { focusInput: true });
     setAssistantStatus(assistant.emptyMessage || "当前还没有接入 Worker。", "warning");
     return;
   }
 
   const normalizedQuestion = normalizeAssistantText(question, 360);
   if (!normalizedQuestion) {
+    setAssistantOpen(true, { focusInput: true });
     setAssistantStatus("先写下你想追问的问题。", "warning");
     return;
   }
 
+  setAssistantOpen(true);
   const contextItems = buildAssistantContext(normalizedQuestion);
   const history = getAssistantConversationHistory();
   const messageSeed = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -5796,7 +6705,7 @@ async function askAssistant(question) {
   pruneAssistantConversation();
   renderAssistantConversation();
 
-  const questionInput = dom.labContent.querySelector("#assistant-question");
+  const questionInput = dom.assistantQuestion;
   if (questionInput) {
     questionInput.value = "";
     questionInput.focus();
@@ -5873,40 +6782,41 @@ async function askAssistant(question) {
 }
 
 function bindAssistantPanel() {
-  renderAssistantConversation();
-  renderAssistantStatus();
-  syncAssistantComposerState();
+  renderAssistantShell();
 
-  const submitButton = dom.labContent.querySelector("#assistant-submit-button");
-  const stopButton = dom.labContent.querySelector("#assistant-stop-button");
-  const clearButton = dom.labContent.querySelector("#assistant-clear-button");
-  const questionInput = dom.labContent.querySelector("#assistant-question");
-
-  submitButton?.addEventListener("click", () => {
-    askAssistant(questionInput?.value || "");
+  dom.assistantLauncher?.addEventListener("click", () => {
+    setAssistantOpen(!state.assistantOpen, { focusInput: !state.assistantOpen });
   });
 
-  stopButton?.addEventListener("click", () => {
+  dom.assistantCloseButton?.addEventListener("click", () => {
+    setAssistantOpen(false);
+  });
+
+  dom.assistantSubmitButton?.addEventListener("click", () => {
+    askAssistant(dom.assistantQuestion?.value || "");
+  });
+
+  dom.assistantStopButton?.addEventListener("click", () => {
     state.assistantAbortController?.abort();
   });
 
-  clearButton?.addEventListener("click", () => {
+  dom.assistantClearButton?.addEventListener("click", () => {
     resetAssistantConversation();
   });
 
-  questionInput?.addEventListener("keydown", (event) => {
+  dom.assistantQuestion?.addEventListener("keydown", (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
-      askAssistant(questionInput.value);
+      askAssistant(dom.assistantQuestion?.value || "");
     }
   });
 
-  dom.labContent.querySelectorAll("[data-assistant-suggestion]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const question = button.dataset.assistantSuggestion || "";
-      if (questionInput) questionInput.value = question;
-      askAssistant(question);
-    });
+  dom.assistantQuickActions?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-assistant-suggestion]");
+    if (!button) return;
+    const question = button.dataset.assistantSuggestion || "";
+    if (dom.assistantQuestion) dom.assistantQuestion.value = question;
+    askAssistant(question);
   });
 }
 
@@ -6041,7 +6951,7 @@ function renderLabPrompt() {
       </article>
     </section>
 
-    ${buildAssistantPanelMarkup()}
+    ${buildAssistantPromptEntryMarkup()}
   `;
 
   const controlIds = Object.keys(LAB_CONTROL_DEFAULTS.prompt);
@@ -6095,8 +7005,11 @@ function renderLabPrompt() {
     });
   });
 
+  dom.labContent.querySelector('[data-open-assistant="true"]')?.addEventListener("click", () => {
+    setAssistantOpen(true, { focusInput: true });
+  });
+
   syncPromptState(false);
-  bindAssistantPanel();
 }
 
 function renderLabPlay() {
@@ -7299,8 +8212,11 @@ async function renderGraph(nodeId) {
   }
 
   state.activeId = null;
+  state.activeDeckId = null;
+  state.activeDeckCardId = null;
   state.activeLabPage = null;
   state.activeGraphNodeId = selectedNode.id;
+  state.activePrimaryView = "graph";
   state.currentPrevId = null;
   state.currentNextId = null;
 
@@ -7308,6 +8224,7 @@ async function renderGraph(nodeId) {
   document.body.classList.remove("is-reading");
   dom.viewTitle.textContent = "知识图谱";
   dom.homeView.classList.add("hidden");
+  dom.deckView.classList.add("hidden");
   dom.labView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.graphView.classList.remove("hidden");
@@ -7318,21 +8235,77 @@ async function renderGraph(nodeId) {
   dom.readerProgressBar.style.transform = "scaleX(0)";
   dom.tocButton.disabled = true;
   updateChapterButtons(null, null);
-  closePanels();
+  closeNavigationPanels();
   buildNav();
   renderGraphStats();
   renderGraphLegend();
   renderGraphClusters(selectedNode);
   renderGraphDetail(selectedNode);
+  renderAssistantShell();
   syncViewButtons();
   window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+async function renderDeck(deckId = null, params = {}, options = {}) {
+  const deck = deckId ? findCardDeckById(deckId) : getFeaturedCardDeck();
+  if (!deck) {
+    renderHome();
+    return;
+  }
+
+  const previousDeckId = state.activeDeckId;
+  const previousCardId = state.activeDeckCardId;
+  const activeCard = getDeckEntryCard(deck, params?.card);
+
+  cleanupLabPlaygrounds();
+  state.activeId = null;
+  state.activeGraphNodeId = null;
+  state.activeLabPage = null;
+  state.activeDeckId = deck.id;
+  state.activeDeckCardId = activeCard?.id || null;
+  state.activePrimaryView = "home";
+  state.currentPrevId = null;
+  state.currentNextId = null;
+
+  document.title = `${state.payload.site.title} 路 ${deck.title || "牌组"}`;
+  document.body.classList.remove("is-reading");
+  dom.viewTitle.textContent = deck.title || "牌组";
+  dom.homeView.classList.add("hidden");
+  dom.graphView.classList.add("hidden");
+  dom.labView.classList.add("hidden");
+  dom.docView.classList.add("hidden");
+  dom.deckView.classList.remove("hidden");
+  dom.readerProgressBar.style.transform = "scaleX(0)";
+  dom.tocButton.disabled = true;
+  updateChapterButtons(null, null);
+  closeNavigationPanels();
+  buildNav();
+  dom.deckContent.innerHTML = buildDeckViewMarkup(deck, activeCard);
+  bindDeckViewEvents(deck);
+  renderAssistantShell();
+  syncViewButtons();
+
+  const shouldScrollToDetail =
+    options.scrollToDetail !== false
+    && previousDeckId === deck.id
+    && previousCardId
+    && previousCardId !== activeCard?.id;
+
+  if (shouldScrollToDetail) {
+    scrollDeckDetailIntoView({ smooth: true });
+  } else if (previousDeckId !== deck.id) {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
 }
 
 function renderHome() {
   cleanupLabPlaygrounds();
   state.activeId = null;
+  state.activeDeckId = null;
+  state.activeDeckCardId = null;
   state.activeGraphNodeId = null;
   state.activeLabPage = null;
+  state.activePrimaryView = "home";
   state.currentPrevId = null;
   state.currentNextId = null;
 
@@ -7340,14 +8313,16 @@ function renderHome() {
   document.body.classList.remove("is-reading");
   dom.viewTitle.textContent = "分卷书架";
   dom.homeView.classList.remove("hidden");
+  dom.deckView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
   dom.labView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.readerProgressBar.style.transform = "scaleX(0)";
   dom.tocButton.disabled = true;
   updateChapterButtons(null, null);
+  renderAssistantShell();
   syncViewButtons();
-  closePanels();
+  closeNavigationPanels();
   buildNav();
   window.scrollTo({ top: 0, behavior: "auto" });
 }
@@ -7356,7 +8331,10 @@ async function renderLab(page) {
   const activePage = normalizeLabPage(page);
   cleanupLabPlaygrounds();
   state.activeId = null;
+  state.activeDeckId = null;
+  state.activeDeckCardId = null;
   state.activeGraphNodeId = null;
+  state.activePrimaryView = "lab";
   state.currentPrevId = null;
   state.currentNextId = null;
   state.labParams = resolveLabParams(activePage, state.labParams);
@@ -7364,15 +8342,17 @@ async function renderLab(page) {
   document.body.classList.remove("is-reading");
   dom.viewTitle.textContent = "理论实验台";
   dom.homeView.classList.add("hidden");
+  dom.deckView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.labView.classList.remove("hidden");
   dom.readerProgressBar.style.transform = "scaleX(0)";
   dom.tocButton.disabled = true;
   updateChapterButtons(null, null);
-  closePanels();
+  closeNavigationPanels();
   buildNav();
   renderLabPage(activePage);
+  renderAssistantShell();
   syncViewButtons();
   await typesetElement(dom.labContent);
   window.scrollTo({ top: 0, behavior: "auto" });
@@ -7387,7 +8367,7 @@ function buildTocLink(label, anchor, level) {
   button.addEventListener("click", () => {
     const target = document.getElementById(anchor);
     if (!target) return;
-    closePanels();
+    closeNavigationPanels();
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   return button;
@@ -7417,8 +8397,8 @@ function renderToc(item) {
 function updateChapterButtons(prev, next) {
   state.currentPrevId = prev?.id || null;
   state.currentNextId = next?.id || null;
-  dom.mobilePrevButton.disabled = !prev;
-  dom.mobileNextButton.disabled = !next;
+  if (dom.mobilePrevButton) dom.mobilePrevButton.disabled = !prev;
+  if (dom.mobileNextButton) dom.mobileNextButton.disabled = !next;
 }
 
 function setCommentCopyStatus(message) {
@@ -8007,10 +8987,14 @@ async function renderDoc(id, params = {}) {
 
   cleanupLabPlaygrounds();
   state.activeId = item.id;
+  state.activeDeckId = null;
+  state.activeDeckCardId = null;
   state.activeGraphNodeId = null;
   state.activeLabPage = null;
+  state.activePrimaryView = "home";
   document.body.classList.add("is-reading");
   dom.homeView.classList.add("hidden");
+  dom.deckView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
   dom.labView.classList.add("hidden");
   dom.docView.classList.remove("hidden");
@@ -8031,6 +9015,7 @@ async function renderDoc(id, params = {}) {
 
   renderToc(item);
   renderPagination(item);
+  renderAssistantShell();
   await typesetMath();
   applyDocRouteFocus(params);
   updateReadingProgress();
@@ -8070,6 +9055,10 @@ async function route() {
     renderHome();
     return;
   }
+  if (routeState.type === "deck") {
+    await renderDeck(routeState.deckId, routeState.params);
+    return;
+  }
   if (routeState.type === "graph") {
     await renderGraph(routeState.nodeId);
     return;
@@ -8095,23 +9084,46 @@ function bindEvents() {
     setDrawerOpen(false);
     setTocOpen(!state.tocOpen);
   });
-  dom.graphButton.addEventListener("click", () => {
-    closePanels();
+  dom.graphButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
     setHashForGraph(state.activeGraphNodeId || getGraphDefaultNode()?.id || null);
   });
-  dom.labButton.addEventListener("click", () => {
-    closePanels();
-    setHashForLab(state.activeLabPage || "learn");
+  dom.labButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
+    setHashForLab(state.activeLabPage || "play");
   });
   dom.themeButton.addEventListener("click", cycleTheme);
   dom.fontDownButton.addEventListener("click", () => adjustFont(-1));
   dom.fontUpButton.addEventListener("click", () => adjustFont(1));
-  dom.mobileFontDownButton.addEventListener("click", () => adjustFont(-1));
-  dom.mobileFontUpButton.addEventListener("click", () => adjustFont(1));
+  dom.mobileFontDownButton?.addEventListener("click", () => adjustFont(-1));
+  dom.mobileFontUpButton?.addEventListener("click", () => adjustFont(1));
   dom.fontResetButton.addEventListener("click", resetFontSize);
-  dom.homeButton.addEventListener("click", () => {
-    closePanels();
+  dom.homeButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
     window.location.hash = "";
+  });
+
+  dom.tabHomeButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
+    window.location.hash = "";
+  });
+  dom.tabLabButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
+    setHashForLab(state.activeLabPage || "play");
+  });
+  dom.tabGraphButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(false);
+    setHashForGraph(state.activeGraphNodeId || getGraphDefaultNode()?.id || null);
+  });
+  dom.tabAiButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(true, { focusInput: true });
   });
 
   dom.startReadingButton.addEventListener("click", () => {
@@ -8126,37 +9138,37 @@ function bindEvents() {
     const defaultNode = getGraphDefaultNode();
     setHashForGraph(defaultNode?.id || null);
   });
-  dom.openLabButton.addEventListener("click", () => {
+  dom.openLabButton?.addEventListener("click", () => {
     const item = getSectionEntry("light-series") || getSectionEntry("book");
     if (item) setHashForDoc(item.id);
   });
   dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
   dom.liveBookOpenCatalog?.addEventListener("click", () => setDrawerOpen(true));
 
-  dom.mobileHomeButton.addEventListener("click", () => {
-    closePanels();
+  dom.mobileHomeButton?.addEventListener("click", () => {
+    closeNavigationPanels();
     window.location.hash = "";
   });
-  dom.mobileCatalogButton.addEventListener("click", () => {
+  dom.mobileCatalogButton?.addEventListener("click", () => {
     setMobileFontPanelOpen(false);
     setTocOpen(false);
     setDrawerOpen(!state.drawerOpen);
   });
-  dom.mobileFontButton.addEventListener("click", () => {
+  dom.mobileFontButton?.addEventListener("click", () => {
     setDrawerOpen(false);
     setTocOpen(false);
     setMobileFontPanelOpen(!state.mobileFontPanelOpen);
   });
-  dom.mobileThemeButton.addEventListener("click", cycleTheme);
-  dom.mobilePrevButton.addEventListener("click", () => {
+  dom.mobileThemeButton?.addEventListener("click", cycleTheme);
+  dom.mobilePrevButton?.addEventListener("click", () => {
     if (state.currentPrevId) {
-      closePanels();
+      closeNavigationPanels();
       setHashForDoc(state.currentPrevId);
     }
   });
-  dom.mobileNextButton.addEventListener("click", () => {
+  dom.mobileNextButton?.addEventListener("click", () => {
     if (state.currentNextId) {
-      closePanels();
+      closeNavigationPanels();
       setHashForDoc(state.currentNextId);
     }
   });
@@ -8247,8 +9259,10 @@ async function init() {
 
   state.payload = await response.json();
   updateShell();
+  renderAssistantShell();
   buildStarterLinks();
   buildFeaturedVolume();
+  buildCardDeckHomeSection();
   buildLiveBookHomeSection();
   buildGraphPreview();
   applyPreferences();
@@ -8257,6 +9271,7 @@ async function init() {
   buildSystemLinks();
   buildNav();
   bindEvents();
+  bindAssistantPanel();
   await route();
 }
 

@@ -6,12 +6,12 @@
     <title>差结构学习法</title>
     <meta
       name="description"
-      content="差结构学习法不是终极存在论，也不是面向大众的大理论宣讲；它更适合作为一套供学习者、研究者与 AI 协作者直接使用的四卷一站公共方法基础设施。第一卷负责上手，第二卷负责压实，第三卷负责把方法直接变成能力，第四卷负责协作与回写。"
+      content="这是一个由尤安持续建设的开放学习项目，公开分享学习方法、认知工具与 AI 辅助研究流程，欢迎阅读、提问、反馈和共建。"
     />
     <meta property="og:title" content="差结构学习法" />
     <meta
       property="og:description"
-      content="差结构学习法不是终极存在论，也不是面向大众的大理论宣讲；它更适合作为一套供学习者、研究者与 AI 协作者直接使用的四卷一站公共方法基础设施。第一卷负责上手，第二卷负责压实，第三卷负责把方法直接变成能力，第四卷负责协作与回写。"
+      content="这是一个由尤安持续建设的开放学习项目，公开分享学习方法、认知工具与 AI 辅助研究流程，欢迎阅读、提问、反馈和共建。"
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -89,24 +89,22 @@
       </div>
 
       <main class="reader-main">
-        <section id="home-view" class="home-view">
-          <div class="hero-card hero-card-featured">
+        <section id="home-view" class="home-view app-home-view">
+          <div class="hero-card hero-card-featured app-shelf-home-card">
             <div class="hero-layout">
               <div class="hero-copy-block">
-                <p class="eyebrow">Recommended First Volume</p>
+                <p class="eyebrow">Bookshelf</p>
                 <h2 id="hero-title"></h2>
                 <p id="hero-text" class="hero-text"></p>
 
                 <div class="hero-actions">
                   <button id="start-reading-button" class="pill-button" type="button">先读白话卷</button>
-                  <button id="open-graph-button" class="pill-button" type="button">打开知识图谱</button>
-                  <button id="open-lab-button" class="pill-button" type="button">看10条轻内容</button>
                   <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">查看全部入口</button>
                 </div>
               </div>
 
-              <aside class="hero-spotlight" aria-label="推荐入口">
-                <p class="eyebrow">第一卷：大众卷</p>
+              <aside class="hero-spotlight app-shelf-spotlight" aria-label="当前上架图书">
+                <p class="eyebrow">Now Reading</p>
                 <h3 id="featured-volume-title"></h3>
                 <p id="featured-volume-copy" class="hero-spotlight-copy"></p>
                 <div id="featured-volume-meta" class="spotlight-meta"></div>
@@ -272,6 +270,15 @@
             </div>
           </section>
 
+          <section id="card-deck-section" class="bookshelf-section card-deck-section" hidden>
+            <div class="section-heading">
+              <p class="eyebrow">Card Decks</p>
+              <h3>先把方法压成一副可翻、可摆、可追问的牌</h3>
+              <p id="card-deck-summary" class="section-copy"></p>
+            </div>
+            <div id="card-deck-grid" class="deck-home-grid"></div>
+          </section>
+
           <section class="systems-section">
             <div class="section-heading">
               <p class="eyebrow">Volume Shelf</p>
@@ -324,6 +331,10 @@
               </a>
             </div>
           </section>
+        </section>
+
+        <section id="deck-view" class="deck-view hidden">
+          <div id="deck-content" class="deck-shell"></div>
         </section>
 
         <section id="graph-view" class="graph-view hidden">
@@ -423,12 +434,111 @@
         </section>
       </main>
 
-      <nav class="mobile-reader-bar">
-        <button id="mobile-home-button" class="mobile-tool" type="button">首页</button>
-        <button id="mobile-catalog-button" class="mobile-tool" type="button">目录</button>
-        <button id="mobile-font-button" class="mobile-tool" type="button">字号</button>
-        <button id="mobile-prev-button" class="mobile-tool" type="button">上一章</button>
-        <button id="mobile-next-button" class="mobile-tool" type="button">下一章</button>
+      <button
+        id="assistant-launcher"
+        class="assistant-launcher"
+        type="button"
+        aria-controls="assistant-panel"
+        aria-expanded="false"
+      >
+        <span class="assistant-launcher-pulse" aria-hidden="true"></span>
+        <span class="assistant-launcher-copy">
+          <strong>实时导读</strong>
+          <small id="assistant-launcher-context">可直接追问当前页面</small>
+        </span>
+      </button>
+
+      <aside id="assistant-panel" class="assistant-panel" aria-label="站内导读助手" aria-hidden="true">
+        <div class="assistant-panel-shell">
+          <div class="assistant-panel-head assistant-panel-head-global">
+            <div class="assistant-panel-title">
+              <p class="eyebrow">Live Guide</p>
+              <h3 id="assistant-panel-title">站内导读助手</h3>
+              <p id="assistant-panel-description" class="assistant-panel-description"></p>
+            </div>
+            <button id="assistant-close-button" class="reader-button" type="button">关闭</button>
+          </div>
+
+          <section class="assistant-context-card">
+            <div class="assistant-context-head">
+              <div>
+                <p class="eyebrow">Current Context</p>
+                <h4 id="assistant-context-title">当前页面</h4>
+              </div>
+              <span id="assistant-context-badge" class="graph-chip">首页</span>
+            </div>
+            <p id="assistant-context-copy" class="assistant-context-copy"></p>
+            <div id="assistant-context-chips" class="assistant-context-chips"></div>
+            <div id="assistant-quick-actions" class="assistant-quick-actions"></div>
+          </section>
+
+          <div id="assistant-conversation" class="assistant-conversation assistant-conversation-panel"></div>
+
+          <div class="assistant-panel-dock">
+            <label class="lab-textarea assistant-composer assistant-composer-panel">
+              <span>直接提问</span>
+              <textarea
+                id="assistant-question"
+                rows="4"
+                maxlength="360"
+                placeholder="例如：这一页真正的主线是什么？"
+              ></textarea>
+            </label>
+
+            <div class="lab-inline-actions assistant-actions assistant-actions-panel">
+              <button id="assistant-submit-button" class="reader-button" type="button">发送问题</button>
+              <button id="assistant-stop-button" class="reader-button" type="button" hidden>停止回答</button>
+              <button id="assistant-clear-button" class="reader-button" type="button">清空对话</button>
+            </div>
+
+            <p id="assistant-status" class="lab-action-status assistant-status" aria-live="polite"></p>
+          </div>
+        </div>
+      </aside>
+
+      <nav class="mobile-reader-bar app-tab-bar" aria-label="主导航">
+        <button id="tab-home-button" class="mobile-tool app-tab-button" type="button">
+          <span class="app-tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6.5h16"></path>
+              <path d="M6.5 4v16"></path>
+              <path d="M9 8.5h8.5v11H9z"></path>
+            </svg>
+          </span>
+          <span>书架</span>
+        </button>
+        <button id="tab-lab-button" class="mobile-tool app-tab-button" type="button">
+          <span class="app-tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 3v4l-4.5 8.2A3 3 0 0 0 7.1 20h9.8a3 3 0 0 0 2.6-4.8L15 7V3"></path>
+              <path d="M8.2 13h7.6"></path>
+            </svg>
+          </span>
+          <span>试验台</span>
+        </button>
+        <button id="tab-graph-button" class="mobile-tool app-tab-button" type="button">
+          <span class="app-tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="6" r="2.5"></circle>
+              <circle cx="18" cy="8" r="2.5"></circle>
+              <circle cx="12" cy="18" r="2.5"></circle>
+              <path d="M8.2 7.1l7.5.9"></path>
+              <path d="M7.6 8l3 7.6"></path>
+              <path d="M16.5 10.1l-3.2 6"></path>
+            </svg>
+          </span>
+          <span>图谱</span>
+        </button>
+        <button id="tab-ai-button" class="mobile-tool app-tab-button" type="button">
+          <span class="app-tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3.5l2 4.2 4.6.6-3.4 3.3.8 4.7-4-2.2-4 2.2.8-4.7-3.4-3.3 4.6-.6z"></path>
+              <path d="M18.5 15.5a3 3 0 1 1-3 3"></path>
+              <path d="M5.5 15.5a3 3 0 1 0 3 3"></path>
+            </svg>
+          </span>
+          <span>AI</span>
+        </button>
       </nav>
 
       <div id="mobile-font-panel" class="mobile-font-panel hidden" aria-hidden="true">

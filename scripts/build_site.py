@@ -13,6 +13,7 @@ import markdown
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "site.config.json"
+CARDS_CONFIG_PATH = ROOT / "cards.config.json"
 DOCS_DIR = ROOT / "docs"
 DOCS_ASSETS_DIR = DOCS_DIR / "assets"
 DATA_DIR = DOCS_DIR / "assets" / "data"
@@ -80,6 +81,232 @@ GRAPH_DEFAULT_NODE_ID = "core-02"
 
 def load_config() -> dict:
     return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def load_cards_config() -> dict:
+    if not CARDS_CONFIG_PATH.exists():
+        return {"featuredDeckId": "", "decks": []}
+
+    return json.loads(CARDS_CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def normalize_card_text(value: object, fallback: str = "") -> str:
+    if value is None:
+        return fallback
+    return str(value).strip() or fallback
+
+
+def normalize_card_text_list(values: object) -> list[str]:
+    if not isinstance(values, list):
+        return []
+
+    normalized: list[str] = []
+    for value in values:
+        text = normalize_card_text(value)
+        if text:
+            normalized.append(text)
+    return normalized
+
+
+def normalize_card_decks(raw: dict) -> dict:
+    raw_decks = raw.get("decks") if isinstance(raw, dict) else []
+    if not isinstance(raw_decks, list):
+        return {"featuredDeckId": "", "decks": []}
+
+    decks: list[dict] = []
+
+    for deck_index, raw_deck in enumerate(raw_decks):
+        if not isinstance(raw_deck, dict):
+            continue
+
+        deck_id = normalize_card_text(raw_deck.get("id"), f"deck-{deck_index + 1}")
+        deck_source_path = normalize_card_text(raw_deck.get("sourcePath"))
+        raw_cards = raw_deck.get("cards")
+
+        if not isinstance(raw_cards, list):
+            continue
+
+        cards: list[dict] = []
+        seen_card_ids: set[str] = set()
+
+        for card_index, raw_card in enumerate(raw_cards):
+            if not isinstance(raw_card, dict):
+                continue
+
+            card_id = normalize_card_text(raw_card.get("id"), f"{deck_id}-card-{card_index + 1}")
+            if not card_id or card_id in seen_card_ids:
+                continue
+
+            seen_card_ids.add(card_id)
+            cards.append(
+                {
+                    "id": card_id,
+                    "title": normalize_card_text(raw_card.get("title"), f"Card {card_index + 1}"),
+                    "suit": normalize_card_text(raw_card.get("suit")),
+                    "layer": normalize_card_text(raw_card.get("layer")),
+                    "lead": normalize_card_text(raw_card.get("lead")),
+                    "example": normalize_card_text(raw_card.get("example")),
+                    "misread": normalize_card_text(raw_card.get("misread")),
+                    "action": normalize_card_text(raw_card.get("action")),
+                    "assistantPrompt": normalize_card_text(raw_card.get("assistantPrompt")),
+                    "focus": normalize_card_text(raw_card.get("focus")),
+                    "sourcePath": normalize_card_text(raw_card.get("sourcePath"), deck_source_path),
+                    "relatedIds": normalize_card_text_list(raw_card.get("relatedIds")),
+                }
+            )
+
+        if not cards:
+            continue
+
+        card_id_set = {card["id"] for card in cards}
+        for card in cards:
+            card["relatedIds"] = [
+                related_id
+                for related_id in card["relatedIds"]
+                if related_id in card_id_set and related_id != card["id"]
+            ]
+
+        raw_suits = raw_deck.get("suits")
+        suits: list[dict] = []
+        seen_suit_ids: set[str] = set()
+        if isinstance(raw_suits, list):
+            for suit_index, raw_suit in enumerate(raw_suits):
+                if not isinstance(raw_suit, dict):
+                    continue
+
+                suit_id = normalize_card_text(raw_suit.get("id"), f"suit-{suit_index + 1}")
+                if not suit_id or suit_id in seen_suit_ids:
+                    continue
+
+                seen_suit_ids.add(suit_id)
+                suits.append(
+                    {
+                        "id": suit_id,
+                        "label": normalize_card_text(raw_suit.get("label"), suit_id),
+                        "symbol": normalize_card_text(raw_suit.get("symbol")),
+                        "summary": normalize_card_text(raw_suit.get("summary")),
+                        "accent": normalize_card_text(raw_suit.get("accent")),
+                        "soft": normalize_card_text(raw_suit.get("soft")),
+                    }
+                )
+
+        raw_layers = raw_deck.get("layers")
+        layers: list[dict] = []
+        seen_layer_ids: set[str] = set()
+        if isinstance(raw_layers, list):
+            for layer_index, raw_layer in enumerate(raw_layers):
+                if not isinstance(raw_layer, dict):
+                    continue
+
+                layer_id = normalize_card_text(raw_layer.get("id"), f"layer-{layer_index + 1}")
+                if not layer_id or layer_id in seen_layer_ids:
+                    continue
+
+                seen_layer_ids.add(layer_id)
+                layers.append(
+                    {
+                        "id": layer_id,
+                        "label": normalize_card_text(raw_layer.get("label"), layer_id),
+                        "shortLabel": normalize_card_text(raw_layer.get("shortLabel"), f"L{layer_index + 1}"),
+                        "summary": normalize_card_text(raw_layer.get("summary")),
+                    }
+                )
+
+        raw_spreads = raw_deck.get("spreads")
+        spreads: list[dict] = []
+        seen_spread_ids: set[str] = set()
+        if isinstance(raw_spreads, list):
+            for spread_index, raw_spread in enumerate(raw_spreads):
+                if not isinstance(raw_spread, dict):
+                    continue
+
+                spread_id = normalize_card_text(raw_spread.get("id"), f"spread-{spread_index + 1}")
+                if not spread_id or spread_id in seen_spread_ids:
+                    continue
+
+                card_ids = [
+                    card_id for card_id in normalize_card_text_list(raw_spread.get("cardIds")) if card_id in card_id_set
+                ]
+                if not card_ids:
+                    continue
+
+                seen_spread_ids.add(spread_id)
+                spreads.append(
+                    {
+                        "id": spread_id,
+                        "title": normalize_card_text(raw_spread.get("title"), spread_id),
+                        "description": normalize_card_text(raw_spread.get("description")),
+                        "rationale": normalize_card_text(raw_spread.get("rationale")),
+                        "cardIds": card_ids,
+                    }
+                )
+
+        spread_id_set = {spread["id"] for spread in spreads}
+
+        raw_guides = raw_deck.get("guideScenarios")
+        guide_scenarios: list[dict] = []
+        seen_guide_ids: set[str] = set()
+        if isinstance(raw_guides, list):
+            for guide_index, raw_guide in enumerate(raw_guides):
+                if not isinstance(raw_guide, dict):
+                    continue
+
+                guide_id = normalize_card_text(raw_guide.get("id"), f"guide-{guide_index + 1}")
+                if not guide_id or guide_id in seen_guide_ids:
+                    continue
+
+                seen_guide_ids.add(guide_id)
+                spread_id = normalize_card_text(raw_guide.get("spreadId"))
+                guide_scenarios.append(
+                    {
+                        "id": guide_id,
+                        "title": normalize_card_text(raw_guide.get("title"), guide_id),
+                        "description": normalize_card_text(raw_guide.get("description")),
+                        "assistantPrompt": normalize_card_text(raw_guide.get("assistantPrompt")),
+                        "spreadId": spread_id if spread_id in spread_id_set else "",
+                        "steps": normalize_card_text_list(raw_guide.get("steps")),
+                    }
+                )
+
+        entry_card_id = normalize_card_text(raw_deck.get("entryCardId"), cards[0]["id"])
+        if entry_card_id not in card_id_set:
+            entry_card_id = cards[0]["id"]
+
+        decks.append(
+            {
+                "id": deck_id,
+                "title": normalize_card_text(raw_deck.get("title"), deck_id),
+                "eyebrow": normalize_card_text(raw_deck.get("eyebrow"), "Learning Deck"),
+                "subtitle": normalize_card_text(raw_deck.get("subtitle")),
+                "summary": normalize_card_text(raw_deck.get("summary")),
+                "description": normalize_card_text(raw_deck.get("description")),
+                "sourcePath": deck_source_path,
+                "entryCardId": entry_card_id,
+                "assistantPrompt": normalize_card_text(raw_deck.get("assistantPrompt")),
+                "suits": suits,
+                "layers": layers,
+                "spreads": spreads,
+                "guideScenarios": guide_scenarios,
+                "cards": cards,
+                "stats": {
+                    "cardCount": len(cards),
+                    "suitCount": len(suits),
+                    "layerCount": len(layers),
+                    "spreadCount": len(spreads),
+                    "guideCount": len(guide_scenarios),
+                },
+            }
+        )
+
+    featured_deck_id = normalize_card_text(raw.get("featuredDeckId")) if isinstance(raw, dict) else ""
+    valid_deck_ids = {deck["id"] for deck in decks}
+    if featured_deck_id not in valid_deck_ids:
+        featured_deck_id = decks[0]["id"] if decks else ""
+
+    return {
+        "featuredDeckId": featured_deck_id,
+        "decks": decks,
+    }
 
 
 def ensure_dirs() -> None:
@@ -673,6 +900,7 @@ def build_payload(config: dict) -> dict:
     newest_update = max((item["updatedAt"] for item in items), default=None)
     total_chars = sum(item["wordCount"] for item in items)
     knowledge_graph = build_knowledge_graph(search_index)
+    card_decks = normalize_card_decks(load_cards_config())
 
     return {
         "site": {
@@ -699,6 +927,7 @@ def build_payload(config: dict) -> dict:
         },
         "sections": sections,
         "items": items,
+        "cardDecks": card_decks,
         "knowledgeGraph": knowledge_graph,
     }
 
