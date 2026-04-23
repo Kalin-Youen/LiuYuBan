@@ -1162,6 +1162,7 @@ const dom = {
   openLabButton: document.getElementById("open-lab-button"),
   openCatalogButton: document.getElementById("open-catalog-button"),
   homeSearchButton: document.getElementById("home-search-button"),
+  homeSearchStripButton: document.getElementById("home-search-strip-button"),
   homeGraphShortcutButton: document.getElementById("home-graph-shortcut-button"),
   homeThemeShortcutButton: document.getElementById("home-theme-shortcut-button"),
   homeLabShortcutButton: document.getElementById("home-lab-shortcut-button"),
@@ -2023,6 +2024,129 @@ function normalizeDocSearchText(text) {
     .toLowerCase();
 }
 
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function createDocFocusRegex(focus) {
+  const segments = String(focus || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((segment) => escapeRegExp(segment));
+
+  if (!segments.length) return null;
+  return new RegExp(segments.join("\\s+"), "gi");
+}
+
+function clearDocFocusHighlights() {
+  if (!dom.docContent) return;
+
+  dom.docContent.querySelectorAll('[data-doc-focus-match="true"]').forEach((node) => {
+    const parent = node.parentNode;
+    if (!parent) return;
+    parent.replaceChild(document.createTextNode(node.textContent || ""), node);
+    parent.normalize();
+  });
+
+  dom.docContent.querySelectorAll(".is-doc-focus-target").forEach((node) => {
+    node.classList.remove("is-doc-focus-target");
+  });
+}
+
+function highlightDocFocusMatches(target, focus) {
+  const regex = createDocFocusRegex(focus);
+  if (!target || !regex) return 0;
+
+  const textNodes = [];
+  const walker = document.createTreeWalker(
+    target,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        if (!node?.nodeValue?.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        if (node.parentElement?.closest('[data-doc-focus-match="true"]')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    },
+  );
+
+  while (walker.nextNode()) {
+    textNodes.push(walker.currentNode);
+  }
+
+  let matchCount = 0;
+
+  textNodes.forEach((node) => {
+    const text = node.nodeValue || "";
+    regex.lastIndex = 0;
+
+    if (!regex.test(text)) {
+      return;
+    }
+
+    regex.lastIndex = 0;
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    let match = null;
+
+    while ((match = regex.exec(text))) {
+      const start = match.index;
+      const end = start + match[0].length;
+
+      if (start > lastIndex) {
+        fragment.append(text.slice(lastIndex, start));
+      }
+
+      const marker = document.createElement("mark");
+      marker.className = "doc-focus-match";
+      marker.dataset.docFocusMatch = "true";
+      marker.textContent = text.slice(start, end);
+      fragment.append(marker);
+
+      lastIndex = end;
+      matchCount += 1;
+    }
+
+    if (lastIndex < text.length) {
+      fragment.append(text.slice(lastIndex));
+    }
+
+    node.parentNode?.replaceChild(fragment, node);
+  });
+
+  return matchCount;
+}
+
+function restartAnimationClass(elements, className) {
+  elements.forEach((element) => {
+    element.classList.remove(className);
+    void element.offsetWidth;
+    element.classList.add(className);
+  });
+}
+
+function flashDocFocusTarget(target, focus = "") {
+  if (!target) return;
+
+  clearDocFocusHighlights();
+  const matchCount = focus ? highlightDocFocusMatches(target, focus) : 0;
+  const markers = Array.from(target.querySelectorAll('[data-doc-focus-match="true"]'));
+
+  if (matchCount > 0 && markers.length) {
+    restartAnimationClass(markers, "is-flashing");
+    return;
+  }
+
+  restartAnimationClass([target], "is-doc-focus-target");
+}
+
 function findDocFocusTarget(focus) {
   const normalizedFocus = normalizeDocSearchText(focus);
   if (!normalizedFocus) return null;
@@ -2060,6 +2184,7 @@ function applyDocRouteFocus(params = {}) {
     return;
   }
 
+  flashDocFocusTarget(target, resolved?.focus || "");
   scrollDocTargetIntoView(target);
 }
 
@@ -2663,9 +2788,11 @@ function buildFeaturedVolume() {
     link.innerHTML = `
       <span class="spotlight-link-index">${formatVolumeEntryIndex(item, index)}</span>
       <span class="spotlight-link-copy">
+        <small class="spotlight-link-meta">${item.sectionTitle || "推荐入口"}</small>
         <strong>${getDisplayTitle(item)}</strong>
         <em>${item.excerpt || item.sectionTitle}</em>
       </span>
+      <span class="spotlight-link-arrow" aria-hidden="true">›</span>
     `;
     dom.featuredVolumeLinks.appendChild(link);
   });
@@ -8257,6 +8384,7 @@ async function renderGraph(nodeId) {
 
   document.title = `${state.payload.site.title} · 知识图谱`;
   document.body.classList.remove("is-reading");
+  document.body.classList.add("is-app-ui");
   document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = "知识图谱";
   dom.homeView.classList.add("hidden");
@@ -8305,6 +8433,7 @@ async function renderDeck(deckId = null, params = {}, options = {}) {
 
   document.title = `${state.payload.site.title} 路 ${deck.title || "牌组"}`;
   document.body.classList.remove("is-reading");
+  document.body.classList.add("is-app-ui");
   document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = deck.title || "牌组";
   dom.homeView.classList.add("hidden");
@@ -8348,6 +8477,7 @@ function renderHome() {
 
   document.title = `${state.payload.site.title} · 在线书稿`;
   document.body.classList.remove("is-reading");
+  document.body.classList.add("is-app-ui");
   document.body.classList.add("is-home-hub");
   syncAppHomeMirror();
   dom.viewTitle.textContent = "分卷书架";
@@ -8379,6 +8509,7 @@ async function renderLab(page) {
   state.labParams = resolveLabParams(activePage, state.labParams);
   document.title = `${state.payload.site.title} · ${LAB_PAGES[activePage].title}`;
   document.body.classList.remove("is-reading");
+  document.body.classList.add("is-app-ui");
   document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = "理论实验台";
   dom.homeView.classList.add("hidden");
@@ -9033,6 +9164,7 @@ async function renderDoc(id, params = {}) {
   state.activeLabPage = null;
   state.activePrimaryView = "home";
   document.body.classList.add("is-reading");
+  document.body.classList.add("is-app-ui");
   document.body.classList.remove("is-home-hub");
   dom.homeView.classList.add("hidden");
   dom.deckView.classList.add("hidden");
@@ -9196,13 +9328,15 @@ function bindEvents() {
     const item = getPrimaryStartItem();
     if (item) setHashForDoc(item.id);
   });
-  dom.homeSearchButton?.addEventListener("click", () => {
+  const openHomeSearch = () => {
     setAssistantOpen(false);
     setTocOpen(false);
     setMobileFontPanelOpen(false);
     setDrawerOpen(true);
     window.requestAnimationFrame(() => dom.searchInput?.focus());
-  });
+  };
+  dom.homeSearchButton?.addEventListener("click", openHomeSearch);
+  dom.homeSearchStripButton?.addEventListener("click", openHomeSearch);
   dom.homeGraphShortcutButton?.addEventListener("click", () => {
     closeNavigationPanels();
     setAssistantOpen(false);

@@ -2047,6 +2047,51 @@ input {
   text-align: left;
 }
 
+.doc-content .doc-focus-match {
+  padding: 0 0.18em;
+  border-radius: 0.32em;
+  background: rgba(216, 141, 98, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(139, 63, 52, 0.14);
+  color: inherit;
+}
+
+.doc-content .doc-focus-match.is-flashing {
+  animation: doc-focus-match-flash 720ms ease-in-out 2;
+}
+
+.doc-content .is-doc-focus-target {
+  animation: doc-focus-target-flash 720ms ease-in-out 2;
+  border-radius: 0.4em;
+}
+
+@keyframes doc-focus-match-flash {
+  0%,
+  100% {
+    background: rgba(216, 141, 98, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(139, 63, 52, 0.14);
+  }
+
+  40% {
+    background: rgba(216, 141, 98, 0.56);
+    box-shadow:
+      inset 0 0 0 1px rgba(139, 63, 52, 0.26),
+      0 0 0 6px rgba(216, 141, 98, 0.16);
+  }
+}
+
+@keyframes doc-focus-target-flash {
+  0%,
+  100% {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  40% {
+    background: rgba(216, 141, 98, 0.12);
+    box-shadow: 0 0 0 8px rgba(216, 141, 98, 0.12);
+  }
+}
+
 .comments-shell {
   margin-top: 28px;
   padding: 22px 22px 20px;
@@ -4835,5 +4880,1059 @@ body.is-home-hub .mobile-tool.is-active {
   .deck-detail-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+body.is-app-ui:not(.is-home-hub) {
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.08), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.06), transparent 24%),
+    linear-gradient(180deg, var(--bg), rgba(236, 242, 249, 0.74));
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-header {
+  top: 12px;
+  width: min(1180px, calc(100vw - 24px));
+  margin: 0 auto;
+  padding: 14px 18px;
+  border-radius: 26px;
+  border: 1px solid var(--paper-line);
+  background: var(--panel-strong);
+  background: color-mix(in srgb, var(--panel-strong) 92%, white 8%);
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(22px);
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-progress {
+  top: calc(12px + var(--header-height));
+  width: min(1180px, calc(100vw - 24px));
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-progress span {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #60a5fa);
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-main {
+  padding-top: 36px;
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-button,
+body.is-app-ui:not(.is-home-hub) .mobile-tool,
+body.is-app-ui:not(.is-home-hub) .toc-link,
+body.is-app-ui:not(.is-home-hub) .font-size-indicator {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: var(--panel-strong);
+  background: color-mix(in srgb, var(--panel-strong) 88%, white 12%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-button-strong,
+body.is-app-ui:not(.is-home-hub) .pill-button {
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.14);
+}
+
+body.is-app-ui:not(.is-home-hub) .drawer-panel,
+body.is-app-ui:not(.is-home-hub) .reader-paper,
+body.is-app-ui:not(.is-home-hub) .comments-shell,
+body.is-app-ui:not(.is-home-hub) .graph-hero-card,
+body.is-app-ui:not(.is-home-hub) .graph-note-card,
+body.is-app-ui:not(.is-home-hub) .graph-board-card,
+body.is-app-ui:not(.is-home-hub) .graph-detail-card,
+body.is-app-ui:not(.is-home-hub) .graph-launch-card,
+body.is-app-ui:not(.is-home-hub) .lab-card,
+body.is-app-ui:not(.is-home-hub) .lab-entry-card,
+body.is-app-ui:not(.is-home-hub) .deck-home-card,
+body.is-app-ui:not(.is-home-hub) .deck-panel-card,
+body.is-app-ui:not(.is-home-hub) .deck-section-card,
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-card,
+body.is-app-ui:not(.is-home-hub) .deck-spread-card,
+body.is-app-ui:not(.is-home-hub) .deck-guide-card,
+body.is-app-ui:not(.is-home-hub) .assistant-panel-shell {
+  border-color: rgba(148, 163, 184, 0.18);
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 28%),
+    var(--panel-strong);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(20px);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-hero-card,
+body.is-app-ui:not(.is-home-hub) .deck-hero-card,
+body.is-app-ui:not(.is-home-hub) .lab-card-strong {
+  background:
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.14), transparent 34%),
+    radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 28%),
+    var(--panel-strong);
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-paper {
+  border-radius: 34px;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-shell,
+body.is-app-ui:not(.is-home-hub) .lab-shell {
+  width: min(1180px, calc(100vw - 28px));
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-meta,
+body.is-app-ui:not(.is-home-hub) .assistant-panel-dock {
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-meta h2,
+body.is-app-ui:not(.is-home-hub) .lab-card h3,
+body.is-app-ui:not(.is-home-hub) .deck-home-card h4,
+body.is-app-ui:not(.is-home-hub) .deck-panel-card h3,
+body.is-app-ui:not(.is-home-hub) .deck-section-card h3,
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-card h3,
+body.is-app-ui:not(.is-home-hub) .assistant-panel-title h3 {
+  font-family: var(--sans);
+  letter-spacing: -0.03em;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-detail-card {
+  top: calc(var(--header-height) + 34px);
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-card {
+  top: calc(var(--header-height) + 30px);
+}
+
+body.is-app-ui .assistant-launcher {
+  right: 18px;
+  left: auto;
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 86px);
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  padding: 0;
+  gap: 0;
+  border-radius: 999px;
+  justify-content: center;
+  background: var(--panel-strong);
+  background: color-mix(in srgb, var(--panel-strong) 92%, white 8%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+body.is-app-ui .assistant-launcher::before {
+  content: "AI";
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+}
+
+body.is-app-ui .assistant-launcher-pulse,
+body.is-app-ui .assistant-launcher-copy {
+  display: none;
+}
+
+body.is-app-ui .assistant-launcher:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 44px rgba(15, 23, 42, 0.18);
+}
+
+body.is-app-ui .assistant-panel {
+  width: min(430px, calc(100vw - 18px));
+  padding-right: 10px;
+}
+
+@media (max-width: 1024px) {
+  body.is-app-ui:not(.is-home-hub) .reader-header,
+  body.is-app-ui:not(.is-home-hub) .reader-progress {
+    width: calc(100vw - 24px);
+  }
+}
+
+@media (max-width: 760px) {
+  body.is-app-ui:not(.is-home-hub) .reader-header {
+    top: 8px;
+    width: calc(100vw - 20px);
+    padding: 12px 14px;
+    border-radius: 22px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .reader-progress {
+    top: calc(8px + var(--header-height));
+    width: calc(100vw - 20px);
+    padding: 0 14px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .reader-main {
+    padding-top: 24px;
+  }
+
+  body.is-app-ui .assistant-launcher {
+    right: 12px;
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 78px);
+  }
+
+  body.is-app-ui .assistant-panel {
+    padding: 8px 8px 0;
+  }
+}
+
+/* Inner-page app refinements */
+body.is-app-ui:not(.is-home-hub) {
+  --app-surface: color-mix(in srgb, var(--panel-strong) 90%, white 10%);
+  --app-surface-soft: color-mix(in srgb, var(--panel-strong) 82%, white 18%);
+  --app-surface-muted: rgba(255, 255, 255, 0.72);
+  --app-border: rgba(148, 163, 184, 0.18);
+  --app-border-strong: rgba(148, 163, 184, 0.26);
+  --app-divider: rgba(148, 163, 184, 0.14);
+  --app-shadow: 0 24px 56px rgba(15, 23, 42, 0.1);
+  --app-shadow-soft: 0 18px 38px rgba(15, 23, 42, 0.08);
+  --app-inset: inset 0 1px 0 rgba(255, 255, 255, 0.56);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-shell,
+body.is-app-ui:not(.is-home-hub) .lab-shell,
+body.is-app-ui:not(.is-home-hub) .deck-shell {
+  gap: 22px;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-shell {
+  width: min(1180px, calc(100vw - 28px));
+  margin: 0 auto;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-layout,
+body.is-app-ui:not(.is-home-hub) .graph-launch-shell,
+body.is-app-ui:not(.is-home-hub) .deck-home-grid,
+body.is-app-ui:not(.is-home-hub) .deck-structure-grid,
+body.is-app-ui:not(.is-home-hub) .deck-spread-grid,
+body.is-app-ui:not(.is-home-hub) .deck-guide-grid,
+body.is-app-ui:not(.is-home-hub) .deck-browser-grid,
+body.is-app-ui:not(.is-home-hub) .lab-grid {
+  gap: 18px;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-note-card,
+body.is-app-ui:not(.is-home-hub) .graph-board-card,
+body.is-app-ui:not(.is-home-hub) .deck-home-card,
+body.is-app-ui:not(.is-home-hub) .deck-panel-card,
+body.is-app-ui:not(.is-home-hub) .deck-section-card,
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-card,
+body.is-app-ui:not(.is-home-hub) .lab-note-card,
+body.is-app-ui:not(.is-home-hub) .lab-card,
+body.is-app-ui:not(.is-home-hub) .assistant-context-card,
+body.is-app-ui:not(.is-home-hub) .assistant-conversation-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-note-card::before,
+body.is-app-ui:not(.is-home-hub) .graph-board-card::before,
+body.is-app-ui:not(.is-home-hub) .deck-home-card::before,
+body.is-app-ui:not(.is-home-hub) .deck-panel-card::before,
+body.is-app-ui:not(.is-home-hub) .deck-section-card::before,
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-card::before,
+body.is-app-ui:not(.is-home-hub) .lab-note-card::before,
+body.is-app-ui:not(.is-home-hub) .lab-card::before,
+body.is-app-ui:not(.is-home-hub) .assistant-context-card::before,
+body.is-app-ui:not(.is-home-hub) .assistant-conversation-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.24), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+body.is-app-ui:not(.is-home-hub) .section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--app-divider);
+}
+
+body.is-app-ui:not(.is-home-hub) .section-heading h3 {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 1.16rem;
+  letter-spacing: -0.03em;
+}
+
+body.is-app-ui:not(.is-home-hub) .section-copy,
+body.is-app-ui:not(.is-home-hub) .graph-detail-copy,
+body.is-app-ui:not(.is-home-hub) .assistant-panel-description,
+body.is-app-ui:not(.is-home-hub) .assistant-context-copy,
+body.is-app-ui:not(.is-home-hub) .lab-section-copy,
+body.is-app-ui:not(.is-home-hub) .lab-section-lead {
+  max-width: 64ch;
+}
+
+body.is-app-ui:not(.is-home-hub) #doc-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-soft);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+body.is-app-ui:not(.is-home-hub) .meta-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-soft);
+  color: var(--text-soft);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-paper {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 18%),
+    var(--paper);
+  box-shadow: 0 30px 72px rgba(15, 23, 42, 0.1);
+}
+
+body.is-app-ui:not(.is-home-hub) .reader-paper::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.26), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-meta {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-color: var(--app-divider);
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-meta h2 {
+  max-width: 14ch;
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-content {
+  margin-top: 30px;
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-content h2,
+body.is-app-ui:not(.is-home-hub) .doc-content h3 {
+  font-family: var(--sans);
+  letter-spacing: -0.04em;
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-content blockquote {
+  padding: 16px 18px;
+  border: 1px solid var(--app-border);
+  border-radius: 22px;
+  background: var(--app-surface-soft);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-content pre {
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-content table {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-muted);
+}
+
+body.is-app-ui:not(.is-home-hub) .comments-shell {
+  margin-top: 32px;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 28%),
+    var(--app-surface);
+}
+
+body.is-app-ui:not(.is-home-hub) .feedback-guide,
+body.is-app-ui:not(.is-home-hub) .comments-placeholder,
+body.is-app-ui:not(.is-home-hub) .comment-template-card {
+  border-color: var(--app-border);
+  background: var(--app-surface-soft);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .doc-pagination {
+  margin-top: 28px;
+  gap: 14px;
+}
+
+body.is-app-ui:not(.is-home-hub) .pager-card {
+  min-height: 112px;
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 28%),
+    var(--app-surface);
+  box-shadow: var(--app-shadow-soft);
+}
+
+body.is-app-ui:not(.is-home-hub) .pager-card strong {
+  font-family: var(--sans);
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+body.is-app-ui:not(.is-home-hub) .toc-title {
+  font-family: var(--sans);
+  font-size: 1rem;
+  letter-spacing: -0.03em;
+}
+
+body.is-app-ui:not(.is-home-hub) .toc-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 12px 14px 12px 16px;
+  border-radius: 18px;
+}
+
+body.is-app-ui:not(.is-home-hub) .toc-link::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), #60a5fa);
+  box-shadow: 0 0 0 6px rgba(96, 165, 250, 0.12);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-stats,
+body.is-app-ui:not(.is-home-hub) .graph-chip-row,
+body.is-app-ui:not(.is-home-hub) .graph-cluster-summary {
+  gap: 10px;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-stat-chip,
+body.is-app-ui:not(.is-home-hub) .graph-chip,
+body.is-app-ui:not(.is-home-hub) .graph-cluster-summary span {
+  padding: 9px 12px;
+  border-color: var(--app-border);
+  background: var(--app-surface-soft);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-note-card,
+body.is-app-ui:not(.is-home-hub) .graph-board-card {
+  padding: 24px;
+  gap: 16px;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-map-hint {
+  padding: 16px;
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(241, 245, 249, 0.78));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-map-scroll {
+  padding: 10px;
+  border-radius: 30px;
+  border-color: var(--app-border);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-legend-card,
+body.is-app-ui:not(.is-home-hub) .graph-preview-card,
+body.is-app-ui:not(.is-home-hub) .graph-chapter-card {
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(241, 245, 249, 0.72));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-preview-card:hover,
+body.is-app-ui:not(.is-home-hub) .graph-chapter-card:hover {
+  border-color: rgba(96, 165, 250, 0.24);
+  box-shadow: var(--app-shadow-soft), var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-preview-card strong,
+body.is-app-ui:not(.is-home-hub) .graph-chapter-card strong,
+body.is-app-ui:not(.is-home-hub) .graph-legend-card strong {
+  font-family: var(--sans);
+  letter-spacing: -0.02em;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-cluster {
+  padding: 18px;
+  border-radius: 28px;
+  border-color: rgba(var(--graph-accent-rgb), 0.22);
+  background:
+    radial-gradient(circle at top right, rgba(var(--graph-accent-rgb), 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.8));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-cluster.is-focus {
+  transform: translateY(-1px);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-node {
+  min-height: 104px;
+  padding: 16px 16px 14px;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(var(--graph-accent-rgb), 0.05)),
+    rgba(255, 255, 255, 0.82);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-node strong {
+  font-family: var(--sans);
+  letter-spacing: -0.02em;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-node-meta {
+  line-height: 1.58;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-detail-card {
+  gap: 18px;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-detail-head {
+  padding: 20px;
+  border-radius: 26px;
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-detail-section {
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-soft);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-detail-section h4 {
+  font-family: var(--sans);
+  letter-spacing: -0.02em;
+}
+
+body.is-app-ui:not(.is-home-hub) .graph-candidate-list {
+  gap: 10px;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-home-card,
+body.is-app-ui:not(.is-home-hub) .deck-panel-card,
+body.is-app-ui:not(.is-home-hub) .deck-section-card,
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-card {
+  padding: 24px;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-home-card h4,
+body.is-app-ui:not(.is-home-hub) .deck-panel-card h3,
+body.is-app-ui:not(.is-home-hub) .deck-section-card h3,
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-card h3,
+body.is-app-ui:not(.is-home-hub) .deck-spread-card h4,
+body.is-app-ui:not(.is-home-hub) .deck-guide-card h4 {
+  font-family: var(--sans);
+  letter-spacing: -0.03em;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-home-preview,
+body.is-app-ui:not(.is-home-hub) .deck-spectrum-item,
+body.is-app-ui:not(.is-home-hub) .deck-spread-card,
+body.is-app-ui:not(.is-home-hub) .deck-guide-card,
+body.is-app-ui:not(.is-home-hub) .deck-detail-section,
+body.is-app-ui:not(.is-home-hub) .deck-related-link {
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(241, 245, 249, 0.72));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-card-grid {
+  gap: 12px;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-card-tile {
+  padding: 16px;
+  border-radius: 24px;
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(241, 245, 249, 0.72));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-card-tile:hover,
+body.is-app-ui:not(.is-home-hub) .deck-card-tile.is-active {
+  border-color: var(--app-border-strong);
+  box-shadow: var(--app-shadow-soft), var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-card-tile-index {
+  min-height: 60px;
+  border-color: rgba(96, 165, 250, 0.18);
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.12), rgba(255, 255, 255, 0.76));
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-card-tile-copy strong {
+  font-family: var(--sans);
+  font-size: 1.06rem;
+  letter-spacing: -0.03em;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-head {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--app-divider);
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-card-detail-meta {
+  justify-content: flex-end;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-detail-section {
+  padding: 16px;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-detail-section h4 {
+  font-family: var(--sans);
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-related-link {
+  padding: 12px 14px;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+body.is-app-ui:not(.is-home-hub) .deck-related-link:hover {
+  transform: translateY(-1px);
+  border-color: var(--app-border-strong);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-hero-card,
+body.is-app-ui:not(.is-home-hub) .lab-note-card,
+body.is-app-ui:not(.is-home-hub) .lab-card {
+  padding: 24px;
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-note-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 28%),
+    var(--app-surface);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-tabs {
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--app-border);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-tab {
+  flex: 1 1 auto;
+  min-height: 44px;
+  border-radius: 18px;
+  justify-content: center;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-tab.is-active {
+  border-color: rgba(96, 165, 250, 0.18);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.18), rgba(255, 255, 255, 0.88));
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-card h3,
+body.is-app-ui:not(.is-home-hub) .lab-entry-card h4 {
+  font-family: var(--sans);
+  letter-spacing: -0.03em;
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-flow {
+  gap: 12px;
+  margin-top: 16px;
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-flow span {
+  padding: 10px 14px;
+  border-color: var(--app-border);
+  background: var(--app-surface-soft);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-stack-card,
+body.is-app-ui:not(.is-home-hub) .lab-extension-card,
+body.is-app-ui:not(.is-home-hub) .lab-preset-button,
+body.is-app-ui:not(.is-home-hub) .lab-range,
+body.is-app-ui:not(.is-home-hub) .lab-select,
+body.is-app-ui:not(.is-home-hub) .lab-text-field,
+body.is-app-ui:not(.is-home-hub) .lab-textarea {
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(241, 245, 249, 0.72));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-preset-button {
+  min-height: 132px;
+  padding: 16px;
+  align-content: flex-start;
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-preset-button strong {
+  font-family: var(--sans);
+  letter-spacing: -0.02em;
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-entry-card {
+  padding: 20px 18px;
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(241, 245, 249, 0.72));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-entry-card:hover {
+  box-shadow: var(--app-shadow-soft), var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-range input {
+  margin-top: 14px;
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-select select,
+body.is-app-ui:not(.is-home-hub) .lab-text-field input,
+body.is-app-ui:not(.is-home-hub) .lab-textarea textarea {
+  border-color: var(--app-border);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+body.is-app-ui:not(.is-home-hub) .lab-prompt-output {
+  border-radius: 22px;
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(248, 250, 252, 0.92), rgba(255, 255, 255, 0.82));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-panel-shell {
+  gap: 16px;
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-panel-title h3 {
+  font-size: 1.18rem;
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-context-card {
+  margin: 0 20px;
+  padding: 18px;
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(241, 245, 249, 0.76));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-context-head {
+  align-items: center;
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-quick-actions {
+  gap: 10px;
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-quick-action {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border-color: var(--app-border);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-conversation-panel {
+  margin: 0 20px;
+  padding: 2px 2px 2px 0;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(241, 245, 249, 0.12));
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-conversation {
+  gap: 14px;
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-message {
+  max-width: 94%;
+  padding: 16px 16px 14px;
+  border-radius: 24px;
+  border-color: var(--app-border);
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-message.is-user {
+  background:
+    linear-gradient(135deg, rgba(255, 248, 242, 0.96), rgba(255, 255, 255, 0.82));
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-message.is-assistant {
+  background:
+    linear-gradient(135deg, rgba(245, 249, 255, 0.96), rgba(255, 255, 255, 0.84));
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-source-card {
+  border-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(241, 245, 249, 0.74));
+  box-shadow: var(--app-inset);
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-panel-dock {
+  padding: 16px 20px 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.78));
+}
+
+body.is-app-ui:not(.is-home-hub) .assistant-composer-panel textarea {
+  min-height: 96px;
+  border-radius: 20px;
+}
+
+@media (max-width: 760px) {
+  body.is-app-ui:not(.is-home-hub) .graph-shell,
+  body.is-app-ui:not(.is-home-hub) .lab-shell,
+  body.is-app-ui:not(.is-home-hub) .deck-shell {
+    width: calc(100vw - 20px);
+    gap: 16px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .reader-paper {
+    border-radius: 28px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .reader-paper-inner {
+    padding: 24px 16px 20px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .graph-note-card,
+  body.is-app-ui:not(.is-home-hub) .graph-board-card,
+  body.is-app-ui:not(.is-home-hub) .graph-detail-card,
+  body.is-app-ui:not(.is-home-hub) .graph-launch-card,
+  body.is-app-ui:not(.is-home-hub) .lab-note-card,
+  body.is-app-ui:not(.is-home-hub) .lab-card,
+  body.is-app-ui:not(.is-home-hub) .deck-home-card,
+  body.is-app-ui:not(.is-home-hub) .deck-panel-card,
+  body.is-app-ui:not(.is-home-hub) .deck-section-card,
+  body.is-app-ui:not(.is-home-hub) .deck-card-detail-card {
+    padding: 20px 16px;
+    border-radius: 24px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .comments-shell {
+    padding: 20px 16px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .doc-meta h2 {
+    max-width: none;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .assistant-context-card,
+  body.is-app-ui:not(.is-home-hub) .assistant-conversation-panel {
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .assistant-panel-dock {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .lab-tabs {
+    padding: 4px;
+    border-radius: 20px;
+  }
+
+  body.is-app-ui:not(.is-home-hub) .lab-tab {
+    width: 100%;
+  }
+}
+
+body.is-home-hub .app-home-shell {
+  gap: 16px;
+}
+
+body.is-home-hub .app-home-search-strip {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+body.is-home-hub .app-home-search-strip:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.1);
+}
+
+body.is-home-hub .app-home-search-strip-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #eff6ff, #dbeafe);
+  color: #2563eb;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+body.is-home-hub .app-home-search-strip-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+body.is-home-hub .app-home-search-strip-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+body.is-home-hub .app-home-search-strip-copy strong {
+  font-family: var(--sans);
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+body.is-home-hub .app-home-search-strip-copy small {
+  color: #64748b;
+  line-height: 1.55;
+}
+
+body.is-home-hub .app-home-feed-section {
+  padding-top: 18px;
+}
+
+body.is-home-hub .app-home-feed-head {
+  padding: 0 18px 12px;
+}
+
+body.is-home-hub .app-home-feed-list .spotlight-link {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 96px;
+  padding: 16px 18px;
+}
+
+body.is-home-hub .app-home-feed-list .spotlight-link:hover {
+  background: rgba(248, 250, 252, 0.98);
+}
+
+body.is-home-hub .app-home-feed-list .spotlight-link-index {
+  width: 54px;
+  height: 54px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #eff6ff, #dbeafe);
+  color: #2563eb;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 10px 22px rgba(37, 99, 235, 0.08);
+}
+
+body.is-home-hub .app-home-feed-list .spotlight-link-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+body.is-home-hub .app-home-feed-list .spotlight-link-meta {
+  color: #94a3b8;
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+body.is-home-hub .app-home-feed-list .spotlight-link-copy em {
+  max-width: 42ch;
+}
+
+body.is-home-hub .app-home-feed-list .spotlight-link-arrow {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  color: #2563eb;
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+body.is-home-hub .app-home-feed-list .spotlight-link:hover .spotlight-link-arrow {
+  transform: translateX(2px);
+  background: #dbeafe;
+}
+
+@media (max-width: 760px) {
+  body.is-home-hub .app-home-search-strip {
+    padding: 14px 16px;
+    border-radius: 22px;
+  }
+
+  body.is-home-hub .app-home-search-strip-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 16px;
+  }
+
+  body.is-home-hub .app-home-search-strip-copy strong {
+    font-size: 0.98rem;
+  }
+
+  body.is-home-hub .app-home-feed-list .spotlight-link {
+    grid-template-columns: 48px minmax(0, 1fr) 28px;
+    min-height: 88px;
+    padding: 15px 16px;
+  }
+
+  body.is-home-hub .app-home-feed-list .spotlight-link-index {
+    width: 48px;
+    height: 48px;
+    border-radius: 18px;
   }
 }
