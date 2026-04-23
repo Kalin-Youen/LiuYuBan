@@ -61,7 +61,7 @@
       "provider": "cloudflare-workers-ai",
       "label": "站内导读助手",
       "description": "先在站内筛出相关章节，再由 Cloudflare Workers AI 按差异、边界、反馈与验证的顺序回答。",
-      "endpoint": "",
+      "endpoint": "https://liuyuban-guide.3124950562.workers.dev",
       "method": "POST",
       "model": "@cf/meta/llama-3.1-8b-instruct-fast",
       "stream": true,
@@ -150,7 +150,7 @@
     "heroTitle": "先选卷，再进入主线",
     "heroText": "第一卷大众卷先上手，第二卷研究卷压实定义与桥梁，第三卷拓展卷把方法直接变成能力，第四卷 AI 协作卷把方法接进模型、版本与回写系统。"
   },
-  "generatedAt": "2026-04-22T12:28:19.591711+00:00",
+  "generatedAt": "2026-04-23T02:43:34.274505+00:00",
   "stats": {
     "documentCount": 78,
     "totalChars": 306018,

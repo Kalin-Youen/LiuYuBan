@@ -55,7 +55,7 @@
     "provider": "cloudflare-workers-ai",
     "label": "站内导读助手",
     "description": "先在站内筛出相关章节，再由 Cloudflare Workers AI 按差异、边界、反馈与验证的顺序回答。",
-    "endpoint": "",
+    "endpoint": "https://liuyuban-guide.3124950562.workers.dev",
     "method": "POST",
     "model": "@cf/meta/llama-3.1-8b-instruct-fast",
     "stream": true,
