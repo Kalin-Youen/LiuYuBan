@@ -5940,19 +5940,23 @@ body.is-home-hub .app-home-feed-list .spotlight-link:hover .spotlight-link-arrow
 body.is-reading .reader-header,
 body.is-app-ui.is-reading:not(.is-home-hub) .reader-header {
   position: fixed;
+  display: inline-flex;
   top: 18px;
   left: 18px;
-  width: auto;
+  right: auto;
+  width: fit-content;
+  max-width: none;
   min-height: 0;
+  min-width: 0;
   margin: 0;
   padding: 0;
   gap: 0;
   justify-content: flex-start;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
 }
 
 body.is-reading .header-copy,
@@ -5974,7 +5978,7 @@ body.is-reading #catalog-button {
 
 body.is-reading .reader-main,
 body.is-app-ui.is-reading:not(.is-home-hub) .reader-main {
-  padding-top: 68px;
+  padding-top: 8px;
 }
 
 @media (max-width: 760px) {
@@ -5990,7 +5994,7 @@ body.is-app-ui.is-reading:not(.is-home-hub) .reader-main {
 
   body.is-reading .reader-main,
   body.is-app-ui.is-reading:not(.is-home-hub) .reader-main {
-    padding-top: 56px;
+    padding-top: 0;
   }
 
   body.is-reading .reader-paper-inner,
