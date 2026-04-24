@@ -1577,6 +1577,15 @@ function getGraphStatusLabel(status) {
   return GRAPH_STATUS_LABELS[status] || "候选";
 }
 
+function resolveGraphStatusLabel(nodeOrStatus) {
+  if (nodeOrStatus && typeof nodeOrStatus === "object") {
+    if (nodeOrStatus.statusLabel) return nodeOrStatus.statusLabel;
+    return getGraphStatusLabel(nodeOrStatus.status);
+  }
+
+  return getGraphStatusLabel(nodeOrStatus);
+}
+
 function getGraphKindLabel(kind) {
   return GRAPH_KIND_LABELS[kind] || "节点";
 }
@@ -1601,6 +1610,9 @@ function sortGraphNodes(nodes) {
   ]);
 
   return [...nodes].sort((left, right) => {
+    const priorityDelta = (right.priority || 0) - (left.priority || 0);
+    if (priorityDelta !== 0) return priorityDelta;
+
     const kindDelta = (kindRank.get(left.kind) || 99) - (kindRank.get(right.kind) || 99);
     if (kindDelta !== 0) return kindDelta;
 
@@ -1949,6 +1961,9 @@ function getGraphNodeVisualMeta(node) {
 }
 
 function buildGraphNodeStatusLabel(node) {
+  if (node.statusLabel && node.status === "candidate") {
+    return node.statusLabel;
+  }
   if (node.discussedChapterCount > 0) {
     return `${node.discussedChapterCount} 篇已展开`;
   }
@@ -6261,7 +6276,7 @@ function getAssistantRouteContext() {
       .flatMap((entry) => getGraphNodeItems(entry, { limit: 2 }));
 
     return {
-      badge: getGraphStatusLabel(node?.status),
+      badge: resolveGraphStatusLabel(node),
       title: node?.label || "当前图谱节点",
       copy:
         node?.description
@@ -8306,7 +8321,7 @@ function renderGraphDetail(selectedNode) {
       <h3>${selectedNode.label}</h3>
       <p class="graph-detail-copy">${selectedNode.description || "这个节点已经被登记进图谱，但还需要继续补桥、扩写或回到正文中展开。"}</p>
       <div class="graph-chip-row">
-        <span class="graph-chip is-${selectedNode.status}">${getGraphStatusLabel(selectedNode.status)}</span>
+        <span class="graph-chip is-${selectedNode.status}">${resolveGraphStatusLabel(selectedNode)}</span>
         <span class="graph-chip">${selectedNode.code || "节点"}</span>
         <span class="graph-chip">${selectedNode.familyLabel || "层级节点"}</span>
         <span class="graph-chip">${getGraphNodeCountLabel(selectedNode)}</span>

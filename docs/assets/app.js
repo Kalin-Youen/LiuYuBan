@@ -6276,7 +6276,7 @@ function getAssistantRouteContext() {
       .flatMap((entry) => getGraphNodeItems(entry, { limit: 2 }));
 
     return {
-      badge: getGraphStatusLabel(node?.status),
+      badge: resolveGraphStatusLabel(node),
       title: node?.label || "当前图谱节点",
       copy:
         node?.description
@@ -8321,7 +8321,7 @@ function renderGraphDetail(selectedNode) {
       <h3>${selectedNode.label}</h3>
       <p class="graph-detail-copy">${selectedNode.description || "这个节点已经被登记进图谱，但还需要继续补桥、扩写或回到正文中展开。"}</p>
       <div class="graph-chip-row">
-        <span class="graph-chip is-${selectedNode.status}">${getGraphStatusLabel(selectedNode.status)}</span>
+        <span class="graph-chip is-${selectedNode.status}">${resolveGraphStatusLabel(selectedNode)}</span>
         <span class="graph-chip">${selectedNode.code || "节点"}</span>
         <span class="graph-chip">${selectedNode.familyLabel || "层级节点"}</span>
         <span class="graph-chip">${getGraphNodeCountLabel(selectedNode)}</span>
