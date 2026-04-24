@@ -68,6 +68,12 @@ MANUAL_NODE_ALIASES = {
     "core-35": ["价值情绪", "情绪加权"],
     "core-36": ["意识叙事", "意义叙事"],
 }
+MANUAL_NODE_ALIASES["secondary-attention-gating"] = [
+    "注意力机制",
+    "注意力门控",
+    "注意力门控网",
+    "attention",
+]
 MOTHER_DESCRIPTIONS = {
     "母网一": "从起源、边界、时间尺度与可能性空间出发，讨论系统究竟从哪里开始、在什么条件下能展开。",
     "母网二": "围绕旋转、涡量、相变、耗散与跃迁，追踪结构怎样被启动、筛选并留住。",
@@ -77,6 +83,29 @@ MOTHER_DESCRIPTIONS = {
     "母网六": "从意识广播、自我模型、直觉、灵感到意义叙事，处理高阶心智如何站住的问题。",
 }
 GRAPH_DEFAULT_NODE_ID = "core-02"
+MANUAL_GRAPH_NODE_DEFINITIONS = (
+    {
+        "id": "secondary-attention-gating",
+        "kind": "secondary",
+        "code": "5.x",
+        "shortCode": "5.x",
+        "label": "注意力门控网",
+        "shortLabel": "注意力门控",
+        "description": "高优先候补节点：把显著性、目标、上下文与历史状态放进同一处，解释有限资源为何总先处理某些差异。",
+        "thesis": "注意力不是神秘聚光灯，而是有限系统对候选差异进行重排、加权与门控的桥梁。",
+        "evidenceTier": "S/B",
+        "familyId": "bridge",
+        "familyLabel": "跨层接口",
+        "familyOrder": 99,
+        "order": 1,
+        "relatedIds": ["core-25", "core-27", "core-31"],
+        "priority": 100,
+        "spotlight": True,
+        "statusHint": "candidate",
+        "statusLabel": "高优先候补",
+        "countInStats": False,
+    },
+)
 
 
 def load_config() -> dict:
@@ -724,6 +753,27 @@ def parse_secondary_graph(core_lookup: dict[str, dict]) -> tuple[list[dict], lis
     return interfaces, secondaries, edges
 
 
+def build_manual_graph_nodes(core_lookup: dict[str, dict]) -> tuple[list[dict], list[dict]]:
+    nodes: list[dict] = []
+    edges: list[dict] = []
+
+    for definition in MANUAL_GRAPH_NODE_DEFINITIONS:
+        related_ids = [node_id for node_id in definition.get("relatedIds", []) if node_id in core_lookup]
+        node = {
+            **definition,
+            "relatedIds": related_ids,
+            "parentId": definition.get("parentId"),
+        }
+        nodes.append(node)
+
+        for core_id in related_ids:
+            if node["id"] not in core_lookup[core_id]["secondaryIds"]:
+                core_lookup[core_id]["secondaryIds"].append(node["id"])
+            edges.append({"source": core_id, "target": node["id"], "kind": "secondary"})
+
+    return nodes, edges
+
+
 def match_node_items(
     node: dict,
     search_index: dict[str, dict],
@@ -774,6 +824,9 @@ def match_node_items(
 
 
 def assign_node_status(node: dict) -> str:
+    status_hint = node.get("statusHint")
+    if status_hint:
+        return str(status_hint)
     if node["discussedChapterCount"] > 0:
         return "lit"
     if node["chapterCount"] > 0:
@@ -786,11 +839,16 @@ def build_knowledge_graph(search_index: dict[str, dict]) -> dict:
     core_lookup = {node["id"]: node for node in cores}
     interfaces, secondaries, more_edges = parse_secondary_graph(core_lookup)
     edges.extend(more_edges)
+    manual_nodes, manual_edges = build_manual_graph_nodes(core_lookup)
+    secondaries.extend(manual_nodes)
+    edges.extend(manual_edges)
 
     nodes = [*mothers, *cores, *interfaces, *secondaries]
     node_lookup = {node["id"]: node for node in nodes}
 
     for node in nodes:
+        node.setdefault("priority", 0)
+        node.setdefault("spotlight", False)
         node["aliases"] = make_node_aliases(node["label"], node.get("shortLabel"))
         node["aliases"].extend(MANUAL_NODE_ALIASES.get(node["id"], []))
         node["aliases"] = sorted(set(alias for alias in node["aliases"] if alias))
@@ -852,13 +910,18 @@ def build_knowledge_graph(search_index: dict[str, dict]) -> dict:
             round((node["discussedChapterCount"] * 0.75 + node["supportChapterCount"] * 0.25) / 6, 3),
         )
 
+    spotlight_candidates = [node for node in nodes if node["kind"] == "core" or node.get("spotlight")]
+    kind_rank = {"core": 0, "interface": 1, "secondary": 2, "mother": 3}
     spotlight_ids = [
         node["id"]
         for node in sorted(
-            cores,
+            spotlight_candidates,
             key=lambda entry: (
+                -entry.get("priority", 0),
+                kind_rank.get(entry["kind"], 9),
                 -entry["discussedChapterCount"],
                 -entry["supportChapterCount"],
+                entry.get("familyOrder", 99),
                 entry["order"],
             ),
         )[:6]
@@ -885,7 +948,7 @@ def build_knowledge_graph(search_index: dict[str, dict]) -> dict:
             "motherCount": len(mothers),
             "coreCount": len(cores),
             "interfaceCount": len(interfaces),
-            "secondaryCount": len(secondaries),
+            "secondaryCount": sum(1 for node in secondaries if node.get("countInStats", True)),
             "litNodeCount": sum(1 for node in nodes if node["status"] == "lit"),
             "mappedNodeCount": sum(1 for node in nodes if node["status"] == "mapped"),
         },

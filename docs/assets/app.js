@@ -1577,6 +1577,15 @@ function getGraphStatusLabel(status) {
   return GRAPH_STATUS_LABELS[status] || "候选";
 }
 
+function resolveGraphStatusLabel(nodeOrStatus) {
+  if (nodeOrStatus && typeof nodeOrStatus === "object") {
+    if (nodeOrStatus.statusLabel) return nodeOrStatus.statusLabel;
+    return getGraphStatusLabel(nodeOrStatus.status);
+  }
+
+  return getGraphStatusLabel(nodeOrStatus);
+}
+
 function getGraphKindLabel(kind) {
   return GRAPH_KIND_LABELS[kind] || "节点";
 }
