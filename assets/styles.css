@@ -5969,6 +5969,13 @@ body.is-reading .header-start {
   gap: 0;
 }
 
+body.is-reading .reader-header,
+body.is-app-ui.is-reading:not(.is-home-hub) .reader-header {
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 body.is-reading #catalog-button {
   padding: 8px 14px;
   border-color: rgba(148, 163, 184, 0.24);
@@ -6010,5 +6017,10 @@ body.is-app-ui.is-reading:not(.is-home-hub) .reader-main {
   body.is-reading .doc-content,
   body.is-app-ui.is-reading:not(.is-home-hub) .doc-content {
     margin-top: 0;
+  }
+
+  body.is-reading .doc-content > :first-child,
+  body.is-app-ui.is-reading:not(.is-home-hub) .doc-content > :first-child {
+    margin-top: 0 !important;
   }
 }
