@@ -1610,6 +1610,9 @@ function sortGraphNodes(nodes) {
   ]);
 
   return [...nodes].sort((left, right) => {
+    const priorityDelta = (right.priority || 0) - (left.priority || 0);
+    if (priorityDelta !== 0) return priorityDelta;
+
     const kindDelta = (kindRank.get(left.kind) || 99) - (kindRank.get(right.kind) || 99);
     if (kindDelta !== 0) return kindDelta;
 
@@ -1958,6 +1961,9 @@ function getGraphNodeVisualMeta(node) {
 }
 
 function buildGraphNodeStatusLabel(node) {
+  if (node.statusLabel && node.status === "candidate") {
+    return node.statusLabel;
+  }
   if (node.discussedChapterCount > 0) {
     return `${node.discussedChapterCount} 篇已展开`;
   }
