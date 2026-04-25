@@ -1010,27 +1010,46 @@ def write_cname(custom_domain: str) -> None:
         CNAME_PATH.unlink()
 
 
-def sync_index_html(config: dict) -> None:
+def build_asset_version(payload: dict) -> str:
+    generated_at = str(payload.get("generatedAt", "")).strip()
+    version = re.sub(r"[^0-9A-Za-z]+", "", generated_at)
+    return version or datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+
+
+def sync_index_html(config: dict, asset_version: str) -> None:
     if not INDEX_HTML_PATH.exists():
         return
 
     text = INDEX_HTML_PATH.read_text(encoding="utf-8")
-    title = html.escape(config["siteTitle"], quote=True)
+    page_title = html.escape(f'{config["siteTitle"]} · 在线书稿', quote=True)
+    share_title = html.escape(config["siteTitle"], quote=True)
     description = html.escape(config["siteDescription"], quote=True)
 
     replacements = [
-        (r"(<title>)(.*?)(</title>)", rf"\g<1>{title}\g<3>"),
+        (r"(<title>)(.*?)(</title>)", rf"\g<1>{page_title}\g<3>"),
         (
             r'(<meta\s+name="description"\s+content=")([^"]*)(")',
             rf'\g<1>{description}\g<3>',
         ),
         (
             r'(<meta\s+property="og:title"\s+content=")([^"]*)(")',
-            rf'\g<1>{title}\g<3>',
+            rf'\g<1>{share_title}\g<3>',
         ),
         (
             r'(<meta\s+property="og:description"\s+content=")([^"]*)(")',
             rf'\g<1>{description}\g<3>',
+        ),
+        (
+            r'(\./assets/styles\.css)(\?v=[^"]*)?',
+            rf"\g<1>?v={asset_version}",
+        ),
+        (
+            r'(\./assets/app\.js)(\?v=[^"]*)?',
+            rf"\g<1>?v={asset_version}",
+        ),
+        (
+            r'(window\.__SITE_ASSET_VERSION__\s*=\s*")[^"]*(")',
+            rf'\g<1>{asset_version}\g<2>',
         ),
     ]
 
@@ -1083,9 +1102,10 @@ def main() -> None:
     ensure_dirs()
     config = load_config()
     payload = build_payload(config)
+    asset_version = build_asset_version(payload)
     write_payload(payload)
     write_cname(config.get("customDomain", ""))
-    sync_index_html(config)
+    sync_index_html(config, asset_version)
     sync_publish_root()
     print(f"Generated site data: {CONTENT_JSON.relative_to(ROOT)}")
 

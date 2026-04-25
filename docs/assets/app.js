@@ -1,4 +1,9 @@
-const contentUrl = "./assets/data/content.json";
+const ASSET_VERSION = typeof window !== "undefined" && typeof window.__SITE_ASSET_VERSION__ === "string"
+  ? window.__SITE_ASSET_VERSION__
+  : "";
+const contentUrl = ASSET_VERSION
+  ? `./assets/data/content.json?v=${encodeURIComponent(ASSET_VERSION)}`
+  : "./assets/data/content.json";
 const STORAGE_KEY = "readerPreferences";
 const THEME_ORDER = ["paper", "sepia", "night"];
 const FONT_MIN = 15;

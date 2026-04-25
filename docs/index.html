@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>差结构学习法</title>
+    <title>差结构学习法 · 在线书稿</title>
     <meta
       name="description"
       content="这是一个由尤安持续建设的开放学习项目，公开分享学习方法、认知工具与 AI 辅助研究流程，欢迎阅读、提问、反馈和共建。"
@@ -15,9 +15,13 @@
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./assets/styles.css" />
+    <link rel="stylesheet" href="./assets/styles.css?v=20260425T1656365762790000" />
     <script>
+      window.__SITE_ASSET_VERSION__ = "20260425T1656365762790000";
       window.MathJax = {
         tex: {
           inlineMath: [["$", "$"], ["\\(", "\\)"]],
@@ -30,7 +34,37 @@
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   </head>
-  <body>
+  <body class="is-app-ui">
+    <script>
+      (() => {
+        const rawHash = window.location.hash.replace(/^#/, "");
+        const queryIndex = rawHash.indexOf("?");
+        const path = queryIndex === -1 ? rawHash : rawHash.slice(0, queryIndex);
+        let hash = path;
+        try {
+          hash = decodeURIComponent(path);
+        } catch (error) {
+          hash = path;
+        }
+
+        const isHomeRoute = !hash
+          || (
+            hash !== "deck"
+            && !hash.startsWith("deck/")
+            && !hash.startsWith("doc/")
+            && hash !== "graph"
+            && !hash.startsWith("graph/")
+            && hash !== "lab"
+            && !hash.startsWith("lab/")
+          );
+
+        if (isHomeRoute) {
+          document.body.classList.add("is-home-hub");
+        } else {
+          document.body.classList.remove("is-home-hub");
+        }
+      })();
+    </script>
     <div id="page-overlay" class="page-overlay hidden" aria-hidden="true"></div>
 
     <aside id="catalog-drawer" class="reader-drawer" aria-label="章节目录">
@@ -66,7 +100,7 @@
           <button id="catalog-button" class="reader-button" type="button">目录</button>
           <div class="header-copy">
             <p class="eyebrow">Novel Mode</p>
-            <h2 id="view-title">书架</h2>
+            <h2 id="view-title">分卷书架</h2>
           </div>
         </div>
 
@@ -647,6 +681,6 @@
       </div>
     </div>
 
-    <script src="./assets/app.js" defer></script>
+    <script src="./assets/app.js?v=20260425T1656365762790000" defer></script>
   </body>
 </html>
