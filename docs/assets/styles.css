@@ -3277,11 +3277,16 @@ input {
 }
 
 .assistant-conversation {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   gap: 12px;
   max-height: 720px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
   padding-right: 4px;
+  scrollbar-gutter: stable;
 }
 
 .assistant-conversation-panel {
@@ -3303,6 +3308,7 @@ input {
 }
 
 .assistant-message.is-user {
+  align-self: flex-end;
   justify-self: end;
   background:
     linear-gradient(135deg, rgba(255, 250, 244, 0.96), rgba(255, 255, 255, 0.8)),
@@ -3310,6 +3316,7 @@ input {
 }
 
 .assistant-message.is-assistant {
+  align-self: flex-start;
   justify-self: start;
   background:
     linear-gradient(135deg, rgba(246, 250, 252, 0.96), rgba(255, 255, 255, 0.82)),
@@ -3341,6 +3348,7 @@ input {
 
 .assistant-message-body {
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   line-height: 1.82;
   color: var(--text);
 }
@@ -5128,7 +5136,8 @@ body.is-app-ui:not(.is-home-hub) .lab-card,
 body.is-app-ui:not(.is-home-hub) .assistant-context-card,
 body.is-app-ui:not(.is-home-hub) .assistant-conversation-panel {
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 body.is-app-ui:not(.is-home-hub) .graph-note-card::before,
@@ -5941,9 +5950,10 @@ body.is-reading .reader-header,
 body.is-app-ui.is-reading:not(.is-home-hub) .reader-header {
   position: fixed;
   display: inline-flex;
-  top: 18px;
+  top: 28px;
   left: 18px;
   right: auto;
+  z-index: 52;
   width: fit-content;
   max-width: none;
   min-height: 0;
@@ -5978,6 +5988,7 @@ body.is-app-ui.is-reading:not(.is-home-hub) .reader-header {
 
 body.is-reading #catalog-button {
   padding: 8px 14px;
+  min-width: 7rem;
   border-color: rgba(148, 163, 184, 0.24);
   background: color-mix(in srgb, var(--panel-strong) 90%, white 10%);
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
@@ -5991,7 +6002,7 @@ body.is-app-ui.is-reading:not(.is-home-hub) .reader-main {
 @media (max-width: 760px) {
   body.is-reading .reader-header,
   body.is-app-ui.is-reading:not(.is-home-hub) .reader-header {
-    top: 12px;
+    top: 18px;
     left: 12px;
   }
 

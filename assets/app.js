@@ -1494,9 +1494,31 @@ function closeNavigationPanels() {
   setMobileFontPanelOpen(false);
 }
 
+function syncCatalogButtonState() {
+  const isOpen = Boolean(state.drawerOpen);
+  const desktopLabel = isOpen ? "\u6536\u8d77\u76ee\u5f55" : "\u76ee\u5f55";
+  const mobileLabel = isOpen ? "\u6536\u8d77\u76ee\u5f55" : "\u6253\u5f00\u76ee\u5f55";
+
+  if (dom.catalogButton) {
+    dom.catalogButton.textContent = desktopLabel;
+    dom.catalogButton.setAttribute("aria-expanded", String(isOpen));
+    dom.catalogButton.setAttribute("aria-label", desktopLabel);
+    dom.catalogButton.setAttribute("title", desktopLabel);
+    dom.catalogButton.classList.toggle("is-active", isOpen);
+  }
+
+  if (dom.mobileCatalogButton) {
+    dom.mobileCatalogButton.setAttribute("aria-expanded", String(isOpen));
+    dom.mobileCatalogButton.setAttribute("aria-label", mobileLabel);
+    dom.mobileCatalogButton.setAttribute("title", mobileLabel);
+    dom.mobileCatalogButton.classList.toggle("is-active", isOpen);
+  }
+}
+
 function setDrawerOpen(open) {
   state.drawerOpen = open;
   dom.catalogDrawer.classList.toggle("is-open", open);
+  syncCatalogButtonState();
   syncOverlay();
 }
 
@@ -9493,6 +9515,8 @@ function bindEvents() {
       setHashForDoc(state.currentNextId);
     }
   });
+
+  syncCatalogButtonState();
 }
 
 async function init() {
