@@ -2,9 +2,9 @@
   "site": {
     "title": "差结构学习法",
     "tagline": "一套正在打磨中的跨学科判断方法",
-    "description": "这是一个由尤安持续建设的开放学习与研究项目，尝试用差异、落差、边界、反馈与验证组织跨学科理解，并把读者反馈与 AI 协作接入持续回写。",
-    "positioningStatement": "一套以差异、落差、边界与反馈为主线的跨学科判断方法。",
-    "positioningSupport": "欢迎喜欢哲学、物理、系统论与宇宙问题的人来反驳、思辨、补桥和共建。",
+    "description": "这是一个由尤安持续打磨的开放学习与研究项目，尝试从差异、落差、边界、反馈与验证出发，组织跨学科理解，并把读者反馈与 AI 协作接回持续回写。",
+    "positioningStatement": "一套正在打磨中的跨学科判断方法：先看哪里不同，再判断什么能站住。",
+    "positioningSupport": "它尝试把物理、生命、意识与社会中的结构现象放到同一条判断线上。欢迎喜欢哲学、物理、系统论与宇宙问题的人来反驳、思辨、补桥和共建。",
     "author": "尤安",
     "repoUrl": "https://github.com/Kalin-Youen/LiuYuBan",
     "siteUrl": "https://kalin-youen.github.io/LiuYuBan/",
@@ -80,15 +80,15 @@
       ]
     },
     "aiGateway": {
-      "title": "如果你是另一个 AI，从这里进",
-      "summary": "不要只读首页。先读 AI 入口说明、README 和 content.json，再按五卷抽样浏览。",
-      "statusNote": "这里提供稳定 raw 链接、卷别结构和一段可直接复制的评审提示词。没读到的内容，请明确写“未读到”。",
+      "title": "如果你是外部 AI 或独立评审，从这里进",
+      "summary": "别只读首页。先拿完整机器入口，再按五卷抽样，最后给真实反馈。",
+      "statusNote": "这里专门给外部模型准备了 raw 链接、卷别结构和可直接复制的评审提示词。没读到的内容，请明确写“未读到”。",
       "entrySourcePath": "AI_ENTRY.md",
       "steps": [
-        "先读 AI 入口说明，不要只停在首页。",
-        "再读 README 和 content.json，确定项目定位、卷别结构与机器入口。",
+        "先读 AI 入口说明，不要只停在首页宣传语。",
+        "再读 README 和 content.json，确认项目定位、卷别结构与机器入口。",
         "至少抽样浏览大众卷、研究卷、拓展卷、推演卷和 AI 协作卷。",
-        "输出真实反馈：最有价值的地方、最易误解的地方、最该降强或补桥的位置。",
+        "重点判断哪些地方真的站住了，哪些地方只是桥梁解释，哪些地方还该降强或补桥。",
         "如果某个页面没读到，请直接写“未读到”，不要假装看过。"
       ],
       "links": [
@@ -118,7 +118,7 @@
           "description": "需要核对文件结构、提交历史或原始文稿时，再回这里。"
         }
       ],
-      "reviewPrompt": "你现在是一个独立评审 AI。请不要迎合作者，也不要只复述站内原话。请先读 AI 入口说明、README 和 content.json，再访问在线站点，并抽样浏览大众卷、研究卷、拓展卷、推演卷和 AI 协作卷。然后输出真实反馈：1. 这个项目最准确的定位；2. 最有价值的 3 个点；3. 最容易引起误解的 3 个点；4. 最该降强、补桥或调整顺序的地方；5. 首页、目录、图谱、试验台、AI 导读、评论入口的可用性。未读到的内容请明确写“未读到”。"
+      "reviewPrompt": "你现在是一个独立评审 AI。请不要迎合作者，也不要只复述站内原话。请先读 AI 入口说明、README 和 content.json，再访问在线站点，并抽样浏览大众卷、研究卷、拓展卷、推演卷和 AI 协作卷。然后输出真实反馈：1. 这个项目最准确的定位；2. 最有价值的 3 个点；3. 最容易引起误解的 3 个点；4. 哪些宣传语、判断或桥梁还该降强、补桥或调整顺序；5. 首页、目录、图谱、试验台、AI 导读、评论入口，尤其是 AI 入口本身，是否真的顺手可用。未读到的内容请明确写“未读到”。"
     },
     "liveBook": {
       "title": "活书计划",
@@ -189,13 +189,13 @@
       ]
     },
     "heroTitle": "先看哪里不同，再看什么能站住",
-    "heroText": "尤安正在打磨一套以差异、落差、边界、反馈与验证为主线的认知方法。它尝试把物理、生命、意识与社会中的结构现象放到同一条判断线上，而不急着把自己说成最后答案。"
+    "heroText": "尤安正在打磨一套以差异、落差、边界、反馈与验证为主线的认知方法。它尝试把物理、生命、意识与社会中的结构现象放到同一条判断线上，用来组织学习、推理与协作，而不是把自己说成解释万物的最后答案。"
   },
-  "generatedAt": "2026-04-26T05:40:11.387232+00:00",
+  "generatedAt": "2026-04-26T06:13:05.276540+00:00",
   "stats": {
     "documentCount": 89,
-    "totalChars": 546483,
-    "newestUpdate": "2026-04-26T05:39:27.584123+00:00"
+    "totalChars": 546929,
+    "newestUpdate": "2026-04-26T05:58:48.871050+00:00"
   },
   "sections": [
     {
@@ -344,14 +344,19 @@
       "sectionTitle": "项目定位与自校验",
       "title": "AI Entry",
       "excerpt": "This file is a compact machine-facing entrance for external models, reviewers, and retrieval agents.",
-      "updatedAt": "2026-04-26T05:30:54.337378+00:00",
+      "updatedAt": "2026-04-26T05:58:48.871050+00:00",
       "sourcePath": "AI_ENTRY.md",
-      "html": "<h1 id=\"ai-entry\">AI Entry</h1>\n<p>This file is a compact machine-facing entrance for external models, reviewers, and retrieval agents.</p>\n<h2 id=\"one-line-positioning\">One-line Positioning</h2>\n<p><code>差结构学习法</code> is not best approached as a finished \"final theory.\"<br>\nAt its current stage, it is better treated as a growing public method infrastructure for learning, judging, researching, and AI collaboration.</p>\n<p>Its core order is:</p>\n<p><code>先看哪里不同 -&gt; 再看边界、持续、反馈与耗散 -&gt; 最后判断什么能站住、能重复、能验证</code></p>\n<h2 id=\"what-this-project-is-not\">What This Project Is Not</h2>\n<ul>\n<li>It is <strong>not</strong> asking you to accept a completed total ontology before reading.</li>\n<li>It is <strong>not</strong> best summarized as \"one word explains everything.\"</li>\n<li>It is <strong>not</strong> only a philosophy essay site; it also includes reading paths, training material, execution-oriented research material, and AI collaboration rules.</li>\n</ul>\n<h2 id=\"best-read-order-for-ai\">Best Read Order For AI</h2>\n<ol>\n<li>Read this file first.</li>\n<li>Read <code>README.md</code>.</li>\n<li>Read <code>docs/assets/data/content.json</code>.</li>\n<li>Visit the online site and inspect the homepage and navigation.</li>\n<li>Sample at least one part from each of:\n   - 大众卷\n   - 研究卷\n   - 拓展卷\n   - 推演卷\n   - AI 协作卷</li>\n</ol>\n<p>If any page fails to load, say clearly: <code>未读到</code>.</p>\n<h2 id=\"stable-machine-links\">Stable Machine Links</h2>\n<ul>\n<li>AI entry:\n  <code>https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/AI_ENTRY.md</code></li>\n<li>README:\n  <code>https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/README.md</code></li>\n<li>Machine index:\n  <code>https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/docs/assets/data/content.json</code></li>\n<li>Online site:\n  <code>https://kalin-youen.github.io/LiuYuBan/</code></li>\n<li>Repository:\n  <code>https://github.com/Kalin-Youen/LiuYuBan</code></li>\n</ul>\n<h2 id=\"volume-map\">Volume Map</h2>\n<ul>\n<li><code>第一卷：大众卷</code>\n  First-contact entry. Light content, white-talk explanations, easier narrative paths.</li>\n<li><code>第二卷：研究卷</code>\n  Main manuscript, definitions, bridges, limits, and research-facing stabilization.</li>\n<li><code>第三卷：拓展卷</code>\n  Turns understanding into trainable ability and reusable method moves.</li>\n<li><code>第四卷：推演卷</code>\n  Pushes ideas toward objects, variables, execution order, comparisons, and failure records.</li>\n<li><code>第五卷：AI 协作卷</code>\n  Defines how AI should collaborate without scattering the mainline.</li>\n</ul>\n<h2 id=\"what-kind-of-feedback-is-most-useful\">What Kind Of Feedback Is Most Useful</h2>\n<p>Please do not just paraphrase the site's own language.</p>\n<p>The most useful feedback is:</p>\n<ul>\n<li>what this project most accurately is;</li>\n<li>where its entry is smooth or confusing;</li>\n<li>which claims are too strong;</li>\n<li>where a bridge is still missing;</li>\n<li>what should be kept and expanded;</li>\n<li>whether the homepage and AI entry are actually usable.</li>\n</ul>\n<h2 id=\"suggested-review-prompt\">Suggested Review Prompt</h2>\n<pre><code class=\"language-text\">You are an independent review AI. Do not flatter the author and do not only repeat the site's own framing.\n\nRead in this order:\n1. AI entry\n2. README\n3. content.json\n4. the online site\n5. sample content from 大众卷、研究卷、拓展卷、推演卷、AI 协作卷\n\nThen report:\n1. the most accurate short definition of the project\n2. the 3 strongest things it already does well\n3. the 3 easiest ways it can be misunderstood\n4. which parts should be downgraded, clarified, or bridged\n5. whether the homepage, navigation, and AI entrance are genuinely usable\n\nIf you failed to read something, say `未读到` explicitly.\n</code></pre>\n<h2 id=\"important-practical-note\">Important Practical Note</h2>\n<p>This is a public repository on the <code>main</code> branch.<br>\nDo not rely only on the GitHub HTML page if parsing fails; prefer raw links.</p>",
+      "html": "<h1 id=\"ai-entry\">AI Entry</h1>\n<p>This file is a compact machine-facing entrance for external models, reviewers, and retrieval agents.</p>\n<h2 id=\"short-positioning\">Short Positioning</h2>\n<p><code>差结构学习法</code> is better treated, at its current stage, as a growing cross-disciplinary judgment method, not a finished total theory.</p>\n<p>Its usable order is:</p>\n<p><code>先看哪里不同 -&gt; 再看边界、持续、反馈与耗散 -&gt; 最后判断什么能站住、能重复、能验证</code></p>\n<h2 id=\"read-it-at-the-right-strength\">Read It At The Right Strength</h2>\n<ul>\n<li>Stable: this repo is building a reusable path for learning, judgment, research, and AI collaboration.</li>\n<li>Useful bridge: it tries to compare physics, life, mind, and society with the same judgment order.</li>\n<li>Still open: any stronger \"unified explanation\" should be reviewed critically, not repeated as settled fact.</li>\n</ul>\n<h2 id=\"what-this-project-is-not\">What This Project Is Not</h2>\n<ul>\n<li>It is <strong>not</strong> asking you to accept a completed total ontology before reading.</li>\n<li>It is <strong>not</strong> best summarized as \"one word explains everything.\"</li>\n<li>It is <strong>not</strong> only a philosophy essay site; it also contains reading paths, method training material, execution-oriented research material, and AI collaboration rules.</li>\n</ul>\n<h2 id=\"best-read-order-for-ai\">Best Read Order For AI</h2>\n<ol>\n<li>Read this file first.</li>\n<li>Read <code>README.md</code>.</li>\n<li>Read <code>docs/assets/data/content.json</code>.</li>\n<li>Visit the online site and inspect the homepage, navigation, AI entry, graph, lab, and comment entry if available.</li>\n<li>Sample at least one part from each of:\n   - 大众卷\n   - 研究卷\n   - 拓展卷\n   - 推演卷\n   - AI 协作卷</li>\n</ol>\n<p>If any page fails to load, say clearly: <code>未读到</code>.</p>\n<h2 id=\"stable-machine-links\">Stable Machine Links</h2>\n<ul>\n<li>AI entry:\n  <code>https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/AI_ENTRY.md</code></li>\n<li>README:\n  <code>https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/README.md</code></li>\n<li>Machine index:\n  <code>https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/docs/assets/data/content.json</code></li>\n<li>Online site:\n  <code>https://kalin-youen.github.io/LiuYuBan/</code></li>\n<li>Repository:\n  <code>https://github.com/Kalin-Youen/LiuYuBan</code></li>\n</ul>\n<h2 id=\"volume-map\">Volume Map</h2>\n<ul>\n<li><code>第一卷：大众卷</code>\n  First-contact entry. Light content, white-talk explanations, easier narrative paths.</li>\n<li><code>第二卷：研究卷</code>\n  Main manuscript, definitions, bridges, limits, and research-facing stabilization.</li>\n<li><code>第三卷：拓展卷</code>\n  Turns understanding into trainable ability and reusable method moves.</li>\n<li><code>第四卷：推演卷</code>\n  Pushes ideas toward objects, variables, execution order, comparisons, and failure records.</li>\n<li><code>第五卷：AI 协作卷</code>\n  Defines how AI should collaborate without scattering the mainline.</li>\n</ul>\n<h2 id=\"what-kind-of-feedback-is-most-useful\">What Kind Of Feedback Is Most Useful</h2>\n<p>Please do not just paraphrase the site's own language.</p>\n<p>The most useful feedback is:</p>\n<ul>\n<li>what this project most accurately is;</li>\n<li>where its entry is smooth or confusing;</li>\n<li>which slogans or claims are too strong;</li>\n<li>where a bridge is still missing;</li>\n<li>what should be kept and expanded;</li>\n<li>whether the homepage and AI entry are actually usable.</li>\n</ul>\n<h2 id=\"suggested-review-prompt\">Suggested Review Prompt</h2>\n<pre><code class=\"language-text\">You are an independent review AI. Do not flatter the author and do not only repeat the site's own framing.\n\nRead in this order:\n1. AI entry\n2. README\n3. content.json\n4. the online site\n5. sample content from 大众卷、研究卷、拓展卷、推演卷、AI 协作卷\n\nThen report:\n1. the most accurate short definition of the project\n2. the 3 strongest things it already does well\n3. the 3 easiest ways it can be misunderstood\n4. which slogans, bridges, or claims should be downgraded, clarified, or rebuilt\n5. whether the homepage, navigation, AI entry, graph, lab, and comment entry are genuinely usable\n\nIf you failed to read something, say `未读到` explicitly.\n</code></pre>\n<h2 id=\"important-practical-note\">Important Practical Note</h2>\n<p>This is a public repository on the <code>main</code> branch.<br>\nDo not rely only on the GitHub HTML page if parsing fails; prefer raw links.</p>",
       "headings": [
         {
           "level": 2,
-          "label": "One-line Positioning",
-          "anchor": "one-line-positioning"
+          "label": "Short Positioning",
+          "anchor": "short-positioning"
+        },
+        {
+          "level": 2,
+          "label": "Read It At The Right Strength",
+          "anchor": "read-it-at-the-right-strength"
         },
         {
           "level": 2,
@@ -389,7 +394,7 @@
           "anchor": "important-practical-note"
         }
       ],
-      "wordCount": 2937,
+      "wordCount": 3312,
       "order": 0
     },
     {
@@ -398,10 +403,10 @@
       "sectionId": "overview",
       "sectionTitle": "项目定位与自校验",
       "title": "差结构学习法是什么",
-      "excerpt": "差结构学习法不是终极存在论，也不是面向大众的大理论宣讲；更合适的定位是：一套面向学习者、研究者与 AI 协作者的公共方法基础设施。",
-      "updatedAt": "2026-04-25T17:32:06.000273+00:00",
+      "excerpt": "差结构学习法不是终极存在论，也不该被说成“描述万物的最后语言”；更稳的定位是：一套正在打磨中的、面向学习者、研究者与 AI 协作者的跨学科判断方法。如果需要强调它的建设形态，也可以把它理解成一套公共方法基础设施。",
+      "updatedAt": "2026-04-26T05:58:22.861468+00:00",
       "sourcePath": "研究文稿/04_议论与说明/差结构学习法是什么_对外主句与入口说明.md",
-      "html": "<h1 id=\"差结构学习法是什么\">差结构学习法是什么</h1>\n<p>差结构学习法不是终极存在论，也不是面向大众的大理论宣讲；更合适的定位是：一套面向学习者、研究者与 AI 协作者的公共方法基础设施。</p>\n<h2 id=\"它先解决什么\">它先解决什么</h2>\n<p>它不先要求你接受“世界最后是什么”，而是先给你一条能直接用的顺序：</p>\n<blockquote>\n<p>先分辨不同，再看边界、持续、反馈与耗散，最后判断什么能站住、能重复、能验证。</p>\n</blockquote>\n<h2 id=\"为什么要这样定位\">为什么要这样定位</h2>\n<p>这套项目当然可以被大众阅读，但它更现实的任务，不是先把整套世界观看成一个需要所有人接受的总答案，而是先把一套真正能拿来学习、推理、校验与协作的方法做稳。</p>\n<p>也正因此，它更适合按五卷制来理解：</p>\n<ol>\n<li><code>第一卷：大众卷</code>负责让第一次接触的人先上手，而不是先被大词压住；</li>\n<li><code>第二卷：研究卷</code>负责压实主线、定义、桥梁和验证接口；</li>\n<li><code>第三卷：拓展卷</code>负责把方法从“能懂”推进到“能练、能用、能迁移”；</li>\n<li><code>第四卷：推演卷</code>负责把研究计划推进到推演、执行、样本和比较；</li>\n<li><code>第五卷：AI 协作卷</code>负责守住主线、边界、版本与回写纪律。</li>\n</ol>\n<h2 id=\"五卷制\">五卷制</h2>\n<ol>\n<li><code>第一卷：大众卷</code>\n   十条轻内容、白话卷、交互实验页。\n   它的价值是降低进入门槛，让人先形成判断动作，再决定是否继续深挖。</li>\n<li><code>第二卷：研究卷</code>\n   摘要、主书稿、专题、术语与边界。\n   它的价值是压实定义、补齐桥梁、保留案例与验证接口，让项目不只会说，还能站住。</li>\n<li><code>第三卷：拓展卷</code>\n   拓展卷、方法卡、能力构建练习。\n   它的价值是让方法在阅读时就开始进入人的思维、学习和行动，而不只停留在理解层。</li>\n<li><code>第四卷：推演卷</code>\n   推演卷、研究卡、执行顺序与样本记录。\n   它的价值是让研究计划不只停在展望，而开始进入对象、变量、比较和失败记录。</li>\n<li><code>第五卷：AI 协作卷</code>\n   AI 协作卷、<code>README.md</code>、<code>content.json</code>。\n   它的价值是把模型协作制度化，让 AI 成为放大秩序、控制噪声和持续回写的工具。</li>\n</ol>\n<p>这五卷不是五套互相竞争的理论，而是同一套方法在五种使用情境中的五种工作形态。</p>\n<h2 id=\"它不是什么\">它不是什么</h2>\n<p>它不是一个包打天下的新本体名词，也不是试图用一个大词把所有学科都压平。过去那些更像“终极存在论”的命名，容易让人误会项目的目标是在发明一个解释一切的最后词汇。现在更明确的定位是：这里优先提供的是一套走法，一套进入问题、组织判断、限制过度扩张的学习方法。</p>\n<h2 id=\"它拿来做什么\">它拿来做什么</h2>\n<p>它最直接的用途，不是替代现有学科，而是帮助读者在跨学科学习时保持一条稳定主线：</p>\n<ol>\n<li>先找出哪里不同，哪里有非均匀性。</li>\n<li>再看这些不同怎样长出边界、稳态、结构与规则。</li>\n<li>再继续追问哪些判断有反馈、哪些判断能被验证、哪些地方必须收住边界。</li>\n</ol>\n<p>这样做的好处是，读者不会一上来就被抽象大词拖走，而能从现象、过程、结构和验证一路往上走。</p>\n<h2 id=\"对外介绍时可以直接这样说\">对外介绍时可以直接这样说</h2>\n<p>如果你只需要一句最稳的介绍，直接用这一句：</p>\n<blockquote>\n<p>差结构学习法不是终极存在论，而是一套面向学习者、研究者与 AI 协作者的公共方法基础设施。</p>\n</blockquote>\n<p>如果允许再多补一句，就接这一句：</p>\n<blockquote>\n<p>它不是先让你接受一套终极理论，而是给人和 AI 一套可直接拿来学习、推理、校验与协作的方法基础设施。</p>\n</blockquote>",
+      "html": "<h1 id=\"差结构学习法是什么\">差结构学习法是什么</h1>\n<p>差结构学习法不是终极存在论，也不该被说成“描述万物的最后语言”；更稳的定位是：一套正在打磨中的、面向学习者、研究者与 AI 协作者的跨学科判断方法。如果需要强调它的建设形态，也可以把它理解成一套公共方法基础设施。</p>\n<h2 id=\"它先解决什么\">它先解决什么</h2>\n<p>它不先要求你接受“世界最后是什么”，而是先给你一条能直接用的顺序：</p>\n<blockquote>\n<p>先分辨不同，再看边界、持续、反馈与耗散，最后判断什么能站住、能重复、能验证。</p>\n</blockquote>\n<h2 id=\"为什么要这样定位\">为什么要这样定位</h2>\n<p>这套项目当然可以被大众阅读，但它更现实的任务，不是先把整套世界观看成一个需要所有人接受的总答案，而是先把一套真正能拿来学习、组织判断、校验与协作的方法做稳。</p>\n<p>也正因此，它更适合按五卷制来理解：</p>\n<ol>\n<li><code>第一卷：大众卷</code>负责让第一次接触的人先上手，而不是先被大词压住；</li>\n<li><code>第二卷：研究卷</code>负责压实主线、定义、桥梁和验证接口；</li>\n<li><code>第三卷：拓展卷</code>负责把方法从“能懂”推进到“能练、能用、能迁移”；</li>\n<li><code>第四卷：推演卷</code>负责把研究计划推进到推演、执行、样本和比较；</li>\n<li><code>第五卷：AI 协作卷</code>负责守住主线、边界、版本与回写纪律。</li>\n</ol>\n<h2 id=\"五卷制\">五卷制</h2>\n<ol>\n<li><code>第一卷：大众卷</code>\n   十条轻内容、白话卷、交互实验页。\n   它的价值是降低进入门槛，让人先形成判断动作，再决定是否继续深挖。</li>\n<li><code>第二卷：研究卷</code>\n   摘要、主书稿、专题、术语与边界。\n   它的价值是压实定义、补齐桥梁、保留案例与验证接口，让项目不只会说，还能站住。</li>\n<li><code>第三卷：拓展卷</code>\n   拓展卷、方法卡、能力构建练习。\n   它的价值是让方法在阅读时就开始进入人的思维、学习和行动，而不只停留在理解层。</li>\n<li><code>第四卷：推演卷</code>\n   推演卷、研究卡、执行顺序与样本记录。\n   它的价值是让研究计划不只停在展望，而开始进入对象、变量、比较和失败记录。</li>\n<li><code>第五卷：AI 协作卷</code>\n   AI 协作卷、<code>README.md</code>、<code>content.json</code>。\n   它的价值是把模型协作制度化，让 AI 成为放大秩序、控制噪声和持续回写的工具。</li>\n</ol>\n<p>这五卷不是五套互相竞争的理论，而是同一套方法在五种使用情境中的五种工作形态。</p>\n<h2 id=\"它不是什么\">它不是什么</h2>\n<p>它不是一个包打天下的新本体名词，也不是试图用一个大词把所有学科都压平，更不是要把“落差”说成能替代一切现成学科的万能词。过去那些更像“终极存在论”的命名，容易让人误会项目的目标是在发明一个解释一切的最后词汇。现在更明确的定位是：这里优先提供的是一套走法，一套进入问题、组织判断、限制过度扩张的学习方法。</p>\n<h2 id=\"它拿来做什么\">它拿来做什么</h2>\n<p>它最直接的用途，不是替代现有学科，而是帮助读者在跨学科学习时保持一条稳定主线：</p>\n<ol>\n<li>先找出哪里不同，哪里有非均匀性。</li>\n<li>再看这些不同怎样长出边界、稳态、结构与规则。</li>\n<li>再继续追问哪些判断有反馈、哪些判断能被验证、哪些地方必须收住边界。</li>\n</ol>\n<p>这样做的好处是，读者不会一上来就被抽象大词拖走，而能从现象、过程、结构和验证一路往上走。</p>\n<h2 id=\"对外介绍时可以直接这样说\">对外介绍时可以直接这样说</h2>\n<p>如果你只需要一句最稳的介绍，直接用这一句：</p>\n<blockquote>\n<p>差结构学习法不是终极存在论，也不是解释万物的最后答案；它是一套正在打磨中的跨学科判断方法。</p>\n</blockquote>\n<p>如果允许再多补一句，就接这一句：</p>\n<blockquote>\n<p>它不先要求你接受一套终极理论，而是先给人和 AI 一条“先看哪里不同，再判断什么能站住”的学习与判断路径。</p>\n</blockquote>",
       "headings": [
         {
           "level": 2,
@@ -434,7 +439,7 @@
           "anchor": "对外介绍时可以直接这样说"
         }
       ],
-      "wordCount": 1279,
+      "wordCount": 1350,
       "order": 1
     },
     {
@@ -11168,6 +11173,7 @@
           "book-10-第8章-思考的物理实现与认知生成",
           "book-23-专题-反思辩证模块-让质疑成为理论生长的回路",
           "book-33-专题-经济与权力的运作本质-差结构如何进入资源-命令与制度",
+          "overview-02-差结构学习法是什么-对外主句与入口说明",
           "overview-03-五卷制说明-为什么分成大众卷-研究卷-拓展卷-推演卷与ai协作卷",
           "terms-04-宇宙会回缩吗-从膨胀末端到状态切换",
           "book-16-附录b-术语表",
@@ -11215,6 +11221,7 @@
           "book-10-第8章-思考的物理实现与认知生成",
           "book-23-专题-反思辩证模块-让质疑成为理论生长的回路",
           "book-33-专题-经济与权力的运作本质-差结构如何进入资源-命令与制度",
+          "overview-02-差结构学习法是什么-对外主句与入口说明",
           "overview-03-五卷制说明-为什么分成大众卷-研究卷-拓展卷-推演卷与ai协作卷",
           "terms-04-宇宙会回缩吗-从膨胀末端到状态切换"
         ],
@@ -11223,8 +11230,8 @@
           "book-18-附录d-核心理论网络图谱",
           "book-19-附录e-接口深化与二级理论网图谱"
         ],
-        "chapterCount": 45,
-        "discussedChapterCount": 42,
+        "chapterCount": 46,
+        "discussedChapterCount": 43,
         "supportChapterCount": 3,
         "status": "lit",
         "signal": 1
@@ -13626,6 +13633,7 @@
           "book-10-第8章-思考的物理实现与认知生成",
           "book-23-专题-反思辩证模块-让质疑成为理论生长的回路",
           "book-33-专题-经济与权力的运作本质-差结构如何进入资源-命令与制度",
+          "overview-02-差结构学习法是什么-对外主句与入口说明",
           "overview-03-五卷制说明-为什么分成大众卷-研究卷-拓展卷-推演卷与ai协作卷",
           "terms-04-宇宙会回缩吗-从膨胀末端到状态切换",
           "book-16-附录b-术语表",
@@ -13674,6 +13682,7 @@
           "book-10-第8章-思考的物理实现与认知生成",
           "book-23-专题-反思辩证模块-让质疑成为理论生长的回路",
           "book-33-专题-经济与权力的运作本质-差结构如何进入资源-命令与制度",
+          "overview-02-差结构学习法是什么-对外主句与入口说明",
           "overview-03-五卷制说明-为什么分成大众卷-研究卷-拓展卷-推演卷与ai协作卷",
           "terms-04-宇宙会回缩吗-从膨胀末端到状态切换",
           "light-series-06-06-漩涡为什么比定义更能教会你结构",
@@ -13684,8 +13693,8 @@
           "book-16-附录b-术语表",
           "book-19-附录e-接口深化与二级理论网图谱"
         ],
-        "chapterCount": 47,
-        "discussedChapterCount": 44,
+        "chapterCount": 48,
+        "discussedChapterCount": 45,
         "supportChapterCount": 3,
         "status": "lit",
         "signal": 1

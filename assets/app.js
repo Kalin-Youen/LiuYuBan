@@ -1058,6 +1058,8 @@ const state = {
     tone: "info",
   },
   assistantOpen: false,
+  guideContextHash: "",
+  guideReturnHash: "",
   activePrimaryView: "home",
   drawerOpen: false,
   tocOpen: false,
@@ -1099,6 +1101,7 @@ const dom = {
   navSections: document.getElementById("nav-sections"),
   searchInput: document.getElementById("search-input"),
   viewTitle: document.getElementById("view-title"),
+  guideButton: document.getElementById("guide-button"),
   homeButton: document.getElementById("home-button"),
   graphButton: document.getElementById("graph-button"),
   tabHomeButton: document.getElementById("tab-home-button"),
@@ -1109,7 +1112,10 @@ const dom = {
   deckView: document.getElementById("deck-view"),
   graphView: document.getElementById("graph-view"),
   labView: document.getElementById("lab-view"),
+  guideView: document.getElementById("guide-view"),
   docView: document.getElementById("doc-view"),
+  guideBackButton: document.getElementById("guide-back-button"),
+  guideBackLabel: document.getElementById("guide-back-label"),
   heroTitle: document.getElementById("hero-title"),
   heroText: document.getElementById("hero-text"),
   positioningStatement: document.getElementById("positioning-statement"),
@@ -1322,15 +1328,27 @@ function resolveLabParams(page, rawParams = {}) {
 }
 
 function getHashRoute() {
-  const rawHash = window.location.hash.replace(/^#/, "");
+  return parseHashRoute(window.location.hash.replace(/^#/, ""));
+}
+
+function parseHashRoute(rawHashInput = "") {
+  const rawHash = String(rawHashInput || "").replace(/^#/, "");
   const queryIndex = rawHash.indexOf("?");
   const path = queryIndex === -1 ? rawHash : rawHash.slice(0, queryIndex);
   const params = queryIndex === -1
     ? {}
     : Object.fromEntries(new URLSearchParams(rawHash.slice(queryIndex + 1)).entries());
-  const hash = decodeURIComponent(path);
+  let hash = path;
+  try {
+    hash = decodeURIComponent(path);
+  } catch {
+    hash = path;
+  }
 
   if (!hash) return { type: "home" };
+  if (hash === "guide") {
+    return { type: "guide", params };
+  }
   if (hash === "deck") {
     return { type: "deck", deckId: null, params };
   }
@@ -1353,6 +1371,10 @@ function getHashRoute() {
     return { type: "lab", page: normalizeLabPage(hash.slice(4)), params };
   }
   return { type: "home" };
+}
+
+function getCurrentHashPath() {
+  return window.location.hash.replace(/^#/, "");
 }
 
 function sanitizeDocRouteParams(params = null) {
@@ -1483,6 +1505,61 @@ function setHashForLab(page = "learn", params = null, { replace = false } = {}) 
   window.location.hash = hash;
 }
 
+function normalizeGuideContextHash(value) {
+  const normalized = String(value || "").replace(/^#/, "").trim();
+  if (!normalized || normalized.startsWith("guide")) return "";
+  return normalized.slice(0, 900);
+}
+
+function sanitizeGuideRouteParams(params = null) {
+  if (!params) return null;
+
+  const resolved = {};
+  const from = normalizeGuideContextHash(params.from);
+  if (from) {
+    resolved.from = from;
+  }
+
+  if (params.focus === true || params.focus === "1") {
+    resolved.focus = "1";
+  }
+
+  return Object.keys(resolved).length ? resolved : null;
+}
+
+function buildGuideHash(params = null, { captureCurrent = true } = {}) {
+  const baseHash = "guide";
+  const resolved = sanitizeGuideRouteParams(params) || {};
+
+  if (!resolved.from && captureCurrent) {
+    const currentHash = normalizeGuideContextHash(getCurrentHashPath())
+      || normalizeGuideContextHash(state.guideContextHash)
+      || normalizeGuideContextHash(state.guideReturnHash);
+    if (currentHash) {
+      resolved.from = currentHash;
+    }
+  }
+
+  if (!Object.keys(resolved).length) {
+    return baseHash;
+  }
+
+  const search = new URLSearchParams();
+  Object.entries(resolved).forEach(([key, value]) => {
+    search.set(key, value);
+  });
+  return `${baseHash}?${search.toString()}`;
+}
+
+function setHashForGuide(params = null, { replace = false, captureCurrent = true } = {}) {
+  const hash = buildGuideHash(params, { captureCurrent });
+  if (replace) {
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${hash}`);
+    return;
+  }
+  window.location.hash = hash;
+}
+
 function closePanels() {
   setDrawerOpen(false);
   setTocOpen(false);
@@ -1517,6 +1594,20 @@ function syncCatalogButtonState() {
   }
 }
 
+function scrollAssistantConversationToBottom(behavior = "auto") {
+  const container = dom.assistantConversation;
+  if (!container) return;
+
+  window.requestAnimationFrame(() => {
+    const top = container.scrollHeight;
+    if (typeof container.scrollTo === "function") {
+      container.scrollTo({ top, behavior });
+      return;
+    }
+    container.scrollTop = top;
+  });
+}
+
 function setDrawerOpen(open) {
   state.drawerOpen = open;
   dom.catalogDrawer.classList.toggle("is-open", open);
@@ -1539,37 +1630,25 @@ function setMobileFontPanelOpen(open) {
 }
 
 function setAssistantOpen(open, { focusInput = false } = {}) {
-  if (open) {
-    setDrawerOpen(false);
-    setTocOpen(false);
-    setMobileFontPanelOpen(false);
+  if (!open) {
+    state.assistantOpen = false;
+    syncViewButtons();
+    return;
   }
 
-  state.assistantOpen = open;
-  dom.assistantPanel?.classList.toggle("is-open", open);
-  dom.assistantPanel?.setAttribute("aria-hidden", String(!open));
-  dom.assistantLauncher?.setAttribute("aria-expanded", String(open));
-  dom.assistantLauncher?.classList.toggle("is-active", open);
-  syncOverlay();
+  closeNavigationPanels();
+  state.assistantOpen = false;
   syncViewButtons();
-
-  if (open) {
-    renderAssistantShell();
-    if (focusInput) {
-      window.requestAnimationFrame(() => {
-        dom.assistantQuestion?.focus();
-      });
-    }
-  }
+  setHashForGuide({ focus: focusInput ? "1" : undefined }, { captureCurrent: true });
 }
 
 function syncOverlay() {
-  const visible = state.drawerOpen || state.tocOpen || state.mobileFontPanelOpen || state.assistantOpen;
+  const visible = state.drawerOpen || state.tocOpen || state.mobileFontPanelOpen;
   dom.pageOverlay.classList.toggle("hidden", !visible);
   dom.pageOverlay.classList.toggle("is-visible", visible);
   document.body.classList.toggle(
     "lock-scroll",
-    window.innerWidth <= MOBILE_BREAKPOINT && (state.drawerOpen || state.tocOpen || state.assistantOpen),
+    window.innerWidth <= MOBILE_BREAKPOINT && (state.drawerOpen || state.tocOpen),
   );
 }
 
@@ -3708,11 +3787,12 @@ function syncViewButtons() {
   dom.graphButton?.classList.toggle("is-active", Boolean(state.activeGraphNodeId));
   dom.labButton?.classList.toggle("is-active", Boolean(state.activeLabPage));
 
-  const activeTab = state.assistantOpen ? "ai" : state.activePrimaryView;
+  const activeTab = state.activePrimaryView === "guide" ? "ai" : state.activePrimaryView;
   dom.tabHomeButton?.classList.toggle("is-active", activeTab === "home");
   dom.tabLabButton?.classList.toggle("is-active", activeTab === "lab");
   dom.tabGraphButton?.classList.toggle("is-active", activeTab === "graph");
   dom.tabAiButton?.classList.toggle("is-active", activeTab === "ai");
+  dom.guideButton?.classList.toggle("is-active", activeTab === "ai");
 }
 
 function setRangeOutput(id, label) {
@@ -6389,9 +6469,45 @@ function collectAssistantItems(candidates) {
   return items;
 }
 
-function getAssistantRouteContext() {
+function getCurrentAssistantRouteState() {
+  if (state.activePrimaryView === "guide") {
+    const fromHash = normalizeGuideContextHash(state.guideContextHash)
+      || normalizeGuideContextHash(state.guideReturnHash);
+    if (fromHash) {
+      return parseHashRoute(fromHash);
+    }
+  }
+
   if (state.activeId) {
-    const item = findItemById(state.activeId);
+    return { type: "doc", id: state.activeId, params: {} };
+  }
+
+  if (state.activeGraphNodeId) {
+    return { type: "graph", nodeId: state.activeGraphNodeId, params: {} };
+  }
+
+  if (state.activeDeckId) {
+    return {
+      type: "deck",
+      deckId: state.activeDeckId,
+      params: state.activeDeckCardId ? { card: state.activeDeckCardId } : {},
+    };
+  }
+
+  if (state.activeLabPage) {
+    return {
+      type: "lab",
+      page: state.activeLabPage,
+      params: state.labParams || {},
+    };
+  }
+
+  return { type: "home" };
+}
+
+function getAssistantRouteContextFromRoute(routeState) {
+  if (routeState?.type === "doc") {
+    const item = findItemById(routeState.id);
     const sequence = getReadingSequence();
     const currentIndex = sequence.findIndex((entry) => entry.id === item?.id);
     const prev = currentIndex > 0 ? sequence[currentIndex - 1] : null;
@@ -6408,18 +6524,18 @@ function getAssistantRouteContext() {
         || "可以直接追问这一章的主线、误区和下一步阅读入口。",
       chips: collectAssistantItems([item, alternate, prev, next]).map((entry) => getDisplayTitle(entry)).slice(0, 3),
       actions: [
-        `这一章真正的主线是什么？`,
+        "这一章真正的主线是什么？",
         `从《${title}》继续往下该读哪里？`,
-        `这章最容易误解的地方是什么？`,
-        `和这一章最相关的图谱节点有哪些？`,
+        "这章最容易误解的地方是什么？",
+        "和这一章最相关的图谱节点有哪些？",
       ],
       items: collectAssistantItems([item, alternate, prev, next]),
       launcherLabel: title || "当前章节",
     };
   }
 
-  if (state.activeGraphNodeId) {
-    const node = findGraphNodeById(state.activeGraphNodeId);
+  if (routeState?.type === "graph") {
+    const node = findGraphNodeById(routeState.nodeId);
     const chapterItems = getGraphNodeItems(node, { limit: getAssistantContextLimit() });
     const relatedItems = getGraphCandidateNodes(node)
       .slice(0, 3)
@@ -6447,9 +6563,9 @@ function getAssistantRouteContext() {
     };
   }
 
-  if (state.activeDeckId) {
-    const deck = findCardDeckById(state.activeDeckId);
-    const card = getDeckEntryCard(deck, state.activeDeckCardId);
+  if (routeState?.type === "deck") {
+    const deck = findCardDeckById(routeState.deckId);
+    const card = getDeckEntryCard(deck, routeState.params?.card);
     const relatedCards = (card?.relatedIds || [])
       .map((cardId) => findDeckCard(deck, cardId))
       .filter(Boolean);
@@ -6485,9 +6601,9 @@ function getAssistantRouteContext() {
     };
   }
 
-  if (state.activeLabPage) {
-    const page = LAB_PAGES[state.activeLabPage] || LAB_PAGES.learn;
-    const isPromptPage = state.activeLabPage === "prompt";
+  if (routeState?.type === "lab") {
+    const page = LAB_PAGES[routeState.page] || LAB_PAGES.learn;
+    const isPromptPage = routeState.page === "prompt";
 
     return {
       badge: "实验台",
@@ -6538,6 +6654,10 @@ function getAssistantRouteContext() {
     ]),
     launcherLabel: "当前页面",
   };
+}
+
+function getAssistantRouteContext() {
+  return getAssistantRouteContextFromRoute(getCurrentAssistantRouteState());
 }
 
 function buildAssistantFallbackContext() {
@@ -6608,34 +6728,40 @@ function getAssistantConversationHistory() {
 
 function buildAssistantMessageMarkup(message) {
   const isAssistant = message.role === "assistant";
-  const roleLabel = isAssistant ? "导读助手" : "你";
+  const roleLabel = isAssistant ? (getAssistantConfig().label || "导读助手") : "你";
   const roleMeta = isAssistant
     ? message.pending ? "正在整理章节…" : "站内导读"
-    : "当前问题";
+    : "已发送";
   const content = message.content || (message.pending ? "正在读取相关章节…" : "这一轮暂时没有可显示内容。");
   const sources = isAssistant && Array.isArray(message.sources) ? message.sources : [];
+  const avatarLabel = isAssistant ? "AI" : "你";
 
   return `
     <article
-      class="assistant-message is-${message.role}${message.pending ? " is-pending" : ""}"
+      class="assistant-message-row is-${message.role}${message.pending ? " is-pending" : ""}"
       data-assistant-message-id="${escapeHtml(message.id)}"
     >
-      <div class="assistant-message-head">
-        <span class="assistant-message-role">${escapeHtml(roleLabel)}</span>
-        <span class="assistant-message-meta">${escapeHtml(roleMeta)}</span>
-      </div>
-      <div class="assistant-message-body">${escapeHtml(content)}</div>
-      ${sources.length ? `
-        <div class="assistant-source-grid">
-          ${sources.map((source) => `
-            <a class="assistant-source-card" href="${escapeHtml(source.url)}">
-              <small>${escapeHtml(source.sectionTitle || "站内章节")}</small>
-              <strong>${escapeHtml(source.title || "未命名章节")}</strong>
-              <p>${escapeHtml(source.excerpt || "点击跳到相关章节继续阅读。")}</p>
-            </a>
-          `).join("")}
+      <div class="assistant-message-avatar" aria-hidden="true">${escapeHtml(avatarLabel)}</div>
+      <div class="assistant-message-stack">
+        <div class="assistant-message-head">
+          <span class="assistant-message-role">${escapeHtml(roleLabel)}</span>
+          <span class="assistant-message-meta">${escapeHtml(roleMeta)}</span>
         </div>
-      ` : ""}
+        <div class="assistant-message-bubble">
+          <div class="assistant-message-body">${escapeHtml(content)}</div>
+        </div>
+        ${sources.length ? `
+          <div class="assistant-source-grid">
+            ${sources.map((source) => `
+              <a class="assistant-source-card" href="${escapeHtml(source.url)}">
+                <small>${escapeHtml(source.sectionTitle || "站内章节")}</small>
+                <strong>${escapeHtml(source.title || "未命名章节")}</strong>
+                <p>${escapeHtml(source.excerpt || "点击跳到相关章节继续阅读。")}</p>
+              </a>
+            `).join("")}
+          </div>
+        ` : ""}
+      </div>
     </article>
   `;
 }
@@ -6657,7 +6783,7 @@ function renderAssistantConversation() {
     ];
 
   container.innerHTML = messages.map((message) => buildAssistantMessageMarkup(message)).join("");
-  container.scrollTop = container.scrollHeight;
+  scrollAssistantConversationToBottom();
 }
 
 function renderAssistantStatus() {
@@ -6772,7 +6898,7 @@ function updateAssistantMessageContent(messageId, content, { pending = false } =
     body.textContent = content || (pending ? "正在读取相关章节…" : "这一轮暂时没有可显示内容。");
   }
 
-  container.scrollTop = container.scrollHeight;
+  scrollAssistantConversationToBottom();
 }
 
 function extractAssistantResponseText(payload) {
@@ -6953,17 +7079,17 @@ function buildAssistantPromptEntryMarkup() {
     <section class="lab-grid lab-grid-two">
       <article class="lab-card lab-card-strong assistant-prompt-entry-card">
         <p class="eyebrow">Live Guide</p>
-        <h3>实时导读已经改成全站悬浮窗</h3>
+        <h3>实时导读现在是单独聊天页</h3>
         <p class="lab-section-copy">
-          问答不再塞在这个实验页里。现在你在任意章节、图谱节点、首页或实验页，都可以直接打开右下角导读窗继续追问。
+          问答不再塞在这个实验页里，也不再走悬浮窗。现在你在任意章节、图谱节点、首页或实验页，都可以直接跳到 AI 导读页继续追问。
         </p>
         <div class="assistant-chip-row">
-          <span class="graph-chip is-lit">全站可用</span>
+          <span class="graph-chip is-lit">单独页面</span>
           <span class="graph-chip">自动带当前页上下文</span>
           <span class="graph-chip ${hasEndpoint ? "is-lit" : "is-candidate"}">${hasEndpoint ? "已接入 Worker" : "待填 Worker"}</span>
         </div>
         <div class="lab-inline-actions">
-          <button class="reader-button" type="button" data-open-assistant="true">打开实时导读</button>
+          <button class="reader-button" type="button" data-open-assistant="true">进入 AI 导读页</button>
           <a class="reader-button" href="#graph/core-02">先从图谱节点试问</a>
         </div>
       </article>
@@ -6972,9 +7098,9 @@ function buildAssistantPromptEntryMarkup() {
         <p class="eyebrow">Use It</p>
         <h3>${escapeHtml(assistant.label || "站内导读助手")}</h3>
         <div class="lab-mini-points">
-          <span>先在当前页里追问主线、入口、误区和下一步，而不是让它泛泛讲理论。</span>
-          <span>回答里出现章节卡片后，直接点进去读，再回来继续追问，才有连续感。</span>
-          <span>提示词页现在更适合先压缩问题，再交给右侧导读窗完成真正的站内导航。</span>
+          <span>先在当前页带着上下文进去追问主线、入口、误区和下一步，而不是让它泛泛讲理论。</span>
+          <span>回答里出现章节卡片后，直接点进去读，再用返回键回到聊天页继续追问，连续感会更强。</span>
+          <span>提示词页现在更适合先压缩问题，再交给独立导读页完成真正的站内导航。</span>
         </div>
       </article>
     </section>
@@ -6998,21 +7124,37 @@ function resetAssistantConversation() {
 async function askAssistant(question) {
   const assistant = getAssistantConfig();
   const endpoint = String(assistant.endpoint || "").trim();
+  const currentRouteHash = normalizeGuideContextHash(getCurrentHashPath());
+  const shouldRouteToGuide = getHashRoute().type !== "guide";
   if (!endpoint) {
-    setAssistantOpen(true, { focusInput: true });
+    if (shouldRouteToGuide) {
+      setHashForGuide({ from: currentRouteHash, focus: "1" }, { captureCurrent: false });
+    }
     setAssistantStatus(assistant.emptyMessage || "当前还没有接入 Worker。", "warning");
     return;
   }
 
   const normalizedQuestion = normalizeAssistantText(question, 360);
   if (!normalizedQuestion) {
-    setAssistantOpen(true, { focusInput: true });
+    if (shouldRouteToGuide) {
+      setHashForGuide({ from: currentRouteHash, focus: "1" }, { captureCurrent: false });
+    } else {
+      window.requestAnimationFrame(() => {
+        dom.assistantQuestion?.focus();
+      });
+    }
     setAssistantStatus("先写下你想追问的问题。", "warning");
     return;
   }
 
-  setAssistantOpen(true);
   const contextItems = buildAssistantContext(normalizedQuestion);
+  if (currentRouteHash) {
+    state.guideReturnHash = currentRouteHash;
+    state.guideContextHash = currentRouteHash;
+  }
+  if (shouldRouteToGuide) {
+    setHashForGuide({ from: currentRouteHash }, { captureCurrent: false });
+  }
   const history = getAssistantConversationHistory();
   const messageSeed = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const userMessage = {
@@ -7035,7 +7177,9 @@ async function askAssistant(question) {
   const questionInput = dom.assistantQuestion;
   if (questionInput) {
     questionInput.value = "";
-    questionInput.focus();
+    if (!shouldRouteToGuide) {
+      questionInput.focus();
+    }
   }
 
   state.assistantPending = true;
@@ -7111,12 +7255,8 @@ async function askAssistant(question) {
 function bindAssistantPanel() {
   renderAssistantShell();
 
-  dom.assistantLauncher?.addEventListener("click", () => {
-    setAssistantOpen(!state.assistantOpen, { focusInput: !state.assistantOpen });
-  });
-
-  dom.assistantCloseButton?.addEventListener("click", () => {
-    setAssistantOpen(false);
+  dom.guideBackButton?.addEventListener("click", () => {
+    navigateBackFromGuide();
   });
 
   dom.assistantSubmitButton?.addEventListener("click", () => {
@@ -7132,7 +7272,9 @@ function bindAssistantPanel() {
   });
 
   dom.assistantQuestion?.addEventListener("keydown", (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    const isPlainEnter = event.key === "Enter" && !event.shiftKey;
+    const isShortcutEnter = (event.metaKey || event.ctrlKey) && event.key === "Enter";
+    if (isPlainEnter || isShortcutEnter) {
       event.preventDefault();
       askAssistant(dom.assistantQuestion?.value || "");
     }
@@ -8549,12 +8691,14 @@ async function renderGraph(nodeId) {
 
   document.title = `${state.payload.site.title} · 知识图谱`;
   document.body.classList.remove("is-reading");
+  document.body.classList.remove("is-guide-screen");
   document.body.classList.add("is-app-ui");
   document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = "知识图谱";
   dom.homeView.classList.add("hidden");
   dom.deckView.classList.add("hidden");
   dom.labView.classList.add("hidden");
+  dom.guideView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.graphView.classList.remove("hidden");
   dom.graphTitle.textContent = "层级知识图谱";
@@ -8598,12 +8742,14 @@ async function renderDeck(deckId = null, params = {}, options = {}) {
 
   document.title = `${state.payload.site.title} 路 ${deck.title || "牌组"}`;
   document.body.classList.remove("is-reading");
+  document.body.classList.remove("is-guide-screen");
   document.body.classList.add("is-app-ui");
   document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = deck.title || "牌组";
   dom.homeView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
   dom.labView.classList.add("hidden");
+  dom.guideView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.deckView.classList.remove("hidden");
   dom.readerProgressBar.style.transform = "scaleX(0)";
@@ -8629,6 +8775,31 @@ async function renderDeck(deckId = null, params = {}, options = {}) {
   }
 }
 
+function resolveGuideBackLabel(fromHash) {
+  const routeState = parseHashRoute(fromHash);
+  if (routeState.type === "doc") return "返回章节";
+  if (routeState.type === "graph") return "返回图谱";
+  if (routeState.type === "lab") return "返回实验页";
+  if (routeState.type === "deck") return "返回卡组";
+  return "返回首页";
+}
+
+function navigateBackFromGuide() {
+  const backHash = normalizeGuideContextHash(state.guideReturnHash)
+    || normalizeGuideContextHash(state.guideContextHash);
+  if (backHash) {
+    window.location.hash = backHash;
+    return;
+  }
+
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+
+  window.location.hash = "";
+}
+
 function renderHome() {
   cleanupLabPlaygrounds();
   state.activeId = null;
@@ -8642,6 +8813,7 @@ function renderHome() {
 
   document.title = `${state.payload.site.title} · 在线书稿`;
   document.body.classList.remove("is-reading");
+  document.body.classList.remove("is-guide-screen");
   document.body.classList.add("is-app-ui");
   document.body.classList.add("is-home-hub");
   syncAppHomeMirror();
@@ -8650,6 +8822,7 @@ function renderHome() {
   dom.deckView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
   dom.labView.classList.add("hidden");
+  dom.guideView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.readerProgressBar.style.transform = "scaleX(0)";
   dom.tocButton.disabled = true;
@@ -8674,12 +8847,14 @@ async function renderLab(page) {
   state.labParams = resolveLabParams(activePage, state.labParams);
   document.title = `${state.payload.site.title} · ${LAB_PAGES[activePage].title}`;
   document.body.classList.remove("is-reading");
+  document.body.classList.remove("is-guide-screen");
   document.body.classList.add("is-app-ui");
   document.body.classList.remove("is-home-hub");
   dom.viewTitle.textContent = "理论实验台";
   dom.homeView.classList.add("hidden");
   dom.deckView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
+  dom.guideView.classList.add("hidden");
   dom.docView.classList.add("hidden");
   dom.labView.classList.remove("hidden");
   dom.readerProgressBar.style.transform = "scaleX(0)";
@@ -8692,6 +8867,54 @@ async function renderLab(page) {
   syncViewButtons();
   await typesetElement(dom.labContent);
   window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+async function renderGuide(params = {}) {
+  cleanupLabPlaygrounds();
+  const fromHash = normalizeGuideContextHash(params.from)
+    || normalizeGuideContextHash(state.guideReturnHash)
+    || normalizeGuideContextHash(state.guideContextHash);
+
+  state.guideReturnHash = fromHash;
+  state.guideContextHash = fromHash;
+  state.activeId = null;
+  state.activeDeckId = null;
+  state.activeDeckCardId = null;
+  state.activeGraphNodeId = null;
+  state.activeLabPage = null;
+  state.activePrimaryView = "guide";
+  state.currentPrevId = null;
+  state.currentNextId = null;
+
+  document.title = `${state.payload.site.title} · AI 导读`;
+  document.body.classList.remove("is-reading");
+  document.body.classList.add("is-app-ui");
+  document.body.classList.remove("is-home-hub");
+  document.body.classList.add("is-guide-screen");
+  dom.viewTitle.textContent = "AI 导读";
+  dom.homeView.classList.add("hidden");
+  dom.deckView.classList.add("hidden");
+  dom.graphView.classList.add("hidden");
+  dom.labView.classList.add("hidden");
+  dom.docView.classList.add("hidden");
+  dom.guideView.classList.remove("hidden");
+  dom.readerProgressBar.style.transform = "scaleX(0)";
+  dom.tocButton.disabled = true;
+  updateChapterButtons(null, null);
+  closeNavigationPanels();
+  buildNav();
+  renderAssistantShell();
+  if (dom.guideBackLabel) {
+    dom.guideBackLabel.textContent = resolveGuideBackLabel(fromHash);
+  }
+  syncViewButtons();
+  window.scrollTo({ top: 0, behavior: "auto" });
+
+  if (params.focus === "1") {
+    window.requestAnimationFrame(() => {
+      dom.assistantQuestion?.focus();
+    });
+  }
 }
 
 function buildTocLink(label, anchor, level) {
@@ -9330,11 +9553,13 @@ async function renderDoc(id, params = {}) {
   state.activePrimaryView = "home";
   document.body.classList.add("is-reading");
   document.body.classList.add("is-app-ui");
+  document.body.classList.remove("is-guide-screen");
   document.body.classList.remove("is-home-hub");
   dom.homeView.classList.add("hidden");
   dom.deckView.classList.add("hidden");
   dom.graphView.classList.add("hidden");
   dom.labView.classList.add("hidden");
+  dom.guideView.classList.add("hidden");
   dom.docView.classList.remove("hidden");
   dom.viewTitle.textContent = getDisplayTitle(item);
   dom.tocButton.disabled = false;
@@ -9406,6 +9631,10 @@ async function route() {
     await renderLab(routeState.page);
     return;
   }
+  if (routeState.type === "guide") {
+    await renderGuide(routeState.params);
+    return;
+  }
   await renderDoc(routeState.id, routeState.params);
 }
 
@@ -9458,6 +9687,10 @@ function bindEvents() {
     closeNavigationPanels();
     setAssistantOpen(false);
     setHashForGraph(state.activeGraphNodeId || getGraphDefaultNode()?.id || null);
+  });
+  dom.guideButton?.addEventListener("click", () => {
+    closeNavigationPanels();
+    setAssistantOpen(true, { focusInput: true });
   });
   dom.tabAiButton?.addEventListener("click", () => {
     closeNavigationPanels();
@@ -9530,6 +9763,11 @@ function bindEvents() {
 
       if (button.dataset.homeTab === "continue") {
         dom.appHomeFeaturedVolumeLinks?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      if (button.dataset.homeTab === "ai") {
+        dom.aiGatewaySection?.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
 
