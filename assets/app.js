@@ -1130,6 +1130,7 @@ const dom = {
   cardDeckGrid: document.getElementById("card-deck-grid"),
   systemLinks: document.getElementById("system-links"),
   quickLinks: document.getElementById("quick-links"),
+  aiGatewaySection: document.getElementById("ai-gateway-section"),
   featuredVolumeTitle: document.getElementById("featured-volume-title"),
   featuredVolumeCopy: document.getElementById("featured-volume-copy"),
   featuredVolumeMeta: document.getElementById("featured-volume-meta"),
@@ -1173,6 +1174,7 @@ const dom = {
   homeLabShortcutButton: document.getElementById("home-lab-shortcut-button"),
   homeStartButton: document.getElementById("home-start-button"),
   homeCatalogButton: document.getElementById("home-catalog-button"),
+  homeAiGatewayButton: document.getElementById("home-ai-gateway-button"),
   appHomeHeroTitle: document.getElementById("app-home-hero-title"),
   appHomeHeroText: document.getElementById("app-home-hero-text"),
   appHomeFeaturedVolumeTitle: document.getElementById("app-home-featured-volume-title"),
@@ -2619,6 +2621,10 @@ function getLiveBookTemplates() {
   return Array.isArray(liveBook.templates) ? liveBook.templates : [];
 }
 
+function getAiGatewayConfig() {
+  return state.payload?.site?.aiGateway || {};
+}
+
 function getPrimaryStartItem() {
   return (
     getSectionEntry("plain-book") ||
@@ -2738,6 +2744,123 @@ function buildLightSeriesLinks() {
   if (!dom.lightSeriesLinks.childElementCount) {
     dom.lightSeriesLinks.innerHTML = `<p class="empty-state">轻内容连载正在整理中。</p>`;
   }
+}
+
+function buildAiGatewayLinkBundle(config = getAiGatewayConfig()) {
+  const links = Array.isArray(config.links)
+    ? config.links
+      .map((entry) => ({
+        label: String(entry?.label || "").trim(),
+        url: String(entry?.url || "").trim(),
+      }))
+      .filter((entry) => entry.label && entry.url)
+    : [];
+
+  if (!links.length) return "";
+
+  return [
+    "这是一个公开 GitHub 仓库，默认分支是 main。",
+    "请优先读取 raw 链接，不要只依赖 GitHub 网页解析。",
+    "",
+    ...links.map((entry) => `${entry.label}：${entry.url}`),
+  ].join("\n");
+}
+
+function buildAiGatewaySection() {
+  const root = dom.aiGatewaySection;
+  if (!root) return;
+
+  const config = getAiGatewayConfig();
+  const title = String(config.title || "").trim();
+  const summary = String(config.summary || "").trim();
+  const statusNote = String(config.statusNote || "").trim();
+  const entrySourcePath = String(config.entrySourcePath || "").trim();
+  const reviewPrompt = String(config.reviewPrompt || "").trim();
+  const steps = Array.isArray(config.steps)
+    ? config.steps.map((entry) => String(entry || "").trim()).filter(Boolean)
+    : [];
+  const links = Array.isArray(config.links)
+    ? config.links
+      .map((entry) => ({
+        label: String(entry?.label || "").trim(),
+        url: String(entry?.url || "").trim(),
+        description: String(entry?.description || "").trim(),
+      }))
+      .filter((entry) => entry.label && entry.url)
+    : [];
+
+  const hasContent = Boolean(title || summary || statusNote || reviewPrompt || steps.length || links.length);
+  root.hidden = !hasContent;
+  if (!hasContent) {
+    root.innerHTML = "";
+    return;
+  }
+
+  const primaryLink = links[0] || null;
+  const entryItem = entrySourcePath ? findItemBySourcePath(entrySourcePath) : null;
+
+  root.innerHTML = `
+    <article class="app-home-ai-card">
+      <div class="app-home-ai-head">
+        <div>
+          <p class="eyebrow">AI Entry</p>
+          <h3>${escapeHtml(title || "给 AI 的入口")}</h3>
+          <p class="app-home-ai-copy">${escapeHtml(summary || "先读项目说明，再按卷抽样浏览。")}</p>
+        </div>
+        ${statusNote ? `<p class="app-home-ai-note">${escapeHtml(statusNote)}</p>` : ""}
+      </div>
+
+      <div class="app-home-ai-layout">
+        <div class="app-home-ai-steps">
+          ${steps.length
+            ? steps.map((entry, index) => `
+                <article class="app-home-ai-step">
+                  <span class="app-home-ai-step-index">${formatSerialIndex(index)}</span>
+                  <p>${escapeHtml(entry)}</p>
+                </article>
+              `).join("")
+            : `<p class="empty-state">AI 入口步骤正在整理中。</p>`}
+        </div>
+
+        <div class="app-home-ai-links">
+          ${links.length
+            ? links.map((entry, index) => `
+                <a class="app-home-ai-link" href="${escapeHtml(entry.url)}" target="_blank" rel="noreferrer">
+                  <span class="app-home-ai-link-meta">${index === 0 ? "首读入口" : "机器入口"}</span>
+                  <strong>${escapeHtml(entry.label)}</strong>
+                  <p>${escapeHtml(entry.description || entry.url)}</p>
+                  <code>${escapeHtml(entry.url)}</code>
+                </a>
+              `).join("")
+            : `<p class="empty-state">AI 机器入口正在整理中。</p>`}
+        </div>
+      </div>
+
+      <div class="hero-actions app-home-ai-actions">
+        ${entryItem ? `<a class="pill-button" href="#doc/${encodeURIComponent(entryItem.id)}">站内查看 AI 入口</a>` : ""}
+        ${primaryLink ? `<a class="pill-button" href="${escapeHtml(primaryLink.url)}" target="_blank" rel="noreferrer">先读 AI 入口</a>` : ""}
+        ${reviewPrompt ? `<button class="pill-button pill-button-ghost" type="button" data-copy-ai-prompt="true">复制评审提示词</button>` : ""}
+        ${links.length ? `<button class="pill-button pill-button-ghost" type="button" data-copy-ai-links="true">复制机器入口清单</button>` : ""}
+      </div>
+
+      <p class="app-home-ai-copy-status" data-ai-gateway-status aria-live="polite"></p>
+    </article>
+  `;
+
+  const status = root.querySelector("[data-ai-gateway-status]");
+  const setStatus = (message) => {
+    if (status) status.textContent = message || "";
+  };
+
+  root.querySelector("[data-copy-ai-prompt='true']")?.addEventListener("click", async () => {
+    const copied = await copyTextToClipboard(reviewPrompt);
+    setStatus(copied ? "已复制 AI 评审提示词。" : "当前环境不支持自动复制，请手动复制提示词。");
+  });
+
+  root.querySelector("[data-copy-ai-links='true']")?.addEventListener("click", async () => {
+    const copied = await copyTextToClipboard(buildAiGatewayLinkBundle(config));
+    setStatus(copied ? "已复制 AI 机器入口清单。" : "当前环境不支持自动复制，请手动复制入口清单。");
+  });
 }
 
 function buildQuickLinks() {
@@ -9364,6 +9487,9 @@ function bindEvents() {
     setAssistantOpen(false);
     setDrawerOpen(true);
   });
+  dom.homeAiGatewayButton?.addEventListener("click", () => {
+    dom.aiGatewaySection?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   dom.homeStartButton?.addEventListener("click", () => {
     closeNavigationPanels();
     setAssistantOpen(false);
@@ -9530,6 +9656,7 @@ async function init() {
   renderAssistantShell();
   buildStarterLinks();
   buildFeaturedVolume();
+  buildAiGatewaySection();
   syncAppHomeMirror();
   buildCardDeckHomeSection();
   buildLiveBookHomeSection();

@@ -6,12 +6,12 @@
     <title>差结构学习法 · 在线书稿</title>
     <meta
       name="description"
-      content="这是一个由尤安持续建设的开放学习项目，公开分享学习方法、认知工具与 AI 辅助研究流程，欢迎阅读、提问、反馈和共建。"
+      content="这是一个由尤安持续建设的开放学习与研究项目，尝试用差异、落差、边界、反馈与验证组织跨学科理解，并把读者反馈与 AI 协作接入持续回写。"
     />
     <meta property="og:title" content="差结构学习法" />
     <meta
       property="og:description"
-      content="这是一个由尤安持续建设的开放学习项目，公开分享学习方法、认知工具与 AI 辅助研究流程，欢迎阅读、提问、反馈和共建。"
+      content="这是一个由尤安持续建设的开放学习与研究项目，尝试用差异、落差、边界、反馈与验证组织跨学科理解，并把读者反馈与 AI 协作接入持续回写。"
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -19,9 +19,9 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./assets/styles.css?v=20260426T0327121334500000" />
+    <link rel="stylesheet" href="./assets/styles.css?v=20260426T0540113872320000" />
     <script>
-      window.__SITE_ASSET_VERSION__ = "20260426T0327121334500000";
+      window.__SITE_ASSET_VERSION__ = "20260426T0540113872320000";
       window.MathJax = {
         tex: {
           inlineMath: [["$", "$"], ["\\(", "\\)"]],
@@ -197,12 +197,15 @@
                     <div id="app-home-featured-volume-meta" class="spotlight-meta app-home-meta-row"></div>
 
                     <div class="hero-actions app-home-primary-actions">
-                      <button id="home-start-button" class="pill-button" type="button">开始阅读</button>
-                      <button id="home-catalog-button" class="pill-button pill-button-ghost" type="button">查看全部入口</button>
+                      <button id="home-start-button" class="pill-button" type="button">先读白话卷</button>
+                      <button id="home-catalog-button" class="pill-button pill-button-ghost" type="button">进入总目录</button>
+                      <button id="home-ai-gateway-button" class="pill-button pill-button-ghost" type="button">给 AI 的入口</button>
                     </div>
                   </div>
                 </div>
               </article>
+
+              <section id="ai-gateway-section" class="app-home-ai-section" aria-label="给 AI 的入口" hidden></section>
 
               <section class="app-home-feed-section" aria-label="继续阅读">
                 <div class="app-home-feed-head">
@@ -223,7 +226,7 @@
 
                 <div class="hero-actions">
                   <button id="start-reading-button" class="pill-button" type="button">先读白话卷</button>
-                  <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">查看全部入口</button>
+                  <button id="open-catalog-button" class="pill-button pill-button-ghost" type="button">进入总目录</button>
                 </div>
               </div>
 
@@ -246,10 +249,10 @@
             </article>
             <article class="positioning-card">
               <p class="eyebrow">How To Introduce</p>
-              <h3>第一次介绍这个项目时，先别把它说成“最后答案”</h3>
+              <h3>第一次介绍这个项目时，先把它说成一条判断路径</h3>
               <p>
-                更稳的说法是：它给你一条跨学科学习与判断的走法。先辨认不同，再补边界、反馈与验证，
-                最后再决定什么能站住。这样更容易让新读者听懂，也更容易继续转发。
+                更稳的说法是：它先带你看哪里不同，再补边界、反馈与验证，最后再判断什么能站住。
+                这样更容易让新读者听懂，也更不容易把项目误听成“已经封口的最后答案”。
               </p>
             </article>
           </div>
@@ -322,20 +325,20 @@
 
           <div class="home-panels">
             <article class="home-card">
-              <h3>第一卷先负责上手</h3>
-              <p>大众卷先把方法做成可进入、可复述、可自测的动作，让读者先用起来，而不是先被大词挡在门外。</p>
+              <h3>大众卷先负责进入</h3>
+              <p>轻内容和白话卷先把方法做成可进入、可复述、可自测的动作，让读者先用起来，而不是先被大词挡在门外。</p>
             </article>
             <article class="home-card">
-              <h3>第二卷负责压实</h3>
-              <p>研究卷负责压定义、补桥梁、留接口，让项目从“能说”走向“能被追问、能被继续研究”。</p>
+              <h3>研究卷负责压实</h3>
+              <p>主书稿、专题和术语边界负责压定义、补桥梁、留接口，让项目从“能说”走向“能被追问、能被继续研究”。</p>
             </article>
             <article class="home-card">
-              <h3>第三卷负责协作回写</h3>
-              <p>AI 协作卷负责把扩写变成受约束的协作，让版本、残差和主线能在持续修改中留下来。</p>
+              <h3>拓展卷和推演卷负责落地</h3>
+              <p>拓展卷负责把方法练进人的判断与行动，推演卷负责把研究计划压成对象、变量、执行顺序与失败记录。</p>
             </article>
             <article class="home-card">
-              <h3>三卷合起来才形成方法</h3>
-              <p>先上手，再压实，再协作回写。这样项目才不是一堆说明，而是一套真的能进入现实、继续生长的结构。</p>
+              <h3>AI 协作卷负责持续回写</h3>
+              <p>它把扩写变成受约束的协作，让反馈、版本、残差和主线能在持续修改中留下来，而不是散成一堆临时回复。</p>
             </article>
           </div>
 
@@ -681,6 +684,6 @@
       </div>
     </div>
 
-    <script src="./assets/app.js?v=20260426T0327121334500000" defer></script>
+    <script src="./assets/app.js?v=20260426T0540113872320000" defer></script>
   </body>
 </html>

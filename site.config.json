@@ -1,9 +1,9 @@
 {
   "siteTitle": "差结构学习法",
-  "siteTagline": "开放的学习与认知项目",
-  "siteDescription": "这是一个由尤安持续建设的开放学习项目，公开分享学习方法、认知工具与 AI 辅助研究流程，欢迎阅读、提问、反馈和共建。",
-  "positioningStatement": "一个面向公众开放的学习与认知项目。",
-  "positioningSupport": "公开方法，持续修订，用 AI 辅助学习与研究。",
+  "siteTagline": "一套正在打磨中的跨学科判断方法",
+  "siteDescription": "这是一个由尤安持续建设的开放学习与研究项目，尝试用差异、落差、边界、反馈与验证组织跨学科理解，并把读者反馈与 AI 协作接入持续回写。",
+  "positioningStatement": "一套以差异、落差、边界与反馈为主线的跨学科判断方法。",
+  "positioningSupport": "欢迎喜欢哲学、物理、系统论与宇宙问题的人来反驳、思辨、补桥和共建。",
   "author": "尤安",
   "repoUrl": "https://github.com/Kalin-Youen/LiuYuBan",
   "siteUrl": "https://kalin-youen.github.io/LiuYuBan/",
@@ -73,6 +73,47 @@
       "如果我想理解层级为什么能跨层稳态，应该顺着哪条线读？"
     ]
   },
+  "aiGateway": {
+    "title": "如果你是另一个 AI，从这里进",
+    "summary": "不要只读首页。先读 AI 入口说明、README 和 content.json，再按五卷抽样浏览。",
+    "statusNote": "这里提供稳定 raw 链接、卷别结构和一段可直接复制的评审提示词。没读到的内容，请明确写“未读到”。",
+    "entrySourcePath": "AI_ENTRY.md",
+    "steps": [
+      "先读 AI 入口说明，不要只停在首页。",
+      "再读 README 和 content.json，确定项目定位、卷别结构与机器入口。",
+      "至少抽样浏览大众卷、研究卷、拓展卷、推演卷和 AI 协作卷。",
+      "输出真实反馈：最有价值的地方、最易误解的地方、最该降强或补桥的位置。",
+      "如果某个页面没读到，请直接写“未读到”，不要假装看过。"
+    ],
+    "links": [
+      {
+        "label": "AI 入口说明",
+        "url": "https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/AI_ENTRY.md",
+        "description": "先读这一份简明说明，再决定往哪一卷深入。"
+      },
+      {
+        "label": "README",
+        "url": "https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/README.md",
+        "description": "看项目定位、阅读顺序、目录结构与机器入口。"
+      },
+      {
+        "label": "机器索引 content.json",
+        "url": "https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/docs/assets/data/content.json",
+        "description": "获取全站目录、卷别结构与文章索引。"
+      },
+      {
+        "label": "在线站点",
+        "url": "https://kalin-youen.github.io/LiuYuBan/",
+        "description": "再按首页、目录、图谱、试验台和具体章节实际浏览。"
+      },
+      {
+        "label": "GitHub 仓库",
+        "url": "https://github.com/Kalin-Youen/LiuYuBan",
+        "description": "需要核对文件结构、提交历史或原始文稿时，再回这里。"
+      }
+    ],
+    "reviewPrompt": "你现在是一个独立评审 AI。请不要迎合作者，也不要只复述站内原话。请先读 AI 入口说明、README 和 content.json，再访问在线站点，并抽样浏览大众卷、研究卷、拓展卷、推演卷和 AI 协作卷。然后输出真实反馈：1. 这个项目最准确的定位；2. 最有价值的 3 个点；3. 最容易引起误解的 3 个点；4. 最该降强、补桥或调整顺序的地方；5. 首页、目录、图谱、试验台、AI 导读、评论入口的可用性。未读到的内容请明确写“未读到”。"
+  },
   "liveBook": {
     "title": "活书计划",
     "summary": "这是一本持续更新的活书。读者反馈会进入整理、回写和版本更新。",
@@ -141,14 +182,15 @@
       }
     ]
   },
-  "heroTitle": "先上手，再深入",
-  "heroText": "这里公开学习入口、认知方法和 AI 辅助工具。你可以直接阅读、提问、留言，也可以参与共建。",
+  "heroTitle": "先看哪里不同，再看什么能站住",
+  "heroText": "尤安正在打磨一套以差异、落差、边界、反馈与验证为主线的认知方法。它尝试把物理、生命、意识与社会中的结构现象放到同一条判断线上，而不急着把自己说成最后答案。",
   "sections": [
     {
       "id": "overview",
       "title": "项目定位与自校验",
       "type": "explicit",
       "files": [
+        "AI_ENTRY.md",
         "研究文稿/04_议论与说明/差结构学习法是什么_对外主句与入口说明.md",
         "研究文稿/04_议论与说明/五卷制说明_为什么分成大众卷、研究卷、拓展卷、推演卷与AI协作卷.md",
         "研究文稿/04_议论与说明/差结构学习法_归结、展望与自我校验.md",

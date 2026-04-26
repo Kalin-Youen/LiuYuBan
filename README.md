@@ -55,6 +55,17 @@
 5. `第五卷：AI协作卷`
    先读 `README.md`、`研究文稿/07_书稿/AI协作卷` 和 `docs/assets/data/content.json`。目标是先守主线、边界、版本与回写纪律。
 
+如果你只想走一条最短路径，可以按目的直接选：
+
+1. `第一次来`
+   先看十条轻内容，再读白话卷卷首和第1到3章，最后回到研究卷摘要。
+2. `想压实定义`
+   先读白话卷第1到3章，再进研究卷第2、3、5章，最后看第11章的阶段性总结。
+3. `想看怎么实际用`
+   先读白话卷第8、9章，再进拓展卷和 AI 协作卷第3、7、10章。
+4. `想参与共建`
+   先读 AI 协作卷第10章和附录模板，再去评论区留下进入感、误解点、补桥建议和现实反馈。
+
 网站内的推荐入口：
 
 1. 第一卷：大众卷。十条轻内容、白话卷、理论实验台
@@ -126,13 +137,15 @@
 
 最推荐的机器入口按优先级排序如下：
 
-1. 仓库说明：
+1. AI 专用入口说明：
+   `https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/AI_ENTRY.md`
+2. 仓库说明：
    `https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/README.md`
-2. 站点机器索引：
+3. 站点机器索引：
    `https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/docs/assets/data/content.json`
-3. 在线站点首页：
+4. 在线站点首页：
    `https://kalin-youen.github.io/LiuYuBan/`
-4. 具体 Markdown 原文：
+5. 具体 Markdown 原文：
    `https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/研究文稿/07_书稿/第12章_展望与研究计划.md`
 
 如果需要优先进入某个分卷，建议从这些路径找：
@@ -147,24 +160,37 @@
 
 如果要让另一个模型稳定读取本项目，最稳的做法不是只丢一个仓库首页链接，而是按下面这种方式给：
 
-1. 先给它 `README.md` 的 raw 链接，让它先知道这是什么仓库。
-2. 再给它 `content.json` 的 raw 链接，让它获得机器可读目录。
-3. 再给它你想让它重点读的具体 Markdown raw 链接。
-4. 同时明确写一句：
+1. 先给它 `AI_ENTRY.md` 的 raw 链接，让它先拿到最短的项目说明和访问顺序。
+2. 再给它 `README.md` 的 raw 链接，让它知道这是什么仓库。
+3. 再给它 `content.json` 的 raw 链接，让它获得机器可读目录。
+4. 再给它你想让它重点读的具体 Markdown raw 链接。
+5. 同时明确写一句：
    `这是公开仓库，默认分支是 main，请优先读取 raw 链接，不要只依赖仓库首页网页解析。`
 
 适合喂给模型的例子：
 
 ```text
 这是一个公开 GitHub 仓库，默认分支是 main。
-请先读 README：
+请先读 AI 入口说明：
+https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/AI_ENTRY.md
+
+再读 README：
 https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/README.md
 
 再读机器索引：
 https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/docs/assets/data/content.json
 
-然后重点阅读这篇：
+然后抽样浏览在线站点：
+https://kalin-youen.github.io/LiuYuBan/
+
+最后重点阅读这篇：
 https://raw.githubusercontent.com/Kalin-Youen/LiuYuBan/main/研究文稿/07_书稿/第12章_展望与研究计划.md
+```
+
+如果你需要另一个模型直接给出独立反馈，最短可用提示可以写成：
+
+```text
+请不要只复述站内原话。先读 AI 入口说明、README 和 content.json，再访问在线站点，并抽样浏览大众卷、研究卷、拓展卷、推演卷和 AI 协作卷。然后输出真实反馈：这个项目最准确的定位、最有价值的地方、最容易引起误解的地方、最该降强或补桥的位置，以及首页和 AI 入口是否顺畅。未读到的内容请明确写“未读到”。
 ```
 
 ## 本地构建

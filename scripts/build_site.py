@@ -978,6 +978,7 @@ def build_payload(config: dict) -> dict:
             "customDomain": config["customDomain"],
             "comments": config.get("comments", {}),
             "assistant": config.get("assistant", {}),
+            "aiGateway": config.get("aiGateway", {}),
             "liveBook": config.get("liveBook", {}),
             "heroTitle": config["heroTitle"],
             "heroText": config["heroText"],
