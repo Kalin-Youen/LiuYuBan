@@ -4646,19 +4646,19 @@ body.is-home-hub #open-catalog-button {
 }
 
 body.is-home-hub .mobile-reader-bar {
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: var(--guide-card-bg);
+  border: 1px solid var(--paper-line);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
 }
 
 body.is-home-hub .mobile-tool {
-  color: #94a3b8;
+  color: var(--text-faint);
   border-color: transparent;
 }
 
 body.is-home-hub .mobile-tool.is-active {
-  background: rgba(37, 99, 235, 0.12);
-  color: #2563eb;
+  background: var(--accent-soft);
+  color: var(--accent);
   border-color: transparent;
   box-shadow: none;
 }
