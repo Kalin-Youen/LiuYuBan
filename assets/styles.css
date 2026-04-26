@@ -6477,6 +6477,50 @@ body.is-guide-screen .assistant-source-grid {
   width: min(100%, 680px);
 }
 
+.assistant-source-disclosure {
+  width: min(100%, 680px);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.78));
+  overflow: hidden;
+}
+
+.assistant-source-summary {
+  display: grid;
+  gap: 4px;
+  padding: 10px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.assistant-source-summary::-webkit-details-marker {
+  display: none;
+}
+
+.assistant-source-summary-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.assistant-source-summary-meta {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assistant-source-disclosure[open] .assistant-source-summary {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.assistant-source-disclosure .assistant-source-grid {
+  padding: 12px;
+}
+
 body.is-guide-screen .assistant-source-card {
   border-color: rgba(148, 163, 184, 0.18);
   background:
@@ -6489,6 +6533,10 @@ body.is-guide-screen .assistant-panel-dock {
   padding: 16px 0 0;
   border-top: 1px solid rgba(148, 163, 184, 0.14);
   background: transparent;
+}
+
+.guide-actions [hidden] {
+  display: none !important;
 }
 
 .guide-composer {
@@ -6506,9 +6554,14 @@ body.is-guide-screen .assistant-panel-dock {
 }
 
 body.is-guide-screen .assistant-status {
-  min-height: 1.4em;
+  min-height: 0;
   margin: 2px 4px 0;
   font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+body.is-guide-screen .assistant-status:empty {
+  display: none;
 }
 
 @media (max-width: 760px) {
@@ -6578,6 +6631,10 @@ body.is-guide-screen .assistant-status {
   body.is-guide-screen .assistant-source-grid {
     max-width: 100%;
     width: 100%;
+  }
+
+  .assistant-source-summary-meta {
+    white-space: normal;
   }
 
   .guide-composer textarea {

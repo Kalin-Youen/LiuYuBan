@@ -1057,6 +1057,7 @@ const state = {
     message: "",
     tone: "info",
   },
+  assistantStatusTimer: null,
   assistantOpen: false,
   guideContextHash: "",
   guideReturnHash: "",
@@ -6726,14 +6727,72 @@ function getAssistantConversationHistory() {
     .filter((entry) => entry.content);
 }
 
+function formatAssistantSourceMeta(source) {
+  const sectionTitle = String(source?.sectionTitle || "").trim();
+  const title = String(source?.title || "").trim() || "未命名章节";
+  return sectionTitle && sectionTitle !== title ? `${sectionTitle} · ${title}` : title;
+}
+
+function buildAssistantSourceSummary(sources) {
+  if (!Array.isArray(sources) || !sources.length) return "";
+
+  const preview = sources
+    .slice(0, 2)
+    .map((source) => String(source?.title || "").trim())
+    .filter(Boolean)
+    .join(" / ");
+
+  if (!preview) return `相关章节 ${sources.length} 篇`;
+  return sources.length > 2 ? `${preview} 等 ${sources.length} 篇` : preview;
+}
+
+function buildAssistantLocalFallbackAnswer(question, contextItems, reason = "network") {
+  const routeContext = getAssistantRouteContext();
+  const sources = (Array.isArray(contextItems) && contextItems.length
+    ? contextItems
+    : buildAssistantFallbackContext()).slice(0, getAssistantContextLimit());
+  const normalizedQuestion = normalizeAssistantText(question, 120);
+  const lines = [
+    reason === "missing-endpoint"
+      ? "这轮先直接用站内索引给你一版本地导读。"
+      : "这轮先切到站内导读模式，继续按站内索引给你收束。",
+  ];
+
+  if (/第一次|初次|入门|先从哪里|怎么读|开始|顺序/.test(normalizedQuestion)) {
+    lines.push("如果你是第一次来，先从更容易进入的入口读起，再决定要不要回主书稿或知识图谱。");
+  } else if (/白话卷|大众卷/.test(normalizedQuestion)) {
+    lines.push("这轮问题更适合先用白话卷或大众卷压出一条短阅读线，再回到研究卷。");
+  } else if (/图谱|节点/.test(normalizedQuestion)) {
+    lines.push("这轮问题偏向结构定位，适合把章节和知识图谱节点对着看。");
+  } else if (/AI|协作|评审/.test(normalizedQuestion)) {
+    lines.push("这轮问题偏向 AI 协作和入口设计，优先看 AI 协作卷与入口说明。");
+  } else if (routeContext?.title) {
+    lines.push(`我先沿着你当前所在的「${routeContext.title}」继续收束相关章节。`);
+  }
+
+  if (sources.length) {
+    lines.push("这轮先抓到这些最相关的章节：");
+    sources.slice(0, 3).forEach((source, index) => {
+      lines.push(`${index + 1}. ${formatAssistantSourceMeta(source)}`);
+    });
+    lines.push(`最稳的起点可以先看《${sources[0].title || "相关章节"}》。`);
+  } else {
+    lines.push("这轮没有抓到稳定的章节匹配，建议先从白话卷卷首或首页 AI 入口重新追问。");
+  }
+
+  lines.push("你可以展开下面的小框，看本轮抓到的章节摘录，再决定继续点开哪一篇。");
+  return lines.join("\n");
+}
+
 function buildAssistantMessageMarkup(message) {
   const isAssistant = message.role === "assistant";
   const roleLabel = isAssistant ? (getAssistantConfig().label || "导读助手") : "你";
   const roleMeta = isAssistant
-    ? message.pending ? "正在整理章节…" : "站内导读"
+    ? message.pending ? "正在整理章节…" : message.mode === "local-fallback" ? "本地导读" : "站内导读"
     : "已发送";
   const content = message.content || (message.pending ? "正在读取相关章节…" : "这一轮暂时没有可显示内容。");
   const sources = isAssistant && Array.isArray(message.sources) ? message.sources : [];
+  const sourceSummary = buildAssistantSourceSummary(sources);
   const avatarLabel = isAssistant ? "AI" : "你";
 
   return `
@@ -6751,15 +6810,21 @@ function buildAssistantMessageMarkup(message) {
           <div class="assistant-message-body">${escapeHtml(content)}</div>
         </div>
         ${sources.length ? `
-          <div class="assistant-source-grid">
-            ${sources.map((source) => `
-              <a class="assistant-source-card" href="${escapeHtml(source.url)}">
-                <small>${escapeHtml(source.sectionTitle || "站内章节")}</small>
-                <strong>${escapeHtml(source.title || "未命名章节")}</strong>
-                <p>${escapeHtml(source.excerpt || "点击跳到相关章节继续阅读。")}</p>
-              </a>
-            `).join("")}
-          </div>
+          <details class="assistant-source-disclosure">
+            <summary class="assistant-source-summary">
+              <span class="assistant-source-summary-title">本轮抓到 ${sources.length} 篇相关章节</span>
+              <span class="assistant-source-summary-meta">${escapeHtml(sourceSummary)}</span>
+            </summary>
+            <div class="assistant-source-grid">
+              ${sources.map((source) => `
+                <a class="assistant-source-card" href="${escapeHtml(source.url)}">
+                  <small>${escapeHtml(source.sectionTitle || "站内章节")}</small>
+                  <strong>${escapeHtml(source.title || "未命名章节")}</strong>
+                  <p>${escapeHtml(source.excerpt || "点击跳到相关章节继续阅读。")}</p>
+                </a>
+              `).join("")}
+            </div>
+          </details>
         ` : ""}
       </div>
     </article>
@@ -6798,12 +6863,45 @@ function renderAssistantStatus() {
   }
 }
 
-function setAssistantStatus(message, tone = "info") {
+function setAssistantStatus(message, tone = "info", { autoClearMs = 0 } = {}) {
+  if (state.assistantStatusTimer) {
+    window.clearTimeout(state.assistantStatusTimer);
+    state.assistantStatusTimer = null;
+  }
+
   state.assistantStatus = {
     message: message || "",
     tone,
   };
   renderAssistantStatus();
+
+  if (message && autoClearMs > 0) {
+    state.assistantStatusTimer = window.setTimeout(() => {
+      state.assistantStatus = {
+        message: "",
+        tone: "info",
+      };
+      state.assistantStatusTimer = null;
+      renderAssistantStatus();
+    }, autoClearMs);
+  }
+}
+
+function applyAssistantLocalFallback(assistantMessage, question, contextItems, { reason = "network", detail = "" } = {}) {
+  const fallbackAnswer = buildAssistantLocalFallbackAnswer(question, contextItems, reason);
+  const normalizedDetail = normalizeAssistantText(detail, 120);
+  const shouldAppendDetail = normalizedDetail && !/failed to fetch|fetch failed|network request/i.test(normalizedDetail);
+  const statusMessage = "当前使用站内导读模式。";
+
+  updateAssistantMessageContent(assistantMessage.id, fallbackAnswer, {
+    pending: false,
+    mode: "local-fallback",
+  });
+  setAssistantStatus(
+    shouldAppendDetail ? `${statusMessage} ${normalizedDetail}` : statusMessage,
+    "info",
+    { autoClearMs: 2600 },
+  );
 }
 
 function getAssistantQuickActionItems() {
@@ -6873,12 +6971,15 @@ function syncAssistantComposerState() {
   if (textarea) textarea.disabled = false;
 }
 
-function updateAssistantMessageContent(messageId, content, { pending = false } = {}) {
+function updateAssistantMessageContent(messageId, content, { pending = false, mode = null } = {}) {
   const message = state.assistantMessages.find((entry) => entry.id === messageId);
   if (!message) return;
 
   message.content = content;
   message.pending = pending;
+  if (mode) {
+    message.mode = mode;
+  }
 
   const container = dom.assistantConversation;
   const item = container?.querySelector(`[data-assistant-message-id="${messageId}"]`);
@@ -6890,7 +6991,7 @@ function updateAssistantMessageContent(messageId, content, { pending = false } =
   item.classList.toggle("is-pending", Boolean(pending));
   const meta = item.querySelector(".assistant-message-meta");
   if (meta && message.role === "assistant") {
-    meta.textContent = pending ? "正在整理章节…" : "站内导读";
+    meta.textContent = pending ? "正在整理章节…" : message.mode === "local-fallback" ? "本地导读" : "站内导读";
   }
 
   const body = item.querySelector(".assistant-message-body");
@@ -7126,13 +7227,6 @@ async function askAssistant(question) {
   const endpoint = String(assistant.endpoint || "").trim();
   const currentRouteHash = normalizeGuideContextHash(getCurrentHashPath());
   const shouldRouteToGuide = getHashRoute().type !== "guide";
-  if (!endpoint) {
-    if (shouldRouteToGuide) {
-      setHashForGuide({ from: currentRouteHash, focus: "1" }, { captureCurrent: false });
-    }
-    setAssistantStatus(assistant.emptyMessage || "当前还没有接入 Worker。", "warning");
-    return;
-  }
 
   const normalizedQuestion = normalizeAssistantText(question, 360);
   if (!normalizedQuestion) {
@@ -7180,6 +7274,14 @@ async function askAssistant(question) {
     if (!shouldRouteToGuide) {
       questionInput.focus();
     }
+  }
+
+  if (!endpoint) {
+    applyAssistantLocalFallback(assistantMessage, normalizedQuestion, contextItems, {
+      reason: "missing-endpoint",
+      detail: assistant.emptyMessage || "",
+    });
+    return;
   }
 
   state.assistantPending = true;
@@ -7238,12 +7340,10 @@ async function askAssistant(question) {
       );
       setAssistantStatus("已停止当前回答。", "warning");
     } else {
-      updateAssistantMessageContent(
-        assistantMessage.id,
-        "这次没有成功连到导读助手。请先检查 Worker 地址、跨域配置和 Cloudflare AI 绑定是否已经就绪。",
-        { pending: false },
-      );
-      setAssistantStatus(error?.message || "导读助手请求失败。", "warning");
+      applyAssistantLocalFallback(assistantMessage, normalizedQuestion, contextItems, {
+        reason: "network",
+        detail: error?.message || "",
+      });
     }
   } finally {
     state.assistantPending = false;
