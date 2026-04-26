@@ -14,9 +14,9 @@ const DEFAULT_FONT_SIZE = {
   mobile: 17,
 };
 const THEME_LABELS = {
-  paper: "纸张",
-  sepia: "暖棕",
-  night: "夜读",
+  paper: "日间",
+  sepia: "暖读",
+  night: "夜间",
 };
 const HOME_SECTION_ORDER = ["light-series", "plain-book", "overview", "book", "extension-book", "terms", "ai-book"];
 const PRIMARY_VOLUME_SECTION_IDS = Object.freeze(["plain-book", "book", "extension-book", "ai-book"]);
@@ -2546,7 +2546,26 @@ function isCommentFieldTarget(target) {
   );
 }
 
+function isProblematicCommentBrowser() {
+  const ua = String(navigator.userAgent || "");
+  const isMobileDevice =
+    window.innerWidth <= MOBILE_BREAKPOINT ||
+    /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+
+  return isMobileDevice && /(QQ\/|MQQBrowser|QQBrowser|V1_AND_SQ_|QQTheme|TIM\/)/i.test(ua);
+}
+
+function shouldManageCommentFocus() {
+  return !isProblematicCommentBrowser();
+}
+
 function setCommentFocusMode(active) {
+  if (!shouldManageCommentFocus()) {
+    document.documentElement.classList.remove("is-comment-focus");
+    document.body.classList.remove("is-comment-focus");
+    return;
+  }
+
   document.documentElement.classList.toggle("is-comment-focus", active);
   document.body.classList.toggle("is-comment-focus", active);
 }
@@ -2563,7 +2582,7 @@ function getCommentViewportHeight() {
 }
 
 function stabilizeCommentField(target = document.activeElement) {
-  if (!isCommentFieldTarget(target)) return;
+  if (!isCommentFieldTarget(target) || !shouldManageCommentFocus()) return;
 
   const rect = target.getBoundingClientRect();
   const viewportHeight = getCommentViewportHeight();
@@ -2590,7 +2609,7 @@ function stabilizeCommentField(target = document.activeElement) {
 }
 
 function queueCommentFieldStabilization(target = document.activeElement, withFollowUp = false) {
-  if (!isCommentFieldTarget(target)) return;
+  if (!isCommentFieldTarget(target) || !shouldManageCommentFocus()) return;
 
   clearCommentFocusFrame();
   const revision = ++state.commentFocusRevision;
@@ -2622,6 +2641,11 @@ function clearCommentFocusTimer() {
 }
 
 function releaseCommentFocusModeSoon() {
+  if (!shouldManageCommentFocus()) {
+    setCommentFocusMode(false);
+    return;
+  }
+
   clearCommentFocusTimer();
   const revision = ++state.commentFocusRevision;
   clearCommentFocusFrame();
@@ -9913,6 +9937,7 @@ function bindEvents() {
 
   document.addEventListener("focusin", (event) => {
     if (!isCommentFieldTarget(event.target)) return;
+    if (!shouldManageCommentFocus()) return;
     clearCommentFocusTimer();
     state.commentFocusRevision += 1;
     setCommentFocusMode(true);
@@ -9938,6 +9963,7 @@ function bindEvents() {
     "scroll",
     () => {
       if (!isCommentFieldTarget(document.activeElement)) return;
+      if (!shouldManageCommentFocus()) return;
       queueCommentFieldStabilization(document.activeElement);
     },
     { passive: true },
@@ -9950,17 +9976,20 @@ function bindEvents() {
     applyPreferences();
     updateReadingProgress();
     if (isCommentFieldTarget(document.activeElement)) {
+      if (!shouldManageCommentFocus()) return;
       queueCommentFieldStabilization(document.activeElement, true);
     }
   });
 
   window.visualViewport?.addEventListener("resize", () => {
     if (!isCommentFieldTarget(document.activeElement)) return;
+    if (!shouldManageCommentFocus()) return;
     queueCommentFieldStabilization(document.activeElement, true);
   });
 
   window.visualViewport?.addEventListener("scroll", () => {
     if (!isCommentFieldTarget(document.activeElement)) return;
+    if (!shouldManageCommentFocus()) return;
     queueCommentFieldStabilization(document.activeElement);
   });
 
