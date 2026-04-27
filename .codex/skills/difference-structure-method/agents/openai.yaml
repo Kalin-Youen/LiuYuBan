@@ -1,0 +1,4 @@
+interface:
+  display_name: "差结构方法"
+  short_description: "用差异、边界、稳态与失败条件来分析与收束复杂系统问题"
+  default_prompt: "使用 $difference-structure-method 审阅这份草稿，分开证明、实验和类比，并把过强表述改写成带边界和失败条件的说法。"
