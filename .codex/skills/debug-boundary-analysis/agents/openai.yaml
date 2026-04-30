@@ -1,0 +1,4 @@
+interface:
+  display_name: "状态边界调试法"
+  short_description: "用生命周期边界、主矛盾和残差登记处理反复迁移的复杂 bug"
+  default_prompt: "使用 $debug-boundary-analysis 分析这个反复出现的 bug：先暂停继续补丁，最强化复述用户反馈，列出状态对象并按生命周期分类，找出会同时解释多个症状的边界混淆，再给出最小改动、验证矩阵和残差登记。"
