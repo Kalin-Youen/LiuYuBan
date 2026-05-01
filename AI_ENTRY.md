@@ -63,6 +63,12 @@ If any page fails to load, say clearly: `未读到`.
 - `第五卷：AI 协作卷`
   Defines how AI should collaborate without scattering the mainline.
 
+## Code Debugging Protocol
+
+When this project is used to guide software debugging, do not treat it as loose philosophical inspiration. Read `AI_CODE_DEBUG_PROTOCOL.md` and follow it as an execution protocol.
+
+If the same bug has survived two fixes, the AI must stop local patching and produce: comparison object, state owner, executable success criterion, failure condition, lifecycle diagram, code landing points, and at least one breakthrough move that changes the level of attack.
+
 ## What Kind Of Feedback Is Most Useful
 
 Please do not just paraphrase the site's own language.

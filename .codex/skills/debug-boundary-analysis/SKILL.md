@@ -34,6 +34,54 @@ Use this skill when any of these appear:
 
 ## Workflow
 
+### 0. Anti-Loop Gate
+
+Before touching code, check whether this is already a repeated failure.
+
+If the same class of bug has survived two plausible fixes, or the user says the agent is "going in circles", "still wrong", "same as before", or "only adding patches", local patching is forbidden until the following four artifacts are written:
+
+```text
+Comparison object:
+What are the two entrances, states, components, or lifecycles being compared?
+What is the entrance difference of this bug?
+
+State owner:
+Which state belongs to the user or durable document?
+Which state is only temporarily occupied by the operation?
+Which code is allowed to write each state?
+
+Executable success criterion:
+What concrete observable facts prove success after the operation?
+Use runtime facts, not prose. Example:
+- bpy.context.mode == "POSE"
+- active_object == body_rig/head_rig
+- no project-path prompt appears unless the path truly cannot be inferred
+
+Failure condition:
+What exact observation means this repair failed?
+Example:
+- still in EDIT_ARMATURE after save
+- head/body selects the wrong rig
+- retry only moves the symptom to a different entry path
+```
+
+If any of the four artifacts is missing, do not edit. Investigate until it can be filled.
+
+### 0.5 Breakthrough Requirement
+
+When repeated fixes fail, the agent must propose at least one route that changes the level of attack. Do not only add another `if`, `try`, `finally`, or end-of-function reset.
+
+Acceptable breakthrough moves include:
+
+- Move from symptom patching to state ownership: change who owns the state and where writes are allowed.
+- Move from end correction to lifecycle discipline: define enter -> temporary operation -> finally restore -> final forced state.
+- Move from one entry path to entry unification: make invoke, execute, UI draw, command, and test enter through the same initializer.
+- Move from retained reference to re-resolution: stop carrying stale object handles; resolve them at the first safe use point.
+- Move from broad repair to executable invariant: enforce one small invariant at the boundary and test that invariant directly.
+- Move from hidden assumption to logged feedback: add the smallest log/probe that proves which branch or state is actually active.
+
+If no breakthrough move is plausible, say why and name the missing fact that blocks it.
+
 ### 1. Pause Patching
 
 Stop adding local patches until the state boundary is named. Say explicitly what symptom chasing has already failed to explain.
@@ -84,6 +132,18 @@ For each state object, answer:
 
 If an object survives longer than something it references, mark that as a candidate principal contradiction.
 
+For lifecycle bugs, draw the state path explicitly:
+
+```text
+Before entry:
+Temporary operation state:
+Finally/cleanup state:
+Final forced state:
+Owner after return:
+```
+
+The final forced state must be chosen from the success criterion, not from what is convenient at the end of the function.
+
 ### 5. Find The Principal Contradiction
 
 Pick the boundary confusion that explains the largest cluster of symptoms.
@@ -119,6 +179,13 @@ Good changes usually look like:
 - Add lazy re-resolution at the first safe use point.
 - Add generation tokens, version checks, weak references, or ownership guards.
 - Move rebuild triggers from broad events to the exact invalidation boundary.
+
+Forbidden in repeated-failure mode:
+
+- Adding another trailing mode switch, reset, or broad catch without changing ownership or lifecycle.
+- Fixing only the last observed symptom while leaving another entry path with a different initialization rule.
+- Saying "restore state" without naming which state is user-owned, which is temporary, and which final state is mandatory.
+- Reporting success without an executable criterion.
 
 ### 8. Verify With A Matrix
 
@@ -187,13 +254,16 @@ If feedback does not change an engineering rule, it has not yet returned to stru
 
 For substantial debugging tasks, prefer this compact report:
 
-1. Strongest restatement
-2. State objects and lifecycle classes
-3. Principal contradiction
-4. Engineering rule
-5. Minimal code change
-6. Verification matrix
-7. Residual registry
+1. Anti-loop gate: whether repeated failure mode is active
+2. Four required artifacts: comparison object, state owner, executable success criterion, failure condition
+3. Breakthrough move: what level of attack changed
+4. Strongest restatement
+5. State objects and lifecycle classes
+6. Principal contradiction
+7. Engineering rule
+8. Minimal code change
+9. Verification matrix
+10. Residual registry
 
 ## Blender / Undo Reference
 
