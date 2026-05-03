@@ -18,10 +18,10 @@ const THEME_LABELS = {
   sepia: "暖读",
   night: "夜间",
 };
-const HOME_SECTION_ORDER = ["light-series", "plain-book", "overview", "book", "extension-book", "terms", "ai-book"];
-const PRIMARY_VOLUME_SECTION_IDS = Object.freeze(["plain-book", "book", "extension-book", "ai-book"]);
+const HOME_SECTION_ORDER = ["light-series", "life-book", "overview", "book", "extension-book", "terms", "ai-book"];
+const PRIMARY_VOLUME_SECTION_IDS = Object.freeze(["life-book", "book", "extension-book", "ai-book"]);
 const VOLUME_ENTRY_SOURCE_PATHS = Object.freeze({
-  "plain-book": "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
+  "life-book": "研究文稿/07_书稿/生活卷/00_卷首_怎么用这本生活卷.md",
   book: "研究文稿/07_书稿/00_卷首_怎么使用这本研究卷.md",
   "extension-book":
     "研究文稿/07_书稿/拓展卷/00_卷首_为什么要有拓展卷_让方法在阅读中直接变成能力.md",
@@ -41,62 +41,12 @@ const STARTER_GUIDE = Object.freeze([
     copy: "先体验这套方法怎样从“不同”开始，而不是一开始就撞进大词。",
   },
   {
-    sourcePath: "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
+    sourcePath: "研究文稿/07_书稿/生活卷/00_卷首_怎么用这本生活卷.md",
     eyebrow: "10 分钟起步",
-    title: "再切到白话卷",
-    copy: "当你准备连续阅读时，让白话卷接住后续主线，而不是直接冲向整套书稿。",
+    title: "再切到生活卷",
+    copy: "当你准备马上试用时，让生活卷先给出能复述、能行动的小经验。",
   },
 ]);
-const PLAIN_TO_BOOK_VARIANT_PATHS = Object.freeze({
-  "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md":
-    "研究文稿/07_书稿/00_卷首_怎么使用这本研究卷.md",
-  "研究文稿/07_书稿/白话卷/第1章_世界先给人的不是物而是不同.md":
-    "研究文稿/07_书稿/第2章_力的落差概念的严格化.md",
-  "研究文稿/07_书稿/白话卷/第2章_不同怎样长成边界、对象和结构.md":
-    "研究文稿/07_书稿/第3章_非均匀性与经典结构形成.md",
-  "研究文稿/07_书稿/白话卷/第3章_规则不是天上掉下来的而是站住的重复.md":
-    "研究文稿/07_书稿/第5章_规则形成的分层理论.md",
-  "研究文稿/07_书稿/白话卷/第4章_光、生命与基因其实在同一条线上.md":
-    "研究文稿/07_书稿/第6章_光速、因果结构与时空约束.md",
-  "研究文稿/07_书稿/白话卷/第5章_思考、意识和自我是世界在自己里面再长一层.md":
-    "研究文稿/07_书稿/第8章_思考的物理实现与认知生成.md",
-  "研究文稿/07_书稿/白话卷/第6章_文明就是规则开始写到身体外面.md":
-    "研究文稿/07_书稿/专题_生命、基因与文明的层级必然性.md",
-  "研究文稿/07_书稿/白话卷/第7章_把整套理论压成一条人人能走通的线.md":
-    "研究文稿/07_书稿/第11章_统一结论.md",
-  "研究文稿/07_书稿/白话卷/第8章_影响是存在的_理论如何进入人的判断与行动.md":
-    "研究文稿/07_书稿/专题_反思辩证模块_让质疑成为理论生长的回路.md",
-});
-const BOOK_TO_PLAIN_VARIANT_PATHS = Object.freeze({
-  "研究文稿/07_书稿/00_卷首_怎么使用这本研究卷.md":
-    "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
-  "研究文稿/07_书稿/第1章_绪论.md":
-    "研究文稿/07_书稿/白话卷/00_卷首_怎么读这本白话卷.md",
-  "研究文稿/07_书稿/第2章_力的落差概念的严格化.md":
-    "研究文稿/07_书稿/白话卷/第1章_世界先给人的不是物而是不同.md",
-  "研究文稿/07_书稿/第3章_非均匀性与经典结构形成.md":
-    "研究文稿/07_书稿/白话卷/第2章_不同怎样长成边界、对象和结构.md",
-  "研究文稿/07_书稿/第5章_规则形成的分层理论.md":
-    "研究文稿/07_书稿/白话卷/第3章_规则不是天上掉下来的而是站住的重复.md",
-  "研究文稿/07_书稿/第6章_光速、因果结构与时空约束.md":
-    "研究文稿/07_书稿/白话卷/第4章_光、生命与基因其实在同一条线上.md",
-  "研究文稿/07_书稿/第8章_思考的物理实现与认知生成.md":
-    "研究文稿/07_书稿/白话卷/第5章_思考、意识和自我是世界在自己里面再长一层.md",
-  "研究文稿/07_书稿/第9章_思考的力学运作机制及其与量子力学的异同.md":
-    "研究文稿/07_书稿/白话卷/第5章_思考、意识和自我是世界在自己里面再长一层.md",
-  "研究文稿/07_书稿/第10章_意识、自我、直觉、灵感与错误推理.md":
-    "研究文稿/07_书稿/白话卷/第5章_思考、意识和自我是世界在自己里面再长一层.md",
-  "研究文稿/07_书稿/第11章_统一结论.md":
-    "研究文稿/07_书稿/白话卷/第7章_把整套理论压成一条人人能走通的线.md",
-  "研究文稿/07_书稿/第12章_展望与研究计划.md":
-    "研究文稿/07_书稿/白话卷/第8章_影响是存在的_理论如何进入人的判断与行动.md",
-  "研究文稿/07_书稿/专题_反思辩证模块_让质疑成为理论生长的回路.md":
-    "研究文稿/07_书稿/白话卷/第8章_影响是存在的_理论如何进入人的判断与行动.md",
-  "研究文稿/07_书稿/专题_生命、基因与文明的层级必然性.md":
-    "研究文稿/07_书稿/白话卷/第6章_文明就是规则开始写到身体外面.md",
-  "研究文稿/07_书稿/专题_落差的稳态_结构形成与规则形成的共同基础.md":
-    "研究文稿/07_书稿/白话卷/第3章_规则不是天上掉下来的而是站住的重复.md",
-});
 const SECTION_PRESENTATION = {
   "light-series": {
     badge: "适合转发",
@@ -104,11 +54,11 @@ const SECTION_PRESENTATION = {
     hook: "先把方法压成 10 条可以单发、可复述、能转发的入口。",
     description: "如果你想先感受这套方法怎样进入日常判断，就先从十条轻内容开始。每条都可以单独读，也能连成一条新读者路径。",
   },
-  "plain-book": {
+  "life-book": {
     badge: "第一卷",
-    eyebrow: "大众卷",
-    hook: "先上手、先复述、先把判断动作练顺。",
-    description: "第一次进入本站，优先从大众卷开始。它负责降低门槛，让方法先进入阅读、教学和自测。",
+    eyebrow: "生活卷",
+    hook: "先看懂、先转述、先拿去生活里试。",
+    description: "第一次进入本站，优先从生活卷开始。它负责降低阻力，把方法变成学习、做事、关系和 AI 提问里能马上用的小动作。",
   },
   book: {
     badge: "第二卷",
@@ -126,7 +76,7 @@ const SECTION_PRESENTATION = {
     badge: "总述入口",
     eyebrow: "总览与校准",
     hook: "先看当前最稳的收束、边界与自我校验。",
-    description: "适合在读完白话卷后回头校准全局主轴，快速确认理论当前站得最稳的表达。",
+    description: "适合在读完生活卷后回头校准全局主轴，快速确认理论当前站得最稳的表达。",
   },
   terms: {
     badge: "术语边界",
@@ -162,7 +112,7 @@ const GRAPH_LEGEND = Object.freeze([
   {
     status: "lit",
     title: "已展开",
-    copy: "这个节点已经在正文、白话卷、专题或协作卷里被明确谈到，点开可以直接继续读。",
+    copy: "这个节点已经在正文、生活卷、专题或协作卷里被明确谈到，点开可以直接继续读。",
   },
   {
     status: "mapped",
@@ -480,8 +430,8 @@ const LAB_PAGE_ARCHITECTURE = {
 const LAB_EXTENSION_LAYERS = {
   learn: [
     {
-      title: "术语映射",
-      copy: "把正文、白话卷、实验变量和批注语言互相映射，减少切换成本。",
+      title: "生活化入口",
+      copy: "把实验变量和站内章节翻成能直接试用的小问题，减少第一次进入的阻力。",
     },
     {
       title: "案例库",
@@ -2444,36 +2394,6 @@ function openDeckCard(deck, cardId, { smooth = true } = {}) {
   setHashForDeck(deck.id, { card: cardId });
 }
 
-function getAlternateVersionLabel(item) {
-  if (item?.sectionId === "plain-book") return "正文版";
-  if (item?.sectionId === "book") return "白话版";
-  return "互转阅读";
-}
-
-function getAlternateVersionEmptyTitle(item) {
-  if (item?.sectionId === "plain-book") return "暂未建立直达正文";
-  if (item?.sectionId === "book") return "暂未建立直达白话";
-  return "当前页暂无互转版本";
-}
-
-function getAlternateVersionItem(item) {
-  const normalizedSourcePath = normalizeSourcePath(item?.sourcePath);
-
-  if (!normalizedSourcePath) {
-    return null;
-  }
-
-  if (item.sectionId === "plain-book") {
-    return findItemBySourcePath(PLAIN_TO_BOOK_VARIANT_PATHS[normalizedSourcePath]);
-  }
-
-  if (item.sectionId === "book") {
-    return findItemBySourcePath(BOOK_TO_PLAIN_VARIANT_PATHS[normalizedSourcePath]);
-  }
-
-  return null;
-}
-
 function formatVolumeEntryIndex(item, index) {
   const displayTitle = getDisplayTitle(item);
   if (displayTitle.includes("卷首")) return "卷首";
@@ -2731,7 +2651,7 @@ function getAiGatewayConfig() {
 
 function getPrimaryStartItem() {
   return (
-    getSectionEntry("plain-book") ||
+    getSectionEntry("life-book") ||
     getSectionEntry("book") ||
     getReadingSequence()[0] ||
     null
@@ -2968,7 +2888,7 @@ function buildAiGatewaySection() {
 }
 
 function buildQuickLinks() {
-  const items = getReadableSectionItems("plain-book")
+  const items = getReadableSectionItems("life-book")
     .slice(0, 4);
 
   dom.quickLinks.innerHTML = "";
@@ -2980,7 +2900,7 @@ function buildQuickLinks() {
     link.innerHTML = `
       <div class="book-card-index">${formatVolumeEntryIndex(item, index)}</div>
       <div class="book-card-copy">
-        <p class="book-card-meta">白话卷</p>
+        <p class="book-card-meta">生活卷</p>
         <h4>${getDisplayTitle(item)}</h4>
         <p>${item.excerpt || item.sectionTitle}</p>
       </div>
@@ -3009,7 +2929,7 @@ function getSectionEntry(sectionId) {
     );
   }
 
-  if (sectionId === "plain-book") {
+  if (sectionId === "life-book") {
     return (
       items.find((item) => getDisplayTitle(item).includes("卷首")) ||
       items[0] ||
@@ -3029,12 +2949,12 @@ function getSectionEntry(sectionId) {
 }
 
 function buildFeaturedVolume() {
-  const items = getReadableSectionItems("plain-book");
-  const firstReadable = getSectionEntry("plain-book");
+  const items = getReadableSectionItems("life-book");
+  const firstReadable = getSectionEntry("life-book");
 
-  dom.featuredVolumeTitle.textContent = "白话卷 · 直观理解卷";
+  dom.featuredVolumeTitle.textContent = "生活卷 · 低阻力应用卷";
   dom.featuredVolumeCopy.textContent =
-    "最适合作为第一次进入本站的入口。先把这套理论读成能直接理解、直接跟上的版本，再回头切换到主书稿。";
+    "最适合作为第一次进入本站的入口。先拿一件生活、学习或工作里的小事来试，把方法读成能马上行动的版本。";
 
   dom.featuredVolumeMeta.innerHTML = "";
   [
@@ -3233,7 +3153,7 @@ function buildSystemLinks() {
 
     const link = document.createElement("a");
     link.className = "system-card";
-    if (sectionId === "plain-book") {
+    if (sectionId === "life-book") {
       link.classList.add("is-featured");
     }
     link.href = `#doc/${encodeURIComponent(entry.id)}`;
@@ -3751,7 +3671,7 @@ function buildNav() {
 
     const group = document.createElement("section");
     group.className = "nav-group";
-    if (section.id === "plain-book") {
+    if (section.id === "life-book") {
       group.classList.add("is-featured");
     }
 
@@ -6464,7 +6384,7 @@ function scoreAssistantItem(item, keywords) {
     if (index === 0 && bodyText.includes(keyword)) score += 10;
   });
 
-  if (item.sectionId === "plain-book") score += 14;
+  if (item.sectionId === "life-book") score += 14;
   if (item.sectionId === "book") score += 10;
   if (item.sectionId === "overview") score += 6;
 
@@ -6537,7 +6457,6 @@ function getAssistantRouteContextFromRoute(routeState) {
     const currentIndex = sequence.findIndex((entry) => entry.id === item?.id);
     const prev = currentIndex > 0 ? sequence[currentIndex - 1] : null;
     const next = currentIndex >= 0 ? sequence[currentIndex + 1] : null;
-    const alternate = getAlternateVersionItem(item);
     const title = getDisplayTitle(item);
 
     return {
@@ -6547,14 +6466,14 @@ function getAssistantRouteContextFromRoute(routeState) {
         item?.excerpt
         || buildAssistantSnippet(getItemSearchText(item), [], 180)
         || "可以直接追问这一章的主线、误区和下一步阅读入口。",
-      chips: collectAssistantItems([item, alternate, prev, next]).map((entry) => getDisplayTitle(entry)).slice(0, 3),
+      chips: collectAssistantItems([item, prev, next]).map((entry) => getDisplayTitle(entry)).slice(0, 3),
       actions: [
         "这一章真正的主线是什么？",
         `从《${title}》继续往下该读哪里？`,
         "这章最容易误解的地方是什么？",
         "和这一章最相关的图谱节点有哪些？",
       ],
-      items: collectAssistantItems([item, alternate, prev, next]),
+      items: collectAssistantItems([item, prev, next]),
       launcherLabel: title || "当前章节",
     };
   }
@@ -6619,7 +6538,7 @@ function getAssistantRouteContextFromRoute(routeState) {
         getDeckCardSourceItem(deck, card),
         getDeckSourceItem(deck),
         getSectionEntry("extension-book"),
-        getSectionEntry("plain-book"),
+        getSectionEntry("life-book"),
         getSectionEntry("ai-book"),
       ]),
       launcherLabel: card?.title || deck?.title || "当前牌组",
@@ -6645,12 +6564,12 @@ function getAssistantRouteContextFromRoute(routeState) {
         : [
           "这一页最该配合哪几章一起看？",
           "从实验页回到正文，该读哪里？",
-          "把这一页的主线翻成白话",
+          "把这一页翻成今天能做的小动作",
           "它在整站里对应哪些章节？",
         ],
       items: collectAssistantItems([
         getAssistantSetupItem(),
-        getSectionEntry("plain-book"),
+        getSectionEntry("life-book"),
         getSectionEntry("overview"),
         getSectionEntry("ai-book"),
       ]),
@@ -6663,16 +6582,16 @@ function getAssistantRouteContextFromRoute(routeState) {
     badge: "首页",
     title: "分卷书架",
     copy: "适合先问第一次从哪里读起，或让它给你一条最短的进入路径。",
-    chips: ["白话卷", "知识图谱", "轻内容", "评论回填"],
+    chips: ["生活卷", "知识图谱", "轻内容", "评论回填"],
     actions: [
       "第一次来先从哪里读？",
       "给我一条最短阅读线",
-      "先看白话卷还是知识图谱？",
+      "先看生活卷还是知识图谱？",
       "哪些节点最适合先进入？",
     ],
     items: collectAssistantItems([
       startItem,
-      getSectionEntry("plain-book"),
+      getSectionEntry("life-book"),
       getSectionEntry("overview"),
       getSectionEntry("light-series"),
       getSectionEntry("ai-book"),
@@ -6690,7 +6609,7 @@ function buildAssistantFallbackContext() {
   const fallbackItems = contextItems.length
     ? contextItems
     : collectAssistantItems([
-      getSectionEntry("plain-book"),
+      getSectionEntry("life-book"),
       getSectionEntry("overview"),
       getSectionEntry("ai-book"),
     ]);
@@ -6784,8 +6703,8 @@ function buildAssistantLocalFallbackAnswer(question, contextItems, reason = "net
 
   if (/第一次|初次|入门|先从哪里|怎么读|开始|顺序/.test(normalizedQuestion)) {
     lines.push("如果你是第一次来，先从更容易进入的入口读起，再决定要不要回主书稿或知识图谱。");
-  } else if (/白话卷|大众卷/.test(normalizedQuestion)) {
-    lines.push("这轮问题更适合先用白话卷或大众卷压出一条短阅读线，再回到研究卷。");
+  } else if (/生活卷|大众卷/.test(normalizedQuestion)) {
+    lines.push("这轮问题更适合先用生活卷压出一条能马上试的小动作，再决定是否继续读研究卷。");
   } else if (/图谱|节点/.test(normalizedQuestion)) {
     lines.push("这轮问题偏向结构定位，适合把章节和知识图谱节点对着看。");
   } else if (/AI|协作|评审/.test(normalizedQuestion)) {
@@ -6801,7 +6720,7 @@ function buildAssistantLocalFallbackAnswer(question, contextItems, reason = "net
     });
     lines.push(`最稳的起点可以先看《${sources[0].title || "相关章节"}》。`);
   } else {
-    lines.push("这轮没有抓到稳定的章节匹配，建议先从白话卷卷首或首页 AI 入口重新追问。");
+    lines.push("这轮没有抓到稳定的章节匹配，建议先从生活卷卷首或首页 AI 入口重新追问。");
   }
 
   lines.push("你可以展开下面的小框，看本轮抓到的章节摘录，再决定继续点开哪一篇。");
@@ -7125,7 +7044,7 @@ function buildAssistantPanelMarkup() {
             <p class="eyebrow">Live Guide</p>
             <h3>${escapeHtml(assistant.label || "站内导读助手")}</h3>
             <p class="lab-section-copy">
-              ${escapeHtml(assistant.description || "先在站内筛出相关章节，再用较白话的方式给出最短可走通的阅读线。")}
+              ${escapeHtml(assistant.description || "先在站内筛出相关章节，再给出最短可试用的生活动作。")}
             </p>
           </div>
           <div class="assistant-chip-row">
@@ -9268,7 +9187,7 @@ function renderLiveBookCommentPanel(item) {
         <h4>什么反馈最有价值</h4>
         <ul class="feedback-list">
           <li>哪一段最容易进入，哪一段最容易无感。</li>
-          <li>哪里需要补桥、补白话、补术语或降强度。</li>
+          <li>哪里需要补桥、改生活化表达、补术语或降强度。</li>
           <li>哪些内容应升为主线，哪些更适合转入专题或备忘录。</li>
         </ul>
       </div>
@@ -9617,20 +9536,12 @@ function renderPagination(item) {
   const currentIndex = sequence.findIndex((entry) => entry.id === item.id);
   const prev = sequence[currentIndex - 1] || null;
   const next = sequence[currentIndex + 1] || null;
-  const alternate = getAlternateVersionItem(item);
-  const alternateLabel = getAlternateVersionLabel(item);
 
   updateChapterButtons(prev, next);
   dom.docPagination.innerHTML = "";
 
   const cards = [
     renderPagerCard(prev, "上一章", "已经到头了"),
-    renderPagerCard(
-      alternate,
-      alternateLabel,
-      getAlternateVersionEmptyTitle(item),
-      "is-variant",
-    ),
     renderPagerCard(next, "下一章", "已经到底了"),
   ];
 
