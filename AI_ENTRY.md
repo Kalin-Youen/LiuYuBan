@@ -53,7 +53,7 @@ If any page fails to load, say clearly: `未读到`.
 ## Volume Map
 
 - `第一卷：大众卷`
-  First-contact entry. Light content, life-use chapters, and low-friction practical reading paths.
+  First-contact entry. A compressed life-use chapter, a short understanding volume, and low-friction practical reading path.
 - `第二卷：研究卷`
   Main manuscript, definitions, bridges, limits, and research-facing stabilization.
 - `第三卷：拓展卷`

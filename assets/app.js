@@ -18,10 +18,11 @@ const THEME_LABELS = {
   sepia: "暖读",
   night: "夜间",
 };
-const HOME_SECTION_ORDER = ["light-series", "life-book", "overview", "book", "extension-book", "terms", "ai-book"];
-const PRIMARY_VOLUME_SECTION_IDS = Object.freeze(["life-book", "book", "extension-book", "ai-book"]);
+const HOME_SECTION_ORDER = ["life-book", "understanding-book", "overview", "book", "extension-book", "terms", "ai-book"];
+const PRIMARY_VOLUME_SECTION_IDS = Object.freeze(["life-book", "understanding-book", "book", "extension-book", "ai-book"]);
 const VOLUME_ENTRY_SOURCE_PATHS = Object.freeze({
-  "life-book": "研究文稿/07_书稿/生活卷/00_卷首_怎么用这本生活卷.md",
+  "life-book": "研究文稿/07_书稿/生活卷/00_第0章_极速读完这套方法.md",
+  "understanding-book": "研究文稿/07_书稿/理解卷/00_卷首_十分钟把这套看法真正讲懂.md",
   book: "研究文稿/07_书稿/00_卷首_怎么使用这本研究卷.md",
   "extension-book":
     "研究文稿/07_书稿/拓展卷/00_卷首_为什么要有拓展卷_让方法在阅读中直接变成能力.md",
@@ -35,30 +36,30 @@ const STARTER_GUIDE = Object.freeze([
     copy: "先用一句话弄清项目是什么、不是什么，再决定是否继续进入。",
   },
   {
-    sourcePath: "研究文稿/08_轻内容连载/01_世界先给人的不是物，而是不同.md",
-    eyebrow: "1 分钟进入",
-    title: "先用一条轻内容上手",
-    copy: "先体验这套方法怎样从“不同”开始，而不是一开始就撞进大词。",
+    sourcePath: "研究文稿/07_书稿/生活卷/00_第0章_极速读完这套方法.md",
+    eyebrow: "3 分钟进入",
+    title: "直接读生活卷极速版",
+    copy: "用一页把差异、边界、结构、耗散和反馈连成能立刻转述的判断动作。",
   },
   {
-    sourcePath: "研究文稿/07_书稿/生活卷/00_卷首_怎么用这本生活卷.md",
-    eyebrow: "10 分钟起步",
-    title: "再切到生活卷",
-    copy: "当你准备马上试用时，让生活卷先给出能复述、能行动的小经验。",
+    sourcePath: "研究文稿/07_书稿/理解卷/00_卷首_十分钟把这套看法真正讲懂.md",
+    eyebrow: "10 分钟讲懂",
+    title: "再读理解卷",
+    copy: "用漩涡、水电站、AI 训练和学习小事，把整条线讲成别人也能听懂的话。",
   },
 ]);
 const SECTION_PRESENTATION = {
-  "light-series": {
-    badge: "适合转发",
-    eyebrow: "轻内容连载",
-    hook: "先把方法压成 10 条可以单发、可复述、能转发的入口。",
-    description: "如果你想先感受这套方法怎样进入日常判断，就先从十条轻内容开始。每条都可以单独读，也能连成一条新读者路径。",
-  },
   "life-book": {
     badge: "第一卷",
     eyebrow: "生活卷",
-    hook: "先看懂、先转述、先拿去生活里试。",
-    description: "第一次进入本站，优先从生活卷开始。它负责降低阻力，把方法变成学习、做事、关系和 AI 提问里能马上用的小动作。",
+    hook: "用最短时间抓住整套走法，再拿去生活里试。",
+    description: "第一次进入本站，优先读生活卷极速版。它把方法压成一条连贯动作：找差异、划边界、搭结构、看消耗、接反馈。",
+  },
+  "understanding-book": {
+    badge: "第一卷补强",
+    eyebrow: "理解卷",
+    hook: "用生活例子把这套看法讲透，让人能马上转述。",
+    description: "读完生活卷以后，如果想把“为什么这样看”讲给别人，就读理解卷。它用漩涡、水电站、AI 训练和学习小事，把抽象词压回日常经验。",
   },
   book: {
     badge: "第二卷",
@@ -85,7 +86,7 @@ const SECTION_PRESENTATION = {
     description: "当你被术语、边界、强命题或跨层接口卡住时，从这里翻最省时间。",
   },
   "ai-book": {
-    badge: "第四卷",
+    badge: "第五卷",
     eyebrow: "AI 协作卷",
     hook: "把扩写变成协作，把噪声变成残差，把修改变成回写。",
     description: "它不是第一次进入时的首读入口，而是让模型协作守主线、控噪声和做版本治理的卷册。",
@@ -1081,7 +1082,6 @@ const dom = {
   liveBookWorkflow: document.getElementById("live-book-workflow"),
   liveBookHomeCards: document.getElementById("live-book-home-cards"),
   starterLinks: document.getElementById("starter-links"),
-  lightSeriesLinks: document.getElementById("light-series-links"),
   cardDeckSection: document.getElementById("card-deck-section"),
   cardDeckSummary: document.getElementById("card-deck-summary"),
   cardDeckGrid: document.getElementById("card-deck-grid"),
@@ -2652,6 +2652,7 @@ function getAiGatewayConfig() {
 function getPrimaryStartItem() {
   return (
     getSectionEntry("life-book") ||
+    getSectionEntry("understanding-book") ||
     getSectionEntry("book") ||
     getReadingSequence()[0] ||
     null
@@ -2741,32 +2742,6 @@ function buildStarterLinks() {
 
   if (!dom.starterLinks.childElementCount) {
     dom.starterLinks.innerHTML = `<p class="empty-state">新读者入口正在整理中。</p>`;
-  }
-}
-
-function buildLightSeriesLinks() {
-  if (!dom.lightSeriesLinks) return;
-
-  const items = getReadableSectionItems("light-series").slice(0, 10);
-  dom.lightSeriesLinks.innerHTML = "";
-
-  items.forEach((item, index) => {
-    const link = document.createElement("a");
-    link.className = "book-card light-card";
-    link.href = `#doc/${encodeURIComponent(item.id)}`;
-    link.innerHTML = `
-      <div class="book-card-index">${formatSerialIndex(index)}</div>
-      <div class="book-card-copy">
-        <p class="book-card-meta">轻内容 ${formatSerialIndex(index)}</p>
-        <h4>${getDisplayTitle(item)}</h4>
-        <p>${item.excerpt || item.sectionTitle}</p>
-      </div>
-    `;
-    dom.lightSeriesLinks.appendChild(link);
-  });
-
-  if (!dom.lightSeriesLinks.childElementCount) {
-    dom.lightSeriesLinks.innerHTML = `<p class="empty-state">轻内容连载正在整理中。</p>`;
   }
 }
 
@@ -2888,7 +2863,10 @@ function buildAiGatewaySection() {
 }
 
 function buildQuickLinks() {
-  const items = getReadableSectionItems("life-book")
+  const items = [
+    ...getReadableSectionItems("life-book"),
+    ...getReadableSectionItems("understanding-book"),
+  ]
     .slice(0, 4);
 
   dom.quickLinks.innerHTML = "";
@@ -2900,7 +2878,7 @@ function buildQuickLinks() {
     link.innerHTML = `
       <div class="book-card-index">${formatVolumeEntryIndex(item, index)}</div>
       <div class="book-card-copy">
-        <p class="book-card-meta">生活卷</p>
+        <p class="book-card-meta">${item.sectionTitle || "推荐入口"}</p>
         <h4>${getDisplayTitle(item)}</h4>
         <p>${item.excerpt || item.sectionTitle}</p>
       </div>
@@ -2931,6 +2909,16 @@ function getSectionEntry(sectionId) {
 
   if (sectionId === "life-book") {
     return (
+      items.find((item) => getDisplayTitle(item).includes("极速")) ||
+      items.find((item) => getDisplayTitle(item).includes("第0章")) ||
+      items[0] ||
+      null
+    );
+  }
+
+  if (sectionId === "understanding-book") {
+    return (
+      items.find((item) => getDisplayTitle(item).includes("十分钟")) ||
       items.find((item) => getDisplayTitle(item).includes("卷首")) ||
       items[0] ||
       null
@@ -2949,12 +2937,15 @@ function getSectionEntry(sectionId) {
 }
 
 function buildFeaturedVolume() {
-  const items = getReadableSectionItems("life-book");
-  const firstReadable = getSectionEntry("life-book");
+  const items = [
+    ...getReadableSectionItems("life-book"),
+    ...getReadableSectionItems("understanding-book"),
+  ];
+  const firstReadable = getSectionEntry("life-book") || getSectionEntry("understanding-book");
 
-  dom.featuredVolumeTitle.textContent = "生活卷 · 低阻力应用卷";
+  dom.featuredVolumeTitle.textContent = "生活卷 + 理解卷 · 低阻力应用入口";
   dom.featuredVolumeCopy.textContent =
-    "最适合作为第一次进入本站的入口。先拿一件生活、学习或工作里的小事来试，把方法读成能马上行动的版本。";
+    "最适合作为第一次进入本站的入口。先用生活卷三分钟上手，再用理解卷把漩涡、水电站、AI 训练这些例子讲给别人听。";
 
   dom.featuredVolumeMeta.innerHTML = "";
   [
@@ -6385,6 +6376,7 @@ function scoreAssistantItem(item, keywords) {
   });
 
   if (item.sectionId === "life-book") score += 14;
+  if (item.sectionId === "understanding-book") score += 12;
   if (item.sectionId === "book") score += 10;
   if (item.sectionId === "overview") score += 6;
 
@@ -6531,7 +6523,7 @@ function getAssistantRouteContextFromRoute(routeState) {
         `“${card?.title || "这张牌"}”最容易被误解成什么？`,
         relatedCards[0]
           ? `我该把“${card?.title || "这张牌"}”和“${relatedCards[0].title}”连起来怎么用？`
-          : "这张牌下一张最该接哪张？",
+          : "这张牌最该和哪张一起用？",
         "回到原文时，我最该补哪一个边界或条件？",
       ],
       items: collectAssistantItems([
@@ -6539,6 +6531,7 @@ function getAssistantRouteContextFromRoute(routeState) {
         getDeckSourceItem(deck),
         getSectionEntry("extension-book"),
         getSectionEntry("life-book"),
+        getSectionEntry("understanding-book"),
         getSectionEntry("ai-book"),
       ]),
       launcherLabel: card?.title || deck?.title || "当前牌组",
@@ -6570,6 +6563,7 @@ function getAssistantRouteContextFromRoute(routeState) {
       items: collectAssistantItems([
         getAssistantSetupItem(),
         getSectionEntry("life-book"),
+        getSectionEntry("understanding-book"),
         getSectionEntry("overview"),
         getSectionEntry("ai-book"),
       ]),
@@ -6582,7 +6576,7 @@ function getAssistantRouteContextFromRoute(routeState) {
     badge: "首页",
     title: "分卷书架",
     copy: "适合先问第一次从哪里读起，或让它给你一条最短的进入路径。",
-    chips: ["生活卷", "知识图谱", "轻内容", "评论回填"],
+    chips: ["生活卷", "理解卷", "极速入口", "知识图谱"],
     actions: [
       "第一次来先从哪里读？",
       "给我一条最短阅读线",
@@ -6592,8 +6586,8 @@ function getAssistantRouteContextFromRoute(routeState) {
     items: collectAssistantItems([
       startItem,
       getSectionEntry("life-book"),
+      getSectionEntry("understanding-book"),
       getSectionEntry("overview"),
-      getSectionEntry("light-series"),
       getSectionEntry("ai-book"),
     ]),
     launcherLabel: "当前页面",
@@ -6610,6 +6604,7 @@ function buildAssistantFallbackContext() {
     ? contextItems
     : collectAssistantItems([
       getSectionEntry("life-book"),
+      getSectionEntry("understanding-book"),
       getSectionEntry("overview"),
       getSectionEntry("ai-book"),
     ]);
@@ -9745,7 +9740,7 @@ function bindEvents() {
     setHashForGraph(defaultNode?.id || null);
   });
   dom.openLabButton?.addEventListener("click", () => {
-    const item = getSectionEntry("light-series") || getSectionEntry("book");
+    const item = getSectionEntry("life-book") || getSectionEntry("book");
     if (item) setHashForDoc(item.id);
   });
   dom.openCatalogButton.addEventListener("click", () => setDrawerOpen(true));
@@ -9940,7 +9935,6 @@ async function init() {
   buildLiveBookHomeSection();
   buildGraphPreview();
   applyPreferences();
-  buildLightSeriesLinks();
   buildQuickLinks();
   buildSystemLinks();
   buildNav();

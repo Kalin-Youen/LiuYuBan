@@ -62,14 +62,14 @@
     "contextDocs": 4,
     "snippetLength": 260,
     "maxTurns": 6,
-    "greeting": "可以先问一个生活问题该从哪一章进入，也可以直接追问它在生活卷、主书稿和知识图谱里分别落到了哪里。",
+    "greeting": "可以先问一个生活问题该从哪一章进入，也可以直接追问它在生活卷、理解卷、主书稿和知识图谱里分别落到了哪里。",
     "placeholder": "例如：落差这一网第一次该看哪几章？结构复制在站内主要落在哪些章节？",
     "emptyMessage": "当前还没有填入 Cloudflare Worker 地址。先把 Worker 部署好，再把 endpoint 回填到 site.config.json。",
     "setupSourcePath": "研究文稿/07_书稿/AI协作卷/第12章_把CloudflareWorkersAI接到站内导读助手.md",
     "suggestions": [
       "落差这一网第一次该从哪里读起？",
       "结构复制除了基因，还在哪些章节被展开过？",
-      "生活卷里哪几章最适合先读，今天能怎么用？",
+      "生活卷和理解卷应该怎么连着读，今天能怎么用？",
       "如果我想理解层级为什么能跨层稳态，应该顺着哪条线读？"
     ]
   },
@@ -160,7 +160,7 @@
         "id": "entry-feedback",
         "title": "进入反馈模板",
         "description": "适合读者告诉你自己是从哪里进入、又是在哪里卡住的。",
-        "body": "[进入反馈]\n章节：{{chapterTitle}}\n评论线程：{{commentPath}}\n1. 我最先读进去的一句/一段是：\n2. 我最卡住的位置是：\n3. 我希望补的一座桥是：\n4. 这条反馈更适合进入：生活卷 / 主书稿 / 术语说明 / 候写清单"
+        "body": "[进入反馈]\n章节：{{chapterTitle}}\n评论线程：{{commentPath}}\n1. 我最先读进去的一句/一段是：\n2. 我最卡住的位置是：\n3. 我希望补的一座桥是：\n4. 这条反馈更适合进入：生活卷 / 理解卷 / 主书稿 / 术语说明 / 候写清单"
       },
       {
         "id": "structure-revision",
@@ -199,16 +199,16 @@
       ]
     },
     {
-      "id": "light-series",
-      "title": "第一卷：大众卷·十条轻内容",
-      "type": "directory",
-      "path": "研究文稿/08_轻内容连载"
-    },
-    {
       "id": "life-book",
       "title": "第一卷：大众卷·生活卷",
       "type": "directory",
       "path": "研究文稿/07_书稿/生活卷"
+    },
+    {
+      "id": "understanding-book",
+      "title": "第一卷：大众卷·理解卷",
+      "type": "directory",
+      "path": "研究文稿/07_书稿/理解卷"
     },
     {
       "id": "book",
