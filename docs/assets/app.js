@@ -4,6 +4,9 @@ const ASSET_VERSION = typeof window !== "undefined" && typeof window.__SITE_ASSE
 const contentUrl = ASSET_VERSION
   ? `./assets/data/content.json?v=${encodeURIComponent(ASSET_VERSION)}`
   : "./assets/data/content.json";
+const searchUrl = ASSET_VERSION
+  ? `./assets/data/search.json?v=${encodeURIComponent(ASSET_VERSION)}`
+  : "./assets/data/search.json";
 const STORAGE_KEY = "readerPreferences";
 const THEME_ORDER = ["paper", "sepia", "night"];
 const FONT_MIN = 15;
@@ -993,6 +996,10 @@ const state = {
   payload: null,
   filteredItems: [],
   searchTextCache: new Map(),
+  contentCache: new Map(),
+  searchIndexPromise: null,
+  searchIndexLoaded: false,
+  searchInputTimer: null,
   activeId: null,
   activeDeckId: null,
   activeDeckCardId: null,
@@ -2069,6 +2076,82 @@ function getDisplayTitle(item) {
     return firstSubheading.label;
   }
   return item.title;
+}
+
+function getVersionedAssetUrl(path) {
+  const normalizedPath = String(path || "").trim();
+  if (!normalizedPath) return "";
+  const url = normalizedPath.startsWith("./") ? normalizedPath : `./${normalizedPath}`;
+  return ASSET_VERSION ? `${url}?v=${encodeURIComponent(ASSET_VERSION)}` : url;
+}
+
+function extractTextFromHtml(html) {
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = html || "";
+  return (wrapper.textContent || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function loadItemContent(item) {
+  if (!item) return null;
+  if (item.html) return item;
+
+  if (!item.contentPath) {
+    item.html = "";
+    return item;
+  }
+
+  let request = state.contentCache.get(item.id);
+  if (!request) {
+    request = fetch(getVersionedAssetUrl(item.contentPath)).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to load document content: ${response.status}`);
+      }
+      return response.json();
+    });
+    state.contentCache.set(item.id, request);
+  }
+
+  try {
+    const content = await request;
+    item.html = content?.html || "";
+    if (item.html && !state.searchTextCache.get(item.id)) {
+      state.searchTextCache.set(item.id, extractTextFromHtml(item.html));
+    }
+    return item;
+  } catch (error) {
+    state.contentCache.delete(item.id);
+    throw error;
+  }
+}
+
+async function ensureSearchIndexLoaded() {
+  if (state.searchIndexLoaded) return true;
+
+  if (!state.searchIndexPromise) {
+    state.searchIndexPromise = fetch(searchUrl).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to load search index: ${response.status}`);
+      }
+      const payload = await response.json();
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      items.forEach((entry) => {
+        if (entry?.id) {
+          state.searchTextCache.set(entry.id, String(entry.text || ""));
+        }
+      });
+      state.searchIndexLoaded = true;
+      return true;
+    });
+  }
+
+  try {
+    return await state.searchIndexPromise;
+  } catch (error) {
+    state.searchIndexPromise = null;
+    throw error;
+  }
 }
 
 function getRenderedDocHtml(item) {
@@ -3527,12 +3610,9 @@ function getItemSearchText(item) {
     return state.searchTextCache.get(item.id);
   }
 
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = item.html || "";
-  const text = (wrapper.textContent || "")
-    .replace(/\s+/g, " ")
-    .trim();
+  if (!item.html) return "";
 
+  const text = extractTextFromHtml(item.html);
   state.searchTextCache.set(item.id, text);
   return text;
 }
@@ -3907,6 +3987,18 @@ function renderDistributionSeries(prefix, values) {
     if (bar) bar.style.height = `${Math.max(8, percent)}%`;
     if (text) text.textContent = `${percent}%`;
   });
+}
+
+async function buildNavWithSearchIndex() {
+  const keyword = dom.searchInput.value.trim();
+  if (keyword && !state.searchIndexLoaded) {
+    try {
+      await ensureSearchIndexLoaded();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  buildNav();
 }
 
 function renderLabTabs(page) {
@@ -6614,8 +6706,16 @@ function buildAssistantFallbackContext() {
     .map((item) => buildAssistantContextEntry(item));
 }
 
-function buildAssistantContext(question) {
+async function buildAssistantContext(question) {
   const keywords = extractAssistantKeywords(question);
+  if (keywords.length) {
+    try {
+      await ensureSearchIndexLoaded();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   const limit = getAssistantContextLimit();
   const prioritizedItems = getAssistantRouteContext().items;
   const prioritizedIds = new Set(prioritizedItems.map((item) => item.id));
@@ -7179,7 +7279,7 @@ async function askAssistant(question) {
     return;
   }
 
-  const contextItems = buildAssistantContext(normalizedQuestion);
+  const contextItems = await buildAssistantContext(normalizedQuestion);
   if (currentRouteHash) {
     state.guideReturnHash = currentRouteHash;
     state.guideContextHash = currentRouteHash;
@@ -9602,6 +9702,18 @@ async function renderDoc(id, params = {}) {
   dom.docTitle.textContent = getDisplayTitle(item);
   dom.docUpdated.textContent = relativeTime(item.updatedAt);
   dom.docSource.textContent = `源文件：${item.sourcePath}`;
+  dom.docContent.innerHTML = `<p class="empty-state">正在加载正文...</p>`;
+
+  try {
+    await loadItemContent(item);
+  } catch (error) {
+    console.error(error);
+    if (state.activeId !== item.id) return;
+    dom.docContent.innerHTML = `<p class="empty-state">正文加载失败。请刷新页面后再试。</p>`;
+    return;
+  }
+
+  if (state.activeId !== item.id) return;
   dom.docContent.innerHTML = getRenderedDocHtml(item);
   renderLiveBookCommentPanel(item);
   await renderComments(item);
@@ -9669,7 +9781,16 @@ async function route() {
 }
 
 function bindEvents() {
-  dom.searchInput.addEventListener("input", buildNav);
+  dom.searchInput.addEventListener("input", () => {
+    buildNav();
+    if (state.searchInputTimer) {
+      window.clearTimeout(state.searchInputTimer);
+    }
+    state.searchInputTimer = window.setTimeout(() => {
+      state.searchInputTimer = null;
+      buildNavWithSearchIndex().catch(console.error);
+    }, 140);
+  });
   dom.catalogButton.addEventListener("click", () => {
     setMobileFontPanelOpen(false);
     setTocOpen(false);

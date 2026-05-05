@@ -18,6 +18,8 @@ DOCS_DIR = ROOT / "docs"
 DOCS_ASSETS_DIR = DOCS_DIR / "assets"
 DATA_DIR = DOCS_DIR / "assets" / "data"
 CONTENT_JSON = DATA_DIR / "content.json"
+SEARCH_JSON = DATA_DIR / "search.json"
+CONTENT_ITEMS_DIR = DATA_DIR / "items"
 CNAME_PATH = DOCS_DIR / "CNAME"
 INDEX_HTML_PATH = DOCS_DIR / "index.html"
 ROOT_INDEX_PATH = ROOT / "index.html"
@@ -340,6 +342,9 @@ def normalize_card_decks(raw: dict) -> dict:
 
 def ensure_dirs() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if CONTENT_ITEMS_DIR.exists():
+        shutil.rmtree(CONTENT_ITEMS_DIR)
+    CONTENT_ITEMS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def chapter_sort_key(path: Path) -> tuple:
@@ -459,6 +464,26 @@ def render_markdown(text: str) -> str:
     return md.convert(text)
 
 
+def make_plain_text(text: str) -> str:
+    text = re.sub(r"[#>*`$\\[\]()\-_=|]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def write_item_content(slug: str, html_content: str) -> None:
+    item_path = CONTENT_ITEMS_DIR / f"{slug}.json"
+    item_path.write_text(
+        json.dumps(
+            {
+                "id": slug,
+                "html": html_content,
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
+        encoding="utf-8",
+    )
+
+
 def relative_source_path(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
 
@@ -475,10 +500,11 @@ def is_graph_support_path(source_path: str) -> bool:
     return any(source_path.startswith(prefix) for prefix in GRAPH_SUPPORT_PATH_HINTS)
 
 
-def collect_items(config: dict) -> tuple[list[dict], list[dict], dict[str, dict]]:
+def collect_items(config: dict) -> tuple[list[dict], list[dict], dict[str, dict], list[dict]]:
     items: list[dict] = []
     sections_meta: list[dict] = []
     search_index: dict[str, dict] = {}
+    frontend_search_index: list[dict] = []
 
     for section in config["sections"]:
         files = discover_files(section)
@@ -494,7 +520,14 @@ def collect_items(config: dict) -> tuple[list[dict], list[dict], dict[str, dict]
             updated_at = datetime.fromtimestamp(
                 file_path.stat().st_mtime, tz=timezone.utc
             ).isoformat()
-            plain_text = re.sub(r"\s+", " ", re.sub(r"[#>*`$\\[\]()\-_=|]", " ", source))
+            plain_text = make_plain_text(source)
+            write_item_content(slug, html)
+            frontend_search_index.append(
+                {
+                    "id": slug,
+                    "text": plain_text,
+                }
+            )
 
             item = {
                 "id": slug,
@@ -505,7 +538,7 @@ def collect_items(config: dict) -> tuple[list[dict], list[dict], dict[str, dict]
                 "excerpt": excerpt,
                 "updatedAt": updated_at,
                 "sourcePath": relative_path,
-                "html": html,
+                "contentPath": f"assets/data/items/{slug}.json",
                 "headings": headings,
                 "wordCount": len(plain_text.strip()),
                 "order": order,
@@ -531,7 +564,7 @@ def collect_items(config: dict) -> tuple[list[dict], list[dict], dict[str, dict]
             }
         )
 
-    return items, sections_meta, search_index
+    return items, sections_meta, search_index, frontend_search_index
 
 
 def make_node_aliases(label: str, short_label: str | None = None) -> list[str]:
@@ -958,8 +991,8 @@ def build_knowledge_graph(search_index: dict[str, dict]) -> dict:
     }
 
 
-def build_payload(config: dict) -> dict:
-    items, sections, search_index = collect_items(config)
+def build_payload(config: dict) -> tuple[dict, list[dict]]:
+    items, sections, search_index, frontend_search_index = collect_items(config)
     newest_update = max((item["updatedAt"] for item in items), default=None)
     total_chars = sum(item["wordCount"] for item in items)
     knowledge_graph = build_knowledge_graph(search_index)
@@ -993,12 +1026,16 @@ def build_payload(config: dict) -> dict:
         "items": items,
         "cardDecks": card_decks,
         "knowledgeGraph": knowledge_graph,
-    }
+    }, frontend_search_index
 
 
-def write_payload(payload: dict) -> None:
+def write_payload(payload: dict, frontend_search_index: list[dict]) -> None:
     CONTENT_JSON.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    SEARCH_JSON.write_text(
+        json.dumps({"items": frontend_search_index}, ensure_ascii=False, separators=(",", ":")),
         encoding="utf-8",
     )
 
@@ -1102,9 +1139,9 @@ def sync_publish_root() -> None:
 def main() -> None:
     ensure_dirs()
     config = load_config()
-    payload = build_payload(config)
+    payload, frontend_search_index = build_payload(config)
     asset_version = build_asset_version(payload)
-    write_payload(payload)
+    write_payload(payload, frontend_search_index)
     write_cname(config.get("customDomain", ""))
     sync_index_html(config, asset_version)
     sync_publish_root()
