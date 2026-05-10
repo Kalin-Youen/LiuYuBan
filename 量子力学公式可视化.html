@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>量子力学公式可视化</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+      background: #0a0f14;
+      color: #e8eef4;
+      min-height: 100vh;
+      display: flex;
+    }
+    
+    .sidebar {
+      width: 280px;
+      background: #141b24;
+      padding: 20px;
+      border-right: 1px solid #2a3542;
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+    .sidebar h2 {
+      font-size: 1rem;
+      color: #4ecdc4;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #2a3542;
+    }
+    .category { margin-bottom: 20px; }
+    .category-title {
+      font-size: 0.8rem;
+      color: #8a9aaa;
+      margin-bottom: 8px;
+      padding-left: 8px;
+      border-left: 2px solid #9d4edd;
+    }
+    .formula-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 6px;
+      background: rgba(157, 78, 221, 0.1);
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: #e8eef4;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    .formula-btn:hover { 
+      background: rgba(157, 78, 221, 0.3); 
+      transform: translateX(5px);
+    }
+    .formula-btn.active {
+      background: rgba(157, 78, 221, 0.4);
+      border-color: #9d4edd;
+      box-shadow: 0 0 10px rgba(157, 78, 221, 0.3);
+    }
+    .formula-btn .name { font-weight: 600; }
+    .formula-btn .desc { font-size: 12px; color: #8a9aaa; margin-top: 4px; }
+    
+    .main {
+      flex: 1;
+      padding: 30px 40px;
+      overflow-y: auto;
+    }
+    .formula-card {
+      background: #141b24;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+      border: 1px solid #2a3542;
+    }
+    .formula-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .formula-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 8px; color: #fff; }
+    .formula-subtitle { color: #8a9aaa; font-size: 1rem; }
+    .formula-badge {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #9d4edd, #4ecdc4);
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .formula-display {
+      background: linear-gradient(135deg, rgba(157, 78, 221, 0.1), rgba(78, 205, 196, 0.1));
+      border-radius: 12px;
+      padding: 40px;
+      margin: 25px 0;
+      text-align: center;
+      font-size: 1.4rem;
+      font-family: 'Times New Roman', serif;
+      border: 1px solid rgba(157, 78, 221, 0.3);
+    }
+    .formula-meaning {
+      color: #b8c4d0;
+      font-size: 1rem;
+      line-height: 1.9;
+    }
+    
+    .level-section {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .level-card {
+      background: #141b24;
+      border-radius: 12px;
+      padding: 20px;
+      border: 2px solid #2a3542;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+    .level-card:hover { border-color: #9d4edd; transform: translateY(-3px); }
+    .level-card.active { 
+      border-color: #9d4edd; 
+      background: rgba(157, 78, 221, 0.15);
+      box-shadow: 0 5px 20px rgba(157, 78, 221, 0.2);
+    }
+    .level-card h3 { font-size: 1rem; margin: 8px 0; }
+    .level-card p { font-size: 0.8rem; color: #8a9aaa; }
+    .level-icon { font-size: 2rem; }
+    
+    .viz-card {
+      background: #141b24;
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid #2a3542;
+    }
+    canvas { 
+      width: 100%; 
+      height: 280px; 
+      background: rgba(0,0,0,0.3); 
+      border-radius: 12px; 
+    }
+    
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .control-label { 
+      display: flex; 
+      justify-content: space-between; 
+      margin-bottom: 8px; 
+      font-size: 0.85rem; 
+    }
+    .control-value { color: #4ecdc4; font-weight: 600; }
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      background: #2a3542;
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, #9d4edd, #4ecdc4);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(157, 78, 221, 0.5);
+    }
+    
+    .click-hint {
+      background: rgba(78, 205, 196, 0.1);
+      border: 1px solid #4ecdc4;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      color: #4ecdc4;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="display: flex; min-height: 100vh;">
+    <!-- 左侧公式导航 -->
+    <aside class="sidebar">
+      <h2>⚛️ 量子力学公式体系</h2>
+      
+      <div class="category">
+        <div class="category-title">基础公设</div>
+        <button class="formula-btn active" data-id="schrodinger">
+          <div class="name">薛定谔方程</div>
+          <div class="desc">非相对论量子演化</div>
+        </button>
+        <button class="formula-btn" data-id="dirac">
+          <div class="name">狄拉克方程</div>
+          <div class="desc">相对论性量子力学</div>
+        </button>
+        <button class="formula-btn" data-id="uncertainty">
+          <div class="name">不确定性原理</div>
+          <div class="desc">海森堡不等式</div>
+        </button>
+      </div>
+      
+      <div class="category">
+        <div class="category-title">态与算符</div>
+        <button class="formula-btn" data-id="superposition">
+          <div class="name">叠加原理</div>
+          <div class="desc">量子态的线性组合</div>
+        </button>
+        <button class="formula-btn" data-id="commutator">
+          <div class="name">对易关系</div>
+          <div class="desc">正则量子化条件</div>
+        </button>
+      </div>
+      
+      <div class="category">
+        <div class="category-title">测量与概率</div>
+        <button class="formula-btn" data-id="born">
+          <div class="name">玻恩规则</div>
+          <div class="desc">测量概率诠释</div>
+        </button>
+        <button class="formula-btn" data-id="expectation">
+          <div class="name">期望值</div>
+          <div class="desc">可观测量平均值</div>
+        </button>
+      </div>
+      
+      <div class="category">
+        <div class="category-title">动力学</div>
+        <button class="formula-btn" data-id="heisenberg">
+          <div class="name">海森堡方程</div>
+          <div class="desc">算符运动方程</div>
+        </button>
+        <button class="formula-btn" data-id="path">
+          <div class="name">路径积分</div>
+          <div class="desc">费曼路径求和</div>
+        </button>
+      </div>
+      
+      <div class="category">
+        <div class="category-title">多粒子系统</div>
+        <button class="formula-btn" data-id="pauli">
+          <div class="name">泡利不相容原理</div>
+          <div class="desc">费米子反对称</div>
+        </button>
+        <button class="formula-btn" data-id="entangle">
+          <div class="name">量子纠缠</div>
+          <div class="desc">非可分态</div>
+        </button>
+      </div>
+      
+      <div class="category">
+        <div class="category-title">量子场论</div>
+        <button class="formula-btn" data-id="second">
+          <div class="name">二次量子化</div>
+          <div class="desc">产生湮灭算符</div>
+        </button>
+        <button class="formula-btn" data-id="decoherence">
+          <div class="name">退相干</div>
+          <div class="desc">环境诱导经典性</div>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main">
+      <div class="click-hint">
+        👈 点击左侧公式按钮，这里的内容会更新！
+      </div>
+      
+      <div class="formula-card">
+        <div class="formula-header">
+          <div>
+            <h1 class="formula-title" id="title">薛定谔方程</h1>
+            <p class="formula-subtitle" id="subtitle">非相对论量子力学的基本动力学方程</p>
+          </div>
+          <span class="formula-badge" id="category">基础公设</span>
+        </div>
+        <div class="formula-display" id="display">
+          iℏ ∂ψ/∂t = Ĥ ψ
+        </div>
+        <p class="formula-meaning" id="meaning">
+          这是量子力学的基本动力学方程，描述量子态随时间的幺正演化。左侧是波函数的时间变化率乘以 iℏ，右侧是哈密顿算符作用在波函数上。该方程保证概率守恒，但测量时会出现概率性结果。
+        </p>
+      </div>
+
+      <!-- 层级推演 -->
+      <div class="formula-card">
+        <h2 style="margin-bottom: 15px; color: #4ecdc4;">📊 层级推演：从微观到宏观</h2>
+        <div class="level-section">
+          <div class="level-card active" data-level="quantum">
+            <div class="level-icon">🔬</div>
+            <h3>量子层</h3>
+            <p>叠加、纠缠、概率幅</p>
+          </div>
+          <div class="level-card" data-level="atomic">
+            <div class="level-icon">⚛️</div>
+            <h3>原子层</h3>
+            <p>能级、轨道、壳层</p>
+          </div>
+          <div class="level-card" data-level="molecular">
+            <div class="level-icon">🧬</div>
+            <h3>分子层</h3>
+            <p>化学键、振动、转动</p>
+          </div>
+          <div class="level-card" data-level="macro">
+            <div class="level-icon">🌍</div>
+            <h3>宏观层</h3>
+            <p>经典物理、确定性</p>
+          </div>
+        </div>
+        <p style="margin-top: 15px; color: #8a9aaa; font-size: 0.95rem; line-height: 1.8;" id="level-desc">
+          当前处于量子层（10⁻¹⁰ m 以下）。系统表现为叠加态，测量结果遵循玻恩规则的概率分布。量子相干性主导系统行为。
+        </p>
+      </div>
+
+      <!-- 可视化 -->
+      <div class="viz-card">
+        <h3 style="color: #8a9aaa; margin-bottom: 15px;">🎨 实时可视化</h3>
+        <canvas id="canvas"></canvas>
+        <div class="controls">
+          <div class="control-group">
+            <div class="control-label"><span>能量 (E)</span><span class="control-value" id="ev">1.0 eV</span></div>
+            <input type="range" id="energy" min="0.1" max="10" step="0.1" value="1">
+          </div>
+          <div class="control-group">
+            <div class="control-label"><span>时间 (t)</span><span class="control-value" id="tv">0 fs</span></div>
+            <input type="range" id="time" min="0" max="100" value="0">
+          </div>
+          <div class="control-group">
+            <div class="control-label"><span>叠加系数 α</span><span class="control-value" id="av">0.707</span></div>
+            <input type="range" id="alpha" min="0" max="1" step="0.01" value="0.707">
+          </div>
+          <div class="control-group">
+            <div class="control-label"><span>ℏ 尺度</span><span class="control-value" id="hv">1.0</span></div>
+            <input type="range" id="hbar" min="0" max="2" step="0.1" value="1">
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // 公式数据
+    const formulas = {
+      schrodinger: {
+        title: '薛定谔方程',
+        subtitle: '非相对论量子力学的基本动力学方程',
+        category: '基础公设',
+        display: 'iℏ ∂ψ/∂t = Ĥ ψ',
+        meaning: '这是量子力学的基本动力学方程，描述量子态随时间的幺正演化。左侧是波函数的时间变化率乘以 iℏ，右侧是哈密顿算符作用在波函数上。该方程保证概率守恒，但测量时会出现概率性结果。'
+      },
+      dirac: {
+        title: '狄拉克方程',
+        subtitle: '相对论性量子力学方程，自然包含自旋',
+        category: '基础公设',
+        display: '(iγᵘ∂ᵤ - m)ψ = 0',
+        meaning: '将量子力学与狭义相对论统一的方程。γᵘ 是狄拉克矩阵，ψ 是四分量旋量。该方程自动包含电子自旋，并预言了反物质（正电子）的存在。'
+      },
+      uncertainty: {
+        title: '不确定性原理',
+        subtitle: '海森堡不确定性关系',
+        category: '基础公设',
+        display: 'Δx · Δp ≥ ℏ/2',
+        meaning: '位置和动量不能同时被精确测量。位置越精确，动量就越不确定，反之亦然。这不是测量技术的局限，而是量子态空间结构的内在性质。'
+      },
+      superposition: {
+        title: '叠加原理',
+        subtitle: '量子态的线性组合',
+        category: '态与算符',
+        display: '|ψ⟩ = Σₙ cₙ |n⟩,  Σₙ|cₙ|² = 1',
+        meaning: '量子系统可同时处于多个本征态的叠加。系数 cₙ 是复数概率幅，|cₙ|² 表示测量得到本征值 n 的概率。叠加是量子干涉和量子计算的基础。'
+      },
+      commutator: {
+        title: '正则对易关系',
+        subtitle: '量子力学的基本代数结构',
+        category: '态与算符',
+        display: '[x̂, p̂] = iℏ',
+        meaning: '位置和动量算符不对易，其差值为 iℏ。这导致它们不能同时有确定值。这是量子化条件的核心。'
+      },
+      born: {
+        title: '玻恩规则',
+        subtitle: '量子测量的概率诠释',
+        category: '测量与概率',
+        display: 'P(aₙ) = |⟨n|ψ⟩|² = |cₙ|²',
+        meaning: '测量本征值 aₙ 的概率等于系统态 |ψ⟩ 与对应本征态 |n⟩ 内积的模平方。这是量子力学概率性的根本来源。'
+      },
+      expectation: {
+        title: '期望值',
+        subtitle: '可观测量的统计平均',
+        category: '测量与概率',
+        display: '⟨A⟩ = ⟨ψ|Â|ψ⟩ = Tr(ρÂ)',
+        meaning: '对系综进行多次测量，结果的统计平均值。可以用狄拉克符号 ⟨ψ|A|ψ⟩ 或密度矩阵的迹来计算。'
+      },
+      heisenberg: {
+        title: '海森堡运动方程',
+        subtitle: '算符绘景下的动力学',
+        category: '动力学',
+        display: 'dÂ/dt = (i/ℏ)[Ĥ, Â] + ∂Â/∂t',
+        meaning: '在海森堡绘景中，态矢量固定而算符随时间演化。算符的运动方程类似于经典力学的泊松括号。'
+      },
+      path: {
+        title: '费曼路径积分',
+        subtitle: '量子力学的拉格朗日表述',
+        category: '动力学',
+        display: 'K = ∫ 𝒟[x(t)] e^(iS/ℏ)',
+        meaning: '传播子是所有可能路径的贡献之和，每条路径的相位由经典作用量 S 决定。ℏ→0 时趋于经典轨迹。'
+      },
+      pauli: {
+        title: '泡利不相容原理',
+        subtitle: '费米子的排斥原理',
+        category: '多粒子系统',
+        display: 'Ψ(r₁, s₁; r₁, s₂) = 0',
+        meaning: '两个全同费米子不能占据相同的量子态。这是原子壳层结构、元素周期律和物质稳定性的根本原因。'
+      },
+      entangle: {
+        title: '量子纠缠',
+        subtitle: '非可分量子态',
+        category: '多粒子系统',
+        display: '|Ψ⁻⟩ = (1/√2)(|01⟩ - |10⟩)',
+        meaning: '纠缠态不能写成各子系统态的直积。对纠缠态的局域测量会瞬间影响另一方的状态（非定域关联）。'
+      },
+      second: {
+        title: '二次量子化',
+        subtitle: '多粒子系统的场论描述',
+        category: '量子场论',
+        display: 'Ĥ = Σₖ ℏωₖ âₖ† âₖ',
+        meaning: '用产生湮灭算符描述多粒子系统。a† 产生一个粒子，a 湮灭一个粒子。哈密顿量表示为粒子数算符的求和。'
+      },
+      decoherence: {
+        title: '退相干理论',
+        subtitle: '环境诱导的经典性',
+        category: '量子场论',
+        display: 'ρₛ = Trₑ(ρₛₑ)',
+        meaning: '量子系统与环境纠缠后，约化密度矩阵的非对角元衰减，表现为经典概率混合。这解释了为什么宏观物体没有量子叠加。'
+      }
+    };
+
+    // 层级数据
+    const levels = {
+      quantum: '当前处于量子层（10⁻¹⁰ m 以下）。系统表现为叠加态，测量结果遵循玻恩规则的概率分布。量子相干性主导系统行为。',
+      atomic: '在原子层（10⁻¹⁰ m），量子约束形成稳定的壳层结构。电子按泡利不相容原理填充轨道，产生元素周期律。',
+      molecular: '分子层（10⁻⁹ m）中，原子通过化学键结合。量子力学决定了键长、键角和分子对称性。',
+      macro: '在宏观层（>10⁻⁶ m），退相干效应使量子叠加消失，系统表现为经典概率混合。牛顿力学成为有效近似。'
+    };
+
+    // 获取DOM元素
+    const titleEl = document.getElementById('title');
+    const subtitleEl = document.getElementById('subtitle');
+    const categoryEl = document.getElementById('category');
+    const displayEl = document.getElementById('display');
+    const meaningEl = document.getElementById('meaning');
+    const levelDescEl = document.getElementById('level-desc');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 当前状态
+    let currentFormula = 'schrodinger';
+    let currentLevel = 'quantum';
+    let animTime = 0;
+
+    // 更新公式显示
+    function updateFormula(id) {
+      const f = formulas[id];
+      if (!f) return;
+      
+      titleEl.textContent = f.title;
+      subtitleEl.textContent = f.subtitle;
+      categoryEl.textContent = f.category;
+      displayEl.textContent = f.display;
+      meaningEl.textContent = f.meaning;
+    }
+
+    // 更新层级描述
+    function updateLevel(level) {
+      levelDescEl.textContent = levels[level];
+    }
+
+    // 绑定公式按钮点击
+    document.querySelectorAll('.formula-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // 移除所有active
+        document.querySelectorAll('.formula-btn').forEach(b => b.classList.remove('active'));
+        // 添加active到当前
+        this.classList.add('active');
+        // 更新
+        currentFormula = this.dataset.id;
+        updateFormula(currentFormula);
+      });
+    });
+
+    // 绑定层级卡片点击
+    document.querySelectorAll('.level-card').forEach(card => {
+      card.addEventListener('click', function() {
+        document.querySelectorAll('.level-card').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        currentLevel = this.dataset.level;
+        updateLevel(currentLevel);
+      });
+    });
+
+    // 滑块事件
+    document.getElementById('energy').addEventListener('input', function() {
+      document.getElementById('ev').textContent = this.value + ' eV';
+    });
+    document.getElementById('time').addEventListener('input', function() {
+      document.getElementById('tv').textContent = this.value + ' fs';
+    });
+    document.getElementById('alpha').addEventListener('input', function() {
+      document.getElementById('av').textContent = this.value;
+    });
+    document.getElementById('hbar').addEventListener('input', function() {
+      document.getElementById('hv').textContent = this.value;
+    });
+
+    // Canvas动画
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth * 2;
+      canvas.height = canvas.offsetHeight * 2;
+      ctx.scale(2, 2);
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    function draw() {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      const energy = parseFloat(document.getElementById('energy').value);
+      const alpha = parseFloat(document.getElementById('alpha').value);
+      
+      ctx.clearRect(0, 0, w, h);
+      
+      // 绘制坐标轴
+      ctx.strokeStyle = '#2a3542';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, h/2);
+      ctx.lineTo(w, h/2);
+      ctx.stroke();
+      
+      // 绘制波函数
+      ctx.strokeStyle = '#9d4edd';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 0; x < w; x++) {
+        const xn = (x / w) * 4 * Math.PI;
+        const psi = Math.sin(xn + animTime) * alpha + Math.sin(2*xn + animTime*1.5) * Math.sqrt(1-alpha*alpha);
+        const y = h/2 - psi * h * 0.35;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      
+      // 绘制概率密度
+      ctx.strokeStyle = '#4ecdc4';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let x = 0; x < w; x++) {
+        const xn = (x / w) * 4 * Math.PI;
+        const psi = Math.sin(xn + animTime) * alpha + Math.sin(2*xn + animTime*1.5) * Math.sqrt(1-alpha*alpha);
+        const prob = psi * psi;
+        const y = h - prob * h * 0.5 - 10;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      
+      // 图例
+      ctx.fillStyle = '#9d4edd';
+      ctx.fillRect(w - 120, 15, 15, 3);
+      ctx.fillStyle = '#8a9aaa';
+      ctx.font = '12px sans-serif';
+      ctx.fillText('波函数 ψ', w - 100, 20);
+      
+      ctx.fillStyle = '#4ecdc4';
+      ctx.fillRect(w - 120, 35, 15, 3);
+      ctx.fillStyle = '#8a9aaa';
+      ctx.fillText('概率密度 |ψ|²', w - 100, 40);
+      
+      animTime += 0.05;
+      requestAnimationFrame(draw);
+    }
+    
+    draw();
+    
+    console.log('页面初始化完成！点击左侧按钮可以切换公式。');
+  </script>
+</body>
+</html>
