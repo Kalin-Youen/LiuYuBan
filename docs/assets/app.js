@@ -174,6 +174,11 @@ const LAB_PAGES = {
     intro:
       "先用提示词把问题收紧，再让站内导读助手带着章节入口返回，让读者能直接继续读下去。",
   },
+  quantum: {
+    title: "量子力学公式可视化",
+    intro:
+      "完整量子力学体系公式的交互式可视化，从薛定谔方程到量子场论，支持参数调节与从微观到宏观的层级推演。",
+  },
 };
 const LAB_INFER_DOMAINS = ["fluid", "disk", "galaxy", "ai"];
 const LAB_CONTROL_DEFAULTS = {
@@ -8407,6 +8412,229 @@ function renderLabInfer() {
   syncInferState(false);
 }
 
+function renderLabQuantum() {
+  dom.labContent.innerHTML = `
+    <section class="lab-grid">
+      <article class="lab-card">
+        <p class="eyebrow">Quantum Formula Library</p>
+        <h3>量子力学公式体系</h3>
+        <p class="lab-section-copy">点击左侧公式名称，查看公式详情、物理意义与推导思路。调节参数观察波函数与概率密度的实时变化。</p>
+        <div class="quantum-layout">
+          <nav class="quantum-sidebar" id="quantum-sidebar"></nav>
+          <div class="quantum-main" id="quantum-main"></div>
+        </div>
+      </article>
+    </section>
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card">
+        <p class="eyebrow">Level Inference</p>
+        <h3>层级推演：从微观到宏观</h3>
+        <div class="quantum-levels" id="quantum-levels"></div>
+        <p id="quantum-level-desc" class="lab-section-copy" style="margin-top:12px;"></p>
+      </article>
+      <article class="lab-card">
+        <p class="eyebrow">Real-time Visualization</p>
+        <h3>实时可视化</h3>
+        <canvas id="quantum-canvas" style="width:100%;height:220px;background:rgba(0,0,0,0.3);border-radius:8px;"></canvas>
+        <div class="quantum-controls" id="quantum-controls"></div>
+      </article>
+    </section>
+    <section class="lab-grid lab-grid-two">
+      <article class="lab-card">
+        <p class="eyebrow">Usage Route</p>
+        <h3>怎么用这一页更顺手</h3>
+        <div class="lab-mini-points">
+          <span>先从基础公设开始，逐类浏览公式，理解每个公式的物理意义和推导思路。</span>
+          <span>调节下方滑块参数，观察波函数和概率密度如何随能量、时间、叠加系数变化。</span>
+          <span>切换层级推演卡片，理解从量子层到宏观层的过渡机制。</span>
+        </div>
+        <div class="lab-inline-actions">
+          <button class="reader-button" type="button" data-lab-nav="learn">回理论学习</button>
+          <button class="reader-button" type="button" data-lab-nav="infer">接研究推演</button>
+        </div>
+      </article>
+      <article class="lab-card">
+        <p class="eyebrow">Concept Network</p>
+        <h3>关联概念</h3>
+        <div class="quantum-tags">
+          <span class="quantum-tag">波函数坍缩</span>
+          <span class="quantum-tag">量子纠缠</span>
+          <span class="quantum-tag">对应原理</span>
+          <span class="quantum-tag">粗粒化</span>
+          <span class="quantum-tag">密度矩阵</span>
+          <span class="quantum-tag">有效理论</span>
+          <span class="quantum-tag">洛伦兹协变</span>
+          <span class="quantum-tag">路径积分</span>
+          <span class="quantum-tag">对称性破缺</span>
+          <span class="quantum-tag">热力学极限</span>
+        </div>
+      </article>
+    </section>
+    <style>
+      .quantum-layout { display:flex; gap:16px; margin-top:16px; }
+      .quantum-sidebar { width:220px; flex-shrink:0; max-height:420px; overflow-y:auto; }
+      .quantum-main { flex:1; }
+      .quantum-cat { margin-bottom:14px; }
+      .quantum-cat-title { font-size:0.75rem; color:var(--muted); margin-bottom:6px; padding-left:6px; border-left:2px solid var(--accent); }
+      .quantum-btn { display:block; width:100%; padding:8px 10px; margin-bottom:4px; background:rgba(157,78,221,0.08); border:1px solid transparent; border-radius:6px; color:var(--ink); cursor:pointer; text-align:left; font-size:0.85rem; transition:all 0.2s; }
+      .quantum-btn:hover { background:rgba(157,78,221,0.2); }
+      .quantum-btn.active { background:rgba(157,78,221,0.3); border-color:var(--accent); }
+      .quantum-btn .qname { font-weight:600; }
+      .quantum-btn .qdesc { font-size:0.7rem; color:var(--muted); margin-top:2px; }
+      .quantum-formula-box { background:rgba(0,0,0,0.2); border-radius:10px; padding:24px; margin:16px 0; text-align:center; font-size:1.2rem; font-family:'Times New Roman',serif; border:1px solid rgba(157,78,221,0.2); }
+      .quantum-meaning { color:var(--muted); font-size:0.9rem; line-height:1.8; }
+      .quantum-derivation { margin-top:16px; padding:16px; background:rgba(0,0,0,0.15); border-radius:8px; border-left:3px solid var(--accent); }
+      .quantum-derivation-title { color:var(--accent); font-size:0.85rem; margin-bottom:8px; }
+      .quantum-derivation-body { color:var(--muted); font-size:0.85rem; line-height:1.7; }
+      .quantum-levels { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+      .quantum-level { background:rgba(0,0,0,0.15); border-radius:8px; padding:14px; border:2px solid var(--line); cursor:pointer; transition:all 0.2s; text-align:center; }
+      .quantum-level:hover { border-color:var(--accent); }
+      .quantum-level.active { border-color:var(--accent); background:rgba(157,78,221,0.12); }
+      .quantum-level h4 { font-size:0.9rem; margin:6px 0 4px; }
+      .quantum-level p { font-size:0.75rem; color:var(--muted); }
+      .quantum-controls { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:14px; }
+      .quantum-ctrl-label { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.8rem; }
+      .quantum-ctrl-val { color:var(--accent); font-weight:600; }
+      .quantum-tags { display:flex; flex-wrap:wrap; gap:6px; }
+      .quantum-tag { display:inline-block; padding:4px 10px; border-radius:4px; font-size:0.75rem; background:rgba(157,78,221,0.2); color:#c77dff; }
+    </style>
+  `;
+
+  const formulas = {
+    schrodinger: { title:'薛定谔方程', subtitle:'非相对论量子演化', cat:'基础公设', display:'iℏ ∂ψ/∂t = Ĥ ψ', meaning:'描述量子态随时间的确定性幺正演化。左侧是波函数的时间变化率乘以 iℏ，右侧是哈密顿算符（动能+势能）作用在波函数上。保证概率守恒。', derivation:'从经典 E=p²/2m+V 出发，做算符替换 E→iℏ∂/∂t，p→-iℏ∇。定态 ψ(r,t)=ψ(r)e^{-iEt/ℏ} 时得 Ĥψ=Eψ。' },
+    dirac: { title:'狄拉克方程', subtitle:'相对论性量子力学', cat:'基础公设', display:'(iγᵘ∂ᵤ - m)ψ = 0', meaning:'将量子力学与狭义相对论统一。γᵘ 是狄拉克矩阵，ψ 是四分量旋量。自动包含电子自旋，预言反物质。', derivation:'为满足 E²=p²+m² 同时保持时间一阶导数，引入 4×4 矩阵 γᵘ 使 (γᵘpᵤ)²=p²。' },
+    uncertainty: { title:'不确定性原理', subtitle:'海森堡不等式', cat:'基础公设', display:'Δx · Δp ≥ ℏ/2', meaning:'位置和动量不能同时被精确测量。这是量子态空间结构的内在性质，不是测量技术的局限。', derivation:'由柯西-施瓦茨不等式：(ΔA)²(ΔB)² ≥ |⟨[A,B]⟩|²/4，代入 [x,p]=iℏ 即得。' },
+    superposition: { title:'叠加原理', subtitle:'量子态的线性组合', cat:'态与算符', display:'|ψ⟩ = Σₙ cₙ|n⟩,  Σₙ|cₙ|²=1', meaning:'量子系统可同时处于多个本征态的叠加。|cₙ|² 是测量得到本征值 n 的概率。叠加是量子干涉和量子计算的基础。', derivation:'薛定谔方程是线性的，解的任意线性组合也是解。' },
+    commutator: { title:'正则对易关系', subtitle:'量子化核心条件', cat:'态与算符', display:'[x̂, p̂] = iℏ', meaning:'位置和动量算符不对易，导致它们不能同时有确定值。这是量子化条件的数学核心。', derivation:'从 p̂=-iℏ∂/∂x 直接计算 [x̂,p̂]ψ = iℏψ。' },
+    density: { title:'密度矩阵', subtitle:'混合态的统一描述', cat:'态与算符', display:'ρ = Σᵢ pᵢ|ψᵢ⟩⟨ψᵢ|,  Trρ=1', meaning:'纯态 ρ²=ρ，混合态 Tr(ρ²)<1。对角元表示处于某态的概率，非对角元表示量子相干。', derivation:'⟨A⟩ = Σᵢ pᵢ⟨ψᵢ|A|ψᵢ⟩ = Tr(ρA)。' },
+    born: { title:'玻恩规则', subtitle:'测量概率诠释', cat:'测量与概率', display:'P(aₙ) = |⟨n|ψ⟩|² = |cₙ|²', meaning:'测量概率等于内积模平方。这是量子力学概率性的根本来源，是基本假设之一。', derivation:'玻恩1926年提出，将 |ψ|² 诠释为概率密度。' },
+    expectation: { title:'期望值', subtitle:'可观测量统计平均', cat:'测量与概率', display:'⟨A⟩ = ⟨ψ|Â|ψ⟩ = Tr(ρÂ)', meaning:'多次测量的统计平均值，可用狄拉克符号或密度矩阵的迹计算。', derivation:'|ψ⟩=Σcₙ|n⟩ 时，⟨A⟩=Σaₙ|cₙ|²。' },
+    heisenberg: { title:'海森堡运动方程', subtitle:'算符绘景动力学', cat:'动力学', display:'dÂ/dt = (i/ℏ)[Ĥ,Â] + ∂Â/∂t', meaning:'海森堡绘景中态固定、算符演化。形式类似经典泊松括号，[,]/iℏ 对应 {,}。', derivation:'A_H(t)=U†A_SU(t)，对时间求导即得。' },
+    path: { title:'费曼路径积分', subtitle:'量子力学拉格朗日表述', cat:'动力学', display:'K = ∫ 𝒟[x(t)] e^{iS/ℏ}', meaning:'传播子是所有路径的贡献之和，ℏ→0 时相长干涉路径趋于经典轨迹。', derivation:'时间分N段，插入完备性关系，N→∞ 得泛函积分。' },
+    pauli: { title:'泡利不相容原理', subtitle:'费米子排斥原理', cat:'多粒子系统', display:'Ψ(r₁,s₁; r₁,s₂) = 0', meaning:'两个全同费米子不能占据相同量子态。原子壳层结构和元素周期律的根本原因。', derivation:'费米子反对称性：Ψ(r,r)=-Ψ(r,r)=0。' },
+    entangle: { title:'量子纠缠', subtitle:'非可分量子态', cat:'多粒子系统', display:'|Ψ⁻⟩ = (1/√2)(|01⟩-|10⟩)', meaning:'纠缠态不能写成子系统态的直积。局域测量瞬间影响关联方，但不违反相对论。', derivation:'H_A⊗H_B 中的不可分解态。纠缠熵 S=-Tr(ρ_A lnρ_A) 量化纠缠。' },
+    second: { title:'二次量子化', subtitle:'多粒子场论描述', cat:'量子场论', display:'Ĥ = Σₖ ℏωₖ âₖ†âₖ', meaning:'产生湮灭算符描述多粒子系统。a†产生粒子，a湮灭粒子。自动处理全同粒子统计。', derivation:'单粒子波函数展开为模式，系数提升为满足对易关系的算符。' },
+    decoherence: { title:'退相干理论', subtitle:'环境诱导经典性', cat:'退相干与经典极限', display:'ρₛ = Trₑ(ρₛₑ)', meaning:'系统与环境纠缠后，约化密度矩阵非对角元衰减，表现为经典概率混合。解释宏观经典性。', derivation:'总系统幺正演化后对环境求迹，马尔可夫近似下由主方程描述。' },
+    lindblad: { title:'林布拉德方程', subtitle:'开放系统演化', cat:'退相干与经典极限', display:'dρ/dt = -(i/ℏ)[H,ρ] + Σₖγₖ(LₖρLₖ† - ½{Lₖ†Lₖ,ρ})', meaning:'描述开放系统密度矩阵的完全正定演化。第一项幺正，第二项耗散退相干。', derivation:'玻恩-马尔可夫近似下对环境影响求迹并粗粒化。' },
+    correspondence: { title:'对应原理', subtitle:'量子到经典过渡', cat:'退相干与经典极限', display:'lim(ℏ→0) [Â,B̂]/iℏ = {A,B}_PB', meaning:'ℏ→0 时对易子趋于泊松括号，海森堡方程趋于哈密顿方程。大量子数极限下趋于经典轨迹。', derivation:'A=A_cl+O(ℏ)，代入对易子展开得 [,]/iℏ={,}+O(ℏ)。' },
+  };
+
+  const categories = [
+    { name:'基础公设', ids:['schrodinger','dirac','uncertainty'] },
+    { name:'态与算符', ids:['superposition','commutator','density'] },
+    { name:'测量与概率', ids:['born','expectation'] },
+    { name:'动力学', ids:['heisenberg','path'] },
+    { name:'多粒子系统', ids:['pauli','entangle'] },
+    { name:'量子场论', ids:['second'] },
+    { name:'退相干与经典极限', ids:['decoherence','lindblad','correspondence'] },
+  ];
+
+  const levels = {
+    quantum: { icon:'🔬', title:'量子层', desc:'叠加、纠缠、概率幅', text:'当前处于量子层（10⁻¹⁰ m 以下）。系统表现为叠加态，测量结果遵循玻恩规则。量子相干性主导行为。' },
+    atomic: { icon:'⚛️', title:'原子层', desc:'能级、轨道、壳层', text:'原子层（10⁻¹⁰ m），量子约束形成稳定壳层结构。电子按泡利原理填充轨道，产生元素周期律。' },
+    molecular: { icon:'🧬', title:'分子层', desc:'化学键、振动、转动', text:'分子层（10⁻⁹ m），原子通过化学键结合。量子力学决定键长、键角和分子对称性。' },
+    macro: { icon:'🌍', title:'宏观层', desc:'经典物理、确定性', text:'宏观层（>10⁻⁶ m），退相干使量子叠加消失，系统表现为经典概率混合。牛顿力学成为有效近似。' },
+  };
+
+  const sidebar = document.getElementById('quantum-sidebar');
+  categories.forEach(cat => {
+    let html = `<div class="quantum-cat"><div class="quantum-cat-title">${cat.name}</div>`;
+    cat.ids.forEach((id, i) => {
+      const f = formulas[id];
+      html += `<button class="quantum-btn${i===0 && cat === categories[0] ? ' active' : ''}" data-qid="${id}"><div class="qname">${f.title}</div><div class="qdesc">${f.subtitle}</div></button>`;
+    });
+    html += '</div>';
+    sidebar.insertAdjacentHTML('beforeend', html);
+  });
+
+  const levelsEl = document.getElementById('quantum-levels');
+  Object.entries(levels).forEach(([key, lv], i) => {
+    levelsEl.insertAdjacentHTML('beforeend', `<div class="quantum-level${i===0?' active':''}" data-lv="${key}"><div style="font-size:1.4rem;">${lv.icon}</div><h4>${lv.title}</h4><p>${lv.desc}</p></div>`);
+  });
+  document.getElementById('quantum-level-desc').textContent = levels.quantum.text;
+
+  const controlsEl = document.getElementById('quantum-controls');
+  controlsEl.innerHTML = `
+    <div><div class="quantum-ctrl-label"><span>能量 E</span><span class="quantum-ctrl-val" id="q-ev">1.0 eV</span></div><input type="range" id="q-energy" min="0.1" max="10" step="0.1" value="1" style="width:100%;height:6px;background:var(--line);border-radius:3px;outline:none;-webkit-appearance:none;"></div>
+    <div><div class="quantum-ctrl-label"><span>叠加系数 α</span><span class="quantum-ctrl-val" id="q-av">0.707</span></div><input type="range" id="q-alpha" min="0" max="1" step="0.01" value="0.707" style="width:100%;height:6px;background:var(--line);border-radius:3px;outline:none;-webkit-appearance:none;"></div>
+  `;
+
+  function showFormula(id) {
+    const f = formulas[id];
+    if (!f) return;
+    document.getElementById('quantum-main').innerHTML = `
+      <h3 style="margin-bottom:4px;">${f.title}</h3>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:12px;">${f.subtitle} · ${f.cat}</p>
+      <div class="quantum-formula-box">${f.display}</div>
+      <p class="quantum-meaning">${f.meaning}</p>
+      <div class="quantum-derivation"><div class="quantum-derivation-title">推导思路</div><div class="quantum-derivation-body">${f.derivation}</div></div>
+    `;
+  }
+  showFormula('schrodinger');
+
+  sidebar.addEventListener('click', e => {
+    const btn = e.target.closest('.quantum-btn');
+    if (!btn) return;
+    sidebar.querySelectorAll('.quantum-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    showFormula(btn.dataset.qid);
+  });
+
+  levelsEl.addEventListener('click', e => {
+    const card = e.target.closest('.quantum-level');
+    if (!card) return;
+    levelsEl.querySelectorAll('.quantum-level').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    document.getElementById('quantum-level-desc').textContent = levels[card.dataset.lv].text;
+  });
+
+  document.getElementById('q-energy').addEventListener('input', function() {
+    document.getElementById('q-ev').textContent = this.value + ' eV';
+  });
+  document.getElementById('q-alpha').addEventListener('input', function() {
+    document.getElementById('q-av').textContent = this.value;
+  });
+
+  const canvas = document.getElementById('quantum-canvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    let animTime = 0;
+    function resize() {
+      canvas.width = canvas.offsetWidth * 2;
+      canvas.height = canvas.offsetHeight * 2;
+      ctx.scale(2, 2);
+    }
+    resize();
+    function draw() {
+      const w = canvas.offsetWidth, h = canvas.offsetHeight;
+      const alpha = parseFloat(document.getElementById('q-alpha')?.value || 0.707);
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = '#2a3542'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+      ctx.strokeStyle = '#9d4edd'; ctx.lineWidth = 2; ctx.beginPath();
+      for (let x = 0; x < w; x++) {
+        const xn = (x/w)*4*Math.PI;
+        const psi = Math.sin(xn+animTime)*alpha + Math.sin(2*xn+animTime*1.5)*Math.sqrt(1-alpha*alpha);
+        const y = h/2 - psi*h*0.3;
+        x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = '#4ecdc4'; ctx.lineWidth = 2; ctx.beginPath();
+      for (let x = 0; x < w; x++) {
+        const xn = (x/w)*4*Math.PI;
+        const psi = Math.sin(xn+animTime)*alpha + Math.sin(2*xn+animTime*1.5)*Math.sqrt(1-alpha*alpha);
+        const y = h - psi*psi*h*0.45 - 8;
+        x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      animTime += 0.05;
+      requestAnimationFrame(draw);
+    }
+    draw();
+    registerLabPlaygroundCleanup(() => { });
+  }
+}
+
 function renderLabPage(page) {
   const activePage = normalizeLabPage(page);
   state.activeLabPage = activePage;
@@ -8422,6 +8650,8 @@ function renderLabPage(page) {
     renderLabValidate();
   } else if (activePage === "prompt") {
     renderLabPrompt();
+  } else if (activePage === "quantum") {
+    renderLabQuantum();
   } else {
     renderLabInfer();
   }
