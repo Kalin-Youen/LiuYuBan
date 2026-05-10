@@ -8413,11 +8413,15 @@ function renderLabInfer() {
 }
 
 function renderLabQuantum() {
-  dom.labContent.innerHTML = `
-    <section class="lab-grid">
-      <article class="lab-card">
-        <p class="eyebrow">Quantum Formula Library</p>
-        <h3>量子力学公式体系</h3>
+  // Load quantum visualization engine
+  var script = document.createElement('script');
+  script.src = './assets/quantum-viz.js';
+  script.onload = function() { if (window._renderLabQuantumV2) window._renderLabQuantumV2(); };
+  document.head.appendChild(script);
+}
+
+function renderLabPage(page) {
+  const activePage = normalizeLabPage(page);
         <p class="lab-section-copy">点击左侧公式名称，查看公式详情、物理意义与推导思路。调节参数观察波函数与概率密度的实时变化。</p>
         <div class="quantum-layout">
           <nav class="quantum-sidebar" id="quantum-sidebar"></nav>

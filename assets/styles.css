@@ -186,10 +186,11 @@ input {
 
 .eyebrow {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--text-soft);
 }
 
 .page-overlay {
