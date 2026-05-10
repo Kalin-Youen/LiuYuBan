@@ -8413,230 +8413,977 @@ function renderLabInfer() {
 }
 
 function renderLabQuantum() {
-  // Load quantum visualization engine
-  var script = document.createElement('script');
-  script.src = './assets/quantum-viz.js';
-  script.onload = function() { if (window._renderLabQuantumV2) window._renderLabQuantumV2(); };
-  document.head.appendChild(script);
-}
+  var currentFormula = 'schrodinger';
+  var currentLevel = 'quantum';
+  var animFrameId = null;
+  var canvas, ctx, W, H;
+  var startTime = Date.now();
 
-function renderLabPage(page) {
-  const activePage = normalizeLabPage(page);
-        <p class="lab-section-copy">点击左侧公式名称，查看公式详情、物理意义与推导思路。调节参数观察波函数与概率密度的实时变化。</p>
-        <div class="quantum-layout">
-          <nav class="quantum-sidebar" id="quantum-sidebar"></nav>
-          <div class="quantum-main" id="quantum-main"></div>
-        </div>
-      </article>
-    </section>
-    <section class="lab-grid lab-grid-two">
-      <article class="lab-card">
-        <p class="eyebrow">Level Inference</p>
-        <h3>层级推演：从微观到宏观</h3>
-        <div class="quantum-levels" id="quantum-levels"></div>
-        <p id="quantum-level-desc" class="lab-section-copy" style="margin-top:12px;"></p>
-      </article>
-      <article class="lab-card">
-        <p class="eyebrow">Real-time Visualization</p>
-        <h3>实时可视化</h3>
-        <canvas id="quantum-canvas" style="width:100%;height:220px;background:rgba(0,0,0,0.3);border-radius:8px;"></canvas>
-        <div class="quantum-controls" id="quantum-controls"></div>
-      </article>
-    </section>
-    <section class="lab-grid lab-grid-two">
-      <article class="lab-card">
-        <p class="eyebrow">Usage Route</p>
-        <h3>怎么用这一页更顺手</h3>
-        <div class="lab-mini-points">
-          <span>先从基础公设开始，逐类浏览公式，理解每个公式的物理意义和推导思路。</span>
-          <span>调节下方滑块参数，观察波函数和概率密度如何随能量、时间、叠加系数变化。</span>
-          <span>切换层级推演卡片，理解从量子层到宏观层的过渡机制。</span>
-        </div>
-        <div class="lab-inline-actions">
-          <button class="reader-button" type="button" data-lab-nav="learn">回理论学习</button>
-          <button class="reader-button" type="button" data-lab-nav="infer">接研究推演</button>
-        </div>
-      </article>
-      <article class="lab-card">
-        <p class="eyebrow">Concept Network</p>
-        <h3>关联概念</h3>
-        <div class="quantum-tags">
-          <span class="quantum-tag">波函数坍缩</span>
-          <span class="quantum-tag">量子纠缠</span>
-          <span class="quantum-tag">对应原理</span>
-          <span class="quantum-tag">粗粒化</span>
-          <span class="quantum-tag">密度矩阵</span>
-          <span class="quantum-tag">有效理论</span>
-          <span class="quantum-tag">洛伦兹协变</span>
-          <span class="quantum-tag">路径积分</span>
-          <span class="quantum-tag">对称性破缺</span>
-          <span class="quantum-tag">热力学极限</span>
-        </div>
-      </article>
-    </section>
-    <style>
-      .quantum-layout { display:flex; gap:16px; margin-top:16px; }
-      .quantum-sidebar { width:220px; flex-shrink:0; max-height:420px; overflow-y:auto; }
-      .quantum-main { flex:1; }
-      .quantum-cat { margin-bottom:14px; }
-      .quantum-cat-title { font-size:0.75rem; color:var(--muted); margin-bottom:6px; padding-left:6px; border-left:2px solid var(--accent); }
-      .quantum-btn { display:block; width:100%; padding:8px 10px; margin-bottom:4px; background:rgba(157,78,221,0.08); border:1px solid transparent; border-radius:6px; color:var(--ink); cursor:pointer; text-align:left; font-size:0.85rem; transition:all 0.2s; }
-      .quantum-btn:hover { background:rgba(157,78,221,0.2); }
-      .quantum-btn.active { background:rgba(157,78,221,0.3); border-color:var(--accent); }
-      .quantum-btn .qname { font-weight:600; }
-      .quantum-btn .qdesc { font-size:0.7rem; color:var(--muted); margin-top:2px; }
-      .quantum-formula-box { background:rgba(0,0,0,0.2); border-radius:10px; padding:24px; margin:16px 0; text-align:center; font-size:1.2rem; font-family:'Times New Roman',serif; border:1px solid rgba(157,78,221,0.2); }
-      .quantum-meaning { color:var(--muted); font-size:0.9rem; line-height:1.8; }
-      .quantum-derivation { margin-top:16px; padding:16px; background:rgba(0,0,0,0.15); border-radius:8px; border-left:3px solid var(--accent); }
-      .quantum-derivation-title { color:var(--accent); font-size:0.85rem; margin-bottom:8px; }
-      .quantum-derivation-body { color:var(--muted); font-size:0.85rem; line-height:1.7; }
-      .quantum-levels { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-      .quantum-level { background:rgba(0,0,0,0.15); border-radius:8px; padding:14px; border:2px solid var(--line); cursor:pointer; transition:all 0.2s; text-align:center; }
-      .quantum-level:hover { border-color:var(--accent); }
-      .quantum-level.active { border-color:var(--accent); background:rgba(157,78,221,0.12); }
-      .quantum-level h4 { font-size:0.9rem; margin:6px 0 4px; }
-      .quantum-level p { font-size:0.75rem; color:var(--muted); }
-      .quantum-controls { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:14px; }
-      .quantum-ctrl-label { display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.8rem; }
-      .quantum-ctrl-val { color:var(--accent); font-weight:600; }
-      .quantum-tags { display:flex; flex-wrap:wrap; gap:6px; }
-      .quantum-tag { display:inline-block; padding:4px 10px; border-radius:4px; font-size:0.75rem; background:rgba(157,78,221,0.2); color:#c77dff; }
-    </style>
-  `;
-
-  const formulas = {
-    schrodinger: { title:'薛定谔方程', subtitle:'非相对论量子演化', cat:'基础公设', display:'iℏ ∂ψ/∂t = Ĥ ψ', meaning:'描述量子态随时间的确定性幺正演化。左侧是波函数的时间变化率乘以 iℏ，右侧是哈密顿算符（动能+势能）作用在波函数上。保证概率守恒。', derivation:'从经典 E=p²/2m+V 出发，做算符替换 E→iℏ∂/∂t，p→-iℏ∇。定态 ψ(r,t)=ψ(r)e^{-iEt/ℏ} 时得 Ĥψ=Eψ。' },
-    dirac: { title:'狄拉克方程', subtitle:'相对论性量子力学', cat:'基础公设', display:'(iγᵘ∂ᵤ - m)ψ = 0', meaning:'将量子力学与狭义相对论统一。γᵘ 是狄拉克矩阵，ψ 是四分量旋量。自动包含电子自旋，预言反物质。', derivation:'为满足 E²=p²+m² 同时保持时间一阶导数，引入 4×4 矩阵 γᵘ 使 (γᵘpᵤ)²=p²。' },
-    uncertainty: { title:'不确定性原理', subtitle:'海森堡不等式', cat:'基础公设', display:'Δx · Δp ≥ ℏ/2', meaning:'位置和动量不能同时被精确测量。这是量子态空间结构的内在性质，不是测量技术的局限。', derivation:'由柯西-施瓦茨不等式：(ΔA)²(ΔB)² ≥ |⟨[A,B]⟩|²/4，代入 [x,p]=iℏ 即得。' },
-    superposition: { title:'叠加原理', subtitle:'量子态的线性组合', cat:'态与算符', display:'|ψ⟩ = Σₙ cₙ|n⟩,  Σₙ|cₙ|²=1', meaning:'量子系统可同时处于多个本征态的叠加。|cₙ|² 是测量得到本征值 n 的概率。叠加是量子干涉和量子计算的基础。', derivation:'薛定谔方程是线性的，解的任意线性组合也是解。' },
-    commutator: { title:'正则对易关系', subtitle:'量子化核心条件', cat:'态与算符', display:'[x̂, p̂] = iℏ', meaning:'位置和动量算符不对易，导致它们不能同时有确定值。这是量子化条件的数学核心。', derivation:'从 p̂=-iℏ∂/∂x 直接计算 [x̂,p̂]ψ = iℏψ。' },
-    density: { title:'密度矩阵', subtitle:'混合态的统一描述', cat:'态与算符', display:'ρ = Σᵢ pᵢ|ψᵢ⟩⟨ψᵢ|,  Trρ=1', meaning:'纯态 ρ²=ρ，混合态 Tr(ρ²)<1。对角元表示处于某态的概率，非对角元表示量子相干。', derivation:'⟨A⟩ = Σᵢ pᵢ⟨ψᵢ|A|ψᵢ⟩ = Tr(ρA)。' },
-    born: { title:'玻恩规则', subtitle:'测量概率诠释', cat:'测量与概率', display:'P(aₙ) = |⟨n|ψ⟩|² = |cₙ|²', meaning:'测量概率等于内积模平方。这是量子力学概率性的根本来源，是基本假设之一。', derivation:'玻恩1926年提出，将 |ψ|² 诠释为概率密度。' },
-    expectation: { title:'期望值', subtitle:'可观测量统计平均', cat:'测量与概率', display:'⟨A⟩ = ⟨ψ|Â|ψ⟩ = Tr(ρÂ)', meaning:'多次测量的统计平均值，可用狄拉克符号或密度矩阵的迹计算。', derivation:'|ψ⟩=Σcₙ|n⟩ 时，⟨A⟩=Σaₙ|cₙ|²。' },
-    heisenberg: { title:'海森堡运动方程', subtitle:'算符绘景动力学', cat:'动力学', display:'dÂ/dt = (i/ℏ)[Ĥ,Â] + ∂Â/∂t', meaning:'海森堡绘景中态固定、算符演化。形式类似经典泊松括号，[,]/iℏ 对应 {,}。', derivation:'A_H(t)=U†A_SU(t)，对时间求导即得。' },
-    path: { title:'费曼路径积分', subtitle:'量子力学拉格朗日表述', cat:'动力学', display:'K = ∫ 𝒟[x(t)] e^{iS/ℏ}', meaning:'传播子是所有路径的贡献之和，ℏ→0 时相长干涉路径趋于经典轨迹。', derivation:'时间分N段，插入完备性关系，N→∞ 得泛函积分。' },
-    pauli: { title:'泡利不相容原理', subtitle:'费米子排斥原理', cat:'多粒子系统', display:'Ψ(r₁,s₁; r₁,s₂) = 0', meaning:'两个全同费米子不能占据相同量子态。原子壳层结构和元素周期律的根本原因。', derivation:'费米子反对称性：Ψ(r,r)=-Ψ(r,r)=0。' },
-    entangle: { title:'量子纠缠', subtitle:'非可分量子态', cat:'多粒子系统', display:'|Ψ⁻⟩ = (1/√2)(|01⟩-|10⟩)', meaning:'纠缠态不能写成子系统态的直积。局域测量瞬间影响关联方，但不违反相对论。', derivation:'H_A⊗H_B 中的不可分解态。纠缠熵 S=-Tr(ρ_A lnρ_A) 量化纠缠。' },
-    second: { title:'二次量子化', subtitle:'多粒子场论描述', cat:'量子场论', display:'Ĥ = Σₖ ℏωₖ âₖ†âₖ', meaning:'产生湮灭算符描述多粒子系统。a†产生粒子，a湮灭粒子。自动处理全同粒子统计。', derivation:'单粒子波函数展开为模式，系数提升为满足对易关系的算符。' },
-    decoherence: { title:'退相干理论', subtitle:'环境诱导经典性', cat:'退相干与经典极限', display:'ρₛ = Trₑ(ρₛₑ)', meaning:'系统与环境纠缠后，约化密度矩阵非对角元衰减，表现为经典概率混合。解释宏观经典性。', derivation:'总系统幺正演化后对环境求迹，马尔可夫近似下由主方程描述。' },
-    lindblad: { title:'林布拉德方程', subtitle:'开放系统演化', cat:'退相干与经典极限', display:'dρ/dt = -(i/ℏ)[H,ρ] + Σₖγₖ(LₖρLₖ† - ½{Lₖ†Lₖ,ρ})', meaning:'描述开放系统密度矩阵的完全正定演化。第一项幺正，第二项耗散退相干。', derivation:'玻恩-马尔可夫近似下对环境影响求迹并粗粒化。' },
-    correspondence: { title:'对应原理', subtitle:'量子到经典过渡', cat:'退相干与经典极限', display:'lim(ℏ→0) [Â,B̂]/iℏ = {A,B}_PB', meaning:'ℏ→0 时对易子趋于泊松括号，海森堡方程趋于哈密顿方程。大量子数极限下趋于经典轨迹。', derivation:'A=A_cl+O(ℏ)，代入对易子展开得 [,]/iℏ={,}+O(ℏ)。' },
+  var COLORS = {
+    purple: '#9d4edd', cyan: '#4ecdc4', red: '#ff6b6b', yellow: '#ffe66d',
+    bg: '#0a0a1a', bgLight: '#12122a', white: '#ffffff', gray: '#888899',
+    gridLine: 'rgba(255,255,255,0.06)', textDim: 'rgba(255,255,255,0.5)',
   };
 
-  const categories = [
-    { name:'基础公设', ids:['schrodinger','dirac','uncertainty'] },
-    { name:'态与算符', ids:['superposition','commutator','density'] },
-    { name:'测量与概率', ids:['born','expectation'] },
-    { name:'动力学', ids:['heisenberg','path'] },
-    { name:'多粒子系统', ids:['pauli','entangle'] },
-    { name:'量子场论', ids:['second'] },
-    { name:'退相干与经典极限', ids:['decoherence','lindblad','correspondence'] },
+  var formulas = [
+    { id: 'schrodinger', name: '薛定谔方程', symbol: 'iℏ∂ψ/∂t = Ĥψ', category: '基础公设' },
+    { id: 'dirac', name: '狄拉克方程', symbol: '(iγ^μ∂_μ − m)ψ = 0', category: '基础公设' },
+    { id: 'uncertainty', name: '不确定性原理', symbol: 'Δx·Δp ≥ ℏ/2', category: '基础公设' },
+    { id: 'superposition', name: '叠加原理', symbol: '|ψ⟩ = α|0⟩ + β|1⟩', category: '态与算符' },
+    { id: 'commutator', name: '对易关系', symbol: '[x̂,p̂] = iℏ', category: '态与算符' },
+    { id: 'density', name: '密度矩阵', symbol: 'ρ = Σ p_i|ψ_i⟩⟨ψ_i|', category: '态与算符' },
+    { id: 'born', name: '玻恩规则', symbol: 'P = |⟨φ|ψ⟩|²', category: '测量与概率' },
+    { id: 'expectation', name: '期望值', symbol: '⟨A⟩ = ⟨ψ|Â|ψ⟩', category: '测量与概率' },
+    { id: 'heisenberg', name: '海森堡方程', symbol: 'dÂ/dt = (i/ℏ)[Ĥ,Â]', category: '动力学' },
+    { id: 'path', name: '路径积分', symbol: 'K = ∫ e^(iS/ℏ) Dx', category: '动力学' },
+    { id: 'pauli', name: '泡利不相容原理', symbol: 'ψ(x₁,x₂) = −ψ(x₂,x₁)', category: '多粒子系统' },
+    { id: 'entangle', name: '量子纠缠', symbol: '|Φ⁺⟩ = (|00⟩+|11⟩)/√2', category: '多粒子系统' },
+    { id: 'second', name: '二次量子化', symbol: 'ψ̂(x) = Σ a_k φ_k(x)', category: '量子场论' },
+    { id: 'decoherence', name: '退相干', symbol: 'ρ → diag(ρ)', category: '退相干与经典极限' },
+    { id: 'lindblad', name: '林布拉德方程', symbol: 'dρ/dt = −(i/ℏ)[H,ρ] + L(ρ)', category: '退相干与经典极限' },
+    { id: 'correspondence', name: '对应原理', symbol: '量子 → 经典 (n→∞)', category: '退相干与经典极限' },
   ];
 
-  const levels = {
-    quantum: { icon:'🔬', title:'量子层', desc:'叠加、纠缠、概率幅', text:'当前处于量子层（10⁻¹⁰ m 以下）。系统表现为叠加态，测量结果遵循玻恩规则。量子相干性主导行为。' },
-    atomic: { icon:'⚛️', title:'原子层', desc:'能级、轨道、壳层', text:'原子层（10⁻¹⁰ m），量子约束形成稳定壳层结构。电子按泡利原理填充轨道，产生元素周期律。' },
-    molecular: { icon:'🧬', title:'分子层', desc:'化学键、振动、转动', text:'分子层（10⁻⁹ m），原子通过化学键结合。量子力学决定键长、键角和分子对称性。' },
-    macro: { icon:'🌍', title:'宏观层', desc:'经典物理、确定性', text:'宏观层（>10⁻⁶ m），退相干使量子叠加消失，系统表现为经典概率混合。牛顿力学成为有效近似。' },
+  var levels = [
+    { id: 'quantum', name: '量子层', icon: '⚛' },
+    { id: 'atomic', name: '原子层', icon: '🔬' },
+    { id: 'molecular', name: '分子层', icon: '🧬' },
+    { id: 'macro', name: '宏观层', icon: '🌍' },
+  ];
+
+  dom.labContent.innerHTML = '<div style="padding:16px;max-width:1200px;margin:0 auto;">'
+    + '<div style="text-align:center;margin-bottom:16px;">'
+    + '<h2 style="color:' + COLORS.purple + ';margin:0 0 4px;font-size:22px;">量子力学可视化实验室</h2>'
+    + '<p style="color:' + COLORS.textDim + ';margin:0;font-size:13px;">选择公式与层级，探索量子世界的不同尺度</p></div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px;" id="formula-tabs">'
+    + formulas.map(function(f) {
+      return '<button onclick="window._qf_setFormula(\'' + f.id + '\')" id="ftab-' + f.id + '" '
+        + 'style="padding:6px 12px;border-radius:6px;border:1px solid ' + COLORS.purple + '33;'
+        + 'background:' + (f.id === currentFormula ? COLORS.purple + '33' : COLORS.bgLight) + ';'
+        + 'color:' + (f.id === currentFormula ? COLORS.purple : COLORS.gray) + ';cursor:pointer;'
+        + 'font-size:12px;transition:all .2s;white-space:nowrap;" title="' + f.symbol + '">' + f.name + '</button>';
+    }).join('') + '</div>'
+    + '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;" id="level-tabs">'
+    + levels.map(function(l) {
+      return '<button onclick="window._qf_setLevel(\'' + l.id + '\')" id="ltab-' + l.id + '" '
+        + 'style="padding:5px 16px;border-radius:20px;border:1px solid ' + COLORS.cyan + '33;'
+        + 'background:' + (l.id === currentLevel ? COLORS.cyan + '33' : COLORS.bgLight) + ';'
+        + 'color:' + (l.id === currentLevel ? COLORS.cyan : COLORS.gray) + ';cursor:pointer;'
+        + 'font-size:12px;transition:all .2s;">' + l.icon + ' ' + l.name + '</button>';
+    }).join('') + '</div>'
+    + '<div id="formula-info" style="text-align:center;margin-bottom:12px;">'
+    + '<span style="color:' + COLORS.yellow + ';font-size:16px;font-family:serif;" id="formula-symbol"></span>'
+    + '<span style="color:' + COLORS.textDim + ';font-size:12px;margin-left:8px;" id="formula-category"></span></div>'
+    + '<div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid ' + COLORS.purple + '22;background:' + COLORS.bg + ';">'
+    + '<canvas id="quantum-canvas" style="display:block;width:100%;"></canvas></div>'
+    + '<div id="viz-legend" style="text-align:center;margin-top:10px;color:' + COLORS.textDim + ';font-size:11px;min-height:20px;"></div></div>';
+
+  canvas = document.getElementById('quantum-canvas');
+  ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    var container = canvas.parentElement;
+    var w = container.clientWidth;
+    var h = Math.min(w * 0.6, 520);
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = w; H = h;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function t() { return (Date.now() - startTime) / 1000; }
+
+  function clearBg() {
+    ctx.fillStyle = COLORS.bg; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = COLORS.gridLine; ctx.lineWidth = 0.5;
+    for (var x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (var y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  }
+
+  function drawAxis(x, y, w, h, xLabel, yLabel) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - h); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath(); ctx.moveTo(x + w, y); ctx.lineTo(x + w - 6, y - 3); ctx.lineTo(x + w - 6, y + 3); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x - 3, y - h + 6); ctx.lineTo(x + 3, y - h + 6); ctx.fill();
+    ctx.fillStyle = COLORS.textDim; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(xLabel, x + w / 2, y + 16);
+    ctx.save(); ctx.translate(x - 14, y - h / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText(yLabel, 0, 0); ctx.restore();
+  }
+
+  function drawLabel(text, x, y, color, size) {
+    ctx.fillStyle = color || COLORS.white;
+    ctx.font = (size || 12) + 'px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(text, x, y);
+  }
+
+  function hexToRgba(hex, a) {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+
+  function drawParticle(x, y, r, color) {
+    var rr = Math.max(1, r);
+    var grad = ctx.createRadialGradient(x, y, 0, x, y, rr);
+    grad.addColorStop(0, hexToRgba(color, 1));
+    grad.addColorStop(0.5, hexToRgba(color, 0.4));
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
+  }
+
+  var viz = {};
+
+  // ==================== 1. 薛定谔方程 ====================
+  viz.schrodinger_quantum = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, amp = H*0.3;
+    ctx.strokeStyle = COLORS.cyan; ctx.lineWidth = 2; ctx.beginPath();
+    for (var px = 0; px < W; px++) {
+      var x = (px/W)*4*Math.PI;
+      var psi = Math.sin(x - time*2) * Math.exp(-Math.pow((x - 2*Math.PI)/3, 2));
+      px === 0 ? ctx.moveTo(px, cy - psi*amp) : ctx.lineTo(px, cy - psi*amp);
+    } ctx.stroke();
+    ctx.fillStyle = hexToRgba(COLORS.purple, 0.3); ctx.beginPath(); ctx.moveTo(0, cy);
+    for (var px2 = 0; px2 < W; px2++) {
+      var x2 = (px2/W)*4*Math.PI;
+      var psi2 = Math.sin(x2 - time*2) * Math.exp(-Math.pow((x2 - 2*Math.PI)/3, 2));
+      ctx.lineTo(px2, cy - psi2*psi2*amp*1.5);
+    } ctx.lineTo(W, cy); ctx.fill();
+    drawAxis(40, cy+amp+20, W-80, amp*2+20, '位置 x', 'ψ(x,t)');
+    drawLabel('ψ(x,t)', W*0.2, cy-amp-10, COLORS.cyan);
+    drawLabel('|ψ|²', W*0.7, cy-amp*0.8, COLORS.purple);
   };
 
-  const sidebar = document.getElementById('quantum-sidebar');
-  categories.forEach(cat => {
-    let html = `<div class="quantum-cat"><div class="quantum-cat-title">${cat.name}</div>`;
-    cat.ids.forEach((id, i) => {
-      const f = formulas[id];
-      html += `<button class="quantum-btn${i===0 && cat === categories[0] ? ' active' : ''}" data-qid="${id}"><div class="qname">${f.title}</div><div class="qdesc">${f.subtitle}</div></button>`;
+  viz.schrodinger_atomic = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, maxR = Math.min(W,H)*0.38;
+    for (var i = 0; i < 2000; i++) {
+      var r = -Math.log(1-Math.random())*0.5, theta = Math.random()*Math.PI*2;
+      var prob = Math.exp(-2*r);
+      if (Math.random() < prob) {
+        ctx.fillStyle = hexToRgba(COLORS.cyan, prob*0.6);
+        ctx.beginPath(); ctx.arc(cx+r*Math.cos(theta)*maxR*0.3, cy+r*Math.sin(theta)*maxR*0.3, 1.2, 0, Math.PI*2); ctx.fill();
+      }
+    }
+    for (var i2 = 0; i2 < 1500; i2++) {
+      var r2 = -Math.log(1-Math.random())*1.0, theta2 = Math.random()*Math.PI*2;
+      var prob2 = r2*r2*Math.exp(-r2)*Math.pow(Math.cos(theta2),2);
+      if (Math.random() < prob2*0.5) {
+        ctx.fillStyle = hexToRgba(COLORS.purple, prob2*0.5);
+        ctx.beginPath(); ctx.arc(cx+r2*Math.cos(theta2+time*0.3)*maxR*0.2, cy+r2*Math.sin(theta2+time*0.3)*maxR*0.2, 1.5, 0, Math.PI*2); ctx.fill();
+      }
+    }
+    drawParticle(cx, cy, 8, COLORS.yellow);
+    drawLabel('氢原子轨道概率云 (1s + 2p)', cx, 24, COLORS.white, 13);
+  };
+
+  viz.schrodinger_molecular = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, sep = W*0.15;
+    ctx.strokeStyle = COLORS.gray; ctx.lineWidth = 2; ctx.beginPath();
+    for (var px = 0; px < W; px++) {
+      var x = (px-W/2)/(W*0.2);
+      var V = Math.min(Math.pow(x-1.5,2), Math.pow(x+1.5,2))*0.5;
+      px === 0 ? ctx.moveTo(px, cy+60-V*30) : ctx.lineTo(px, cy+60-V*30);
+    } ctx.stroke();
+    ctx.strokeStyle = COLORS.cyan; ctx.lineWidth = 2; ctx.beginPath();
+    for (var px2 = 0; px2 < W; px2++) {
+      var x2 = (px2-W/2)/(W*0.15);
+      var psi = Math.exp(-Math.pow(x2-1.5,2)) + Math.exp(-Math.pow(x2+1.5,2));
+      px2 === 0 ? ctx.moveTo(px2, cy-20-psi*40*Math.cos(time)) : ctx.lineTo(px2, cy-20-psi*40*Math.cos(time));
+    } ctx.stroke();
+    ctx.strokeStyle = COLORS.red; ctx.lineWidth = 2; ctx.beginPath();
+    for (var px3 = 0; px3 < W; px3++) {
+      var x3 = (px3-W/2)/(W*0.15);
+      var psi3 = Math.exp(-Math.pow(x3-1.5,2)) - Math.exp(-Math.pow(x3+1.5,2));
+      px3 === 0 ? ctx.moveTo(px3, cy-20-psi3*40*Math.cos(time)) : ctx.lineTo(px3, cy-20-psi3*40*Math.cos(time));
+    } ctx.stroke();
+    drawParticle(cx-sep, cy+40, 10, COLORS.yellow); drawParticle(cx+sep, cy+40, 10, COLORS.yellow);
+    drawLabel('双势阱波函数', cx, 24, COLORS.white, 13);
+    drawLabel('对称态(成键)', cx-W*0.2, cy-80, COLORS.cyan, 11);
+    drawLabel('反对称态(反键)', cx+W*0.2, cy-80, COLORS.red, 11);
+  };
+
+  viz.schrodinger_macro = function(time) {
+    clearBg(); var cx = W/2, cy = H/2;
+    ctx.strokeStyle = hexToRgba(COLORS.yellow, 0.3); ctx.lineWidth = 1; ctx.beginPath();
+    for (var i = 0; i < 300; i++) {
+      var tt = i*0.02;
+      var x = cx+Math.cos(tt*2+time*0.5)*W*0.3, y = cy+Math.sin(tt*3+time*0.3)*H*0.25;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    } ctx.stroke();
+    var ppx = cx+Math.cos(time)*W*0.3, ppy = cy+Math.sin(time*1.5)*H*0.25;
+    drawParticle(ppx, ppy, 12, COLORS.yellow);
+    ctx.strokeStyle = COLORS.red; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(ppx, ppy); ctx.lineTo(ppx-Math.sin(time)*W*0.045, ppy+Math.cos(time*1.5)*H*0.038); ctx.stroke();
+    drawLabel('经典极限：确定性轨迹', cx, 24, COLORS.white, 13);
+    drawLabel('Δx·Δp → 0', cx, H-12, COLORS.yellow, 12);
+  };
+
+  // ==================== 2. 狄拉克方程 ====================
+  viz.dirac_quantum = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, amp = H*0.25;
+    var comps = [{c:COLORS.cyan,l:'ψ₁(上自旋)',p:0},{c:COLORS.purple,l:'ψ₂(下自旋)',p:Math.PI/2},{c:COLORS.red,l:'ψ₃',p:Math.PI},{c:COLORS.yellow,l:'ψ₄',p:Math.PI*1.5}];
+    comps.forEach(function(comp, idx) {
+      var yOff = cy-amp+idx*amp*0.7;
+      ctx.strokeStyle = comp.c; ctx.lineWidth = 1.5; ctx.beginPath();
+      for (var px = 40; px < W-40; px++) {
+        var x = (px-40)/(W-80)*4*Math.PI;
+        var val = Math.sin(x*2-time*3+comp.p)*0.8;
+        px === 40 ? ctx.moveTo(px, yOff-val*amp*0.3) : ctx.lineTo(px, yOff-val*amp*0.3);
+      } ctx.stroke();
+      drawLabel(comp.l, 90, yOff-amp*0.35, comp.c, 10);
     });
-    html += '</div>';
-    sidebar.insertAdjacentHTML('beforeend', html);
-  });
+    drawLabel('狄拉克四分量旋量', cx, 24, COLORS.white, 13);
+  };
 
-  const levelsEl = document.getElementById('quantum-levels');
-  Object.entries(levels).forEach(([key, lv], i) => {
-    levelsEl.insertAdjacentHTML('beforeend', `<div class="quantum-level${i===0?' active':''}" data-lv="${key}"><div style="font-size:1.4rem;">${lv.icon}</div><h4>${lv.title}</h4><p>${lv.desc}</p></div>`);
-  });
-  document.getElementById('quantum-level-desc').textContent = levels.quantum.text;
+  viz.dirac_atomic = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, R = Math.min(W,H)*0.3;
+    ctx.strokeStyle = hexToRgba(COLORS.gray,0.3); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(cx, cy, R, R*0.3, 0, 0, Math.PI*2); ctx.stroke();
+    var sx = Math.sin(time*1.5)*R*0.8, sy = -Math.cos(time*1.5)*R*0.3;
+    ctx.strokeStyle = COLORS.cyan; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx+sx, cy+sy); ctx.stroke();
+    drawParticle(cx+sx, cy+sy, 6, COLORS.cyan);
+    ctx.strokeStyle = hexToRgba(COLORS.purple,0.4); ctx.lineWidth = 1; ctx.beginPath();
+    for (var a = 0; a < Math.PI*2; a += 0.05) {
+      var ppx = cx+Math.sin(a)*R*0.8, ppy = cy-Math.cos(a)*R*0.3;
+      a === 0 ? ctx.moveTo(ppx, ppy) : ctx.lineTo(ppx, ppy);
+    } ctx.stroke();
+    drawParticle(cx, cy, 5, COLORS.yellow);
+    drawLabel('电子自旋进动', cx, 24, COLORS.white, 13);
+    drawLabel('S⃗', cx+sx+12, cy+sy, COLORS.cyan, 12);
+  };
 
-  const controlsEl = document.getElementById('quantum-controls');
-  controlsEl.innerHTML = `
-    <div><div class="quantum-ctrl-label"><span>能量 E</span><span class="quantum-ctrl-val" id="q-ev">1.0 eV</span></div><input type="range" id="q-energy" min="0.1" max="10" step="0.1" value="1" style="width:100%;height:6px;background:var(--line);border-radius:3px;outline:none;-webkit-appearance:none;"></div>
-    <div><div class="quantum-ctrl-label"><span>叠加系数 α</span><span class="quantum-ctrl-val" id="q-av">0.707</span></div><input type="range" id="q-alpha" min="0" max="1" step="0.01" value="0.707" style="width:100%;height:6px;background:var(--line);border-radius:3px;outline:none;-webkit-appearance:none;"></div>
-  `;
+  viz.dirac_molecular = function(time) {
+    clearBg(); var cx = W/2, cy = H/2;
+    var lvls = [{n:'S₁/₂',e:0.8,c:COLORS.cyan,s:0},{n:'P₁/₂',e:0.5,c:COLORS.purple,s:-0.05},{n:'P₃/₂',e:0.35,c:COLORS.red,s:0.05},{n:'D₃/₂',e:0.15,c:COLORS.yellow,s:-0.03},{n:'D₅/₂',e:0.0,c:COLORS.cyan,s:0.03}];
+    var lx = W*0.3, rx = W*0.7;
+    drawLabel('无耦合', lx, 40, COLORS.textDim, 11);
+    lvls.forEach(function(l) { var y = cy-100+l.e*200; ctx.strokeStyle=l.c; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(lx-40,y); ctx.lineTo(lx+40,y); ctx.stroke(); });
+    drawLabel('有耦合', rx, 40, COLORS.textDim, 11);
+    lvls.forEach(function(l) { var y = cy-100+(l.e+l.s)*200; ctx.strokeStyle=l.c; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(rx-40,y); ctx.lineTo(rx+40,y); ctx.stroke(); drawLabel(l.n, rx+50, y+4, l.c, 10); });
+    ctx.strokeStyle = hexToRgba(COLORS.gray,0.2); ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    lvls.forEach(function(l) { ctx.beginPath(); ctx.moveTo(lx+40, cy-100+l.e*200); ctx.lineTo(rx-40, cy-100+(l.e+l.s)*200); ctx.stroke(); });
+    ctx.setLineDash([]);
+    drawLabel('自旋-轨道耦合能级分裂', cx, 24, COLORS.white, 13);
+  };
 
-  function showFormula(id) {
-    const f = formulas[id];
-    if (!f) return;
-    document.getElementById('quantum-main').innerHTML = `
-      <h3 style="margin-bottom:4px;">${f.title}</h3>
-      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:12px;">${f.subtitle} · ${f.cat}</p>
-      <div class="quantum-formula-box">${f.display}</div>
-      <p class="quantum-meaning">${f.meaning}</p>
-      <div class="quantum-derivation"><div class="quantum-derivation-title">推导思路</div><div class="quantum-derivation-body">${f.derivation}</div></div>
-    `;
-  }
-  showFormula('schrodinger');
+  viz.dirac_macro = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, barW = 30, maxH = H*0.35;
+    var items = [{l:'经典动能',v:1.0,c:COLORS.cyan},{l:'相对论修正',v:0.15+0.05*Math.sin(time),c:COLORS.red},{l:'精细结构',v:0.03+0.01*Math.sin(time*2),c:COLORS.yellow},{l:'超精细',v:0.005+0.002*Math.sin(time*3),c:COLORS.purple}];
+    var startX = cx-items.length*(barW+30)/2;
+    items.forEach(function(item, i) {
+      var x = startX+i*(barW+30), h = item.v*maxH;
+      var grad = ctx.createLinearGradient(x, cy, x, cy-h);
+      grad.addColorStop(0, hexToRgba(item.c,0.2)); grad.addColorStop(1, item.c);
+      ctx.fillStyle = grad; ctx.fillRect(x, cy-h, barW, h);
+      ctx.strokeStyle = item.c; ctx.lineWidth = 1; ctx.strokeRect(x, cy-h, barW, h);
+      drawLabel(item.l, x+barW/2, cy+16, COLORS.textDim, 9);
+    });
+    drawLabel('相对论修正的能量偏差', cx, 24, COLORS.white, 13);
+  };
 
-  sidebar.addEventListener('click', e => {
-    const btn = e.target.closest('.quantum-btn');
-    if (!btn) return;
-    sidebar.querySelectorAll('.quantum-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    showFormula(btn.dataset.qid);
-  });
+  // ==================== 3. 不确定性原理 ====================
+  viz.uncertainty_quantum = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, amp = H*0.25;
+    var sigma = 0.5+0.4*Math.sin(time*0.5), sigmaP = 1/(2*sigma);
+    ctx.strokeStyle = COLORS.cyan; ctx.lineWidth = 2; ctx.beginPath();
+    for (var px = 40; px < W-40; px++) {
+      var x = (px-W/2)/(W*0.15), psi = Math.exp(-x*x/(2*sigma*sigma));
+      px === 40 ? ctx.moveTo(px, cy-40-psi*amp) : ctx.lineTo(px, cy-40-psi*amp);
+    } ctx.stroke();
+    ctx.strokeStyle = COLORS.red; ctx.lineWidth = 2; ctx.beginPath();
+    for (var px2 = 40; px2 < W-40; px2++) {
+      var k = (px2-W/2)/(W*0.15), phi = Math.exp(-k*k*sigmaP*sigmaP*2);
+      px2 === 40 ? ctx.moveTo(px2, cy+40+phi*amp*0.8) : ctx.lineTo(px2, cy+40+phi*amp*0.8);
+    } ctx.stroke();
+    ctx.strokeStyle = hexToRgba(COLORS.cyan,0.4); ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    var dx = sigma*W*0.15;
+    ctx.beginPath(); ctx.moveTo(cx-dx, cy-40-amp); ctx.lineTo(cx-dx, cy-20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+dx, cy-40-amp); ctx.lineTo(cx+dx, cy-20); ctx.stroke();
+    ctx.setLineDash([]);
+    drawLabel('Δx', cx, cy-20, COLORS.cyan, 11); drawLabel('Δp', cx, cy+20, COLORS.red, 11);
+    drawLabel('Δx·Δp = '+(sigma*sigmaP).toFixed(2)+' (≥ 0.50)', cx, H-16, COLORS.yellow, 12);
+    drawLabel('高斯波包不确定性', cx, 24, COLORS.white, 13);
+  };
 
-  levelsEl.addEventListener('click', e => {
-    const card = e.target.closest('.quantum-level');
-    if (!card) return;
-    levelsEl.querySelectorAll('.quantum-level').forEach(c => c.classList.remove('active'));
-    card.classList.add('active');
-    document.getElementById('quantum-level-desc').textContent = levels[card.dataset.lv].text;
-  });
-
-  document.getElementById('q-energy').addEventListener('input', function() {
-    document.getElementById('q-ev').textContent = this.value + ' eV';
-  });
-  document.getElementById('q-alpha').addEventListener('input', function() {
-    document.getElementById('q-av').textContent = this.value;
-  });
-
-  const canvas = document.getElementById('quantum-canvas');
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    let animTime = 0;
-    function resize() {
-      canvas.width = canvas.offsetWidth * 2;
-      canvas.height = canvas.offsetHeight * 2;
-      ctx.scale(2, 2);
+  viz.uncertainty_atomic = function(time) {
+    clearBg(); var cx = W/2, cy = H/2;
+    drawLabel('位置空间', W*0.25, 50, COLORS.cyan, 12);
+    for (var i = 0; i < 1500; i++) {
+      var r = -Math.log(1-Math.random())*0.8, theta = Math.random()*Math.PI*2, prob = Math.exp(-2*r);
+      if (Math.random() < prob) { ctx.fillStyle = hexToRgba(COLORS.cyan, prob*0.5); ctx.beginPath(); ctx.arc(W*0.25+r*Math.cos(theta)*30, cy+r*Math.sin(theta)*30, 1.2, 0, Math.PI*2); ctx.fill(); }
     }
-    resize();
-    function draw() {
-      const w = canvas.offsetWidth, h = canvas.offsetHeight;
-      const alpha = parseFloat(document.getElementById('q-alpha')?.value || 0.707);
-      ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = '#2a3542'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
-      ctx.strokeStyle = '#9d4edd'; ctx.lineWidth = 2; ctx.beginPath();
-      for (let x = 0; x < w; x++) {
-        const xn = (x/w)*4*Math.PI;
-        const psi = Math.sin(xn+animTime)*alpha + Math.sin(2*xn+animTime*1.5)*Math.sqrt(1-alpha*alpha);
-        const y = h/2 - psi*h*0.3;
-        x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-      ctx.strokeStyle = '#4ecdc4'; ctx.lineWidth = 2; ctx.beginPath();
-      for (let x = 0; x < w; x++) {
-        const xn = (x/w)*4*Math.PI;
-        const psi = Math.sin(xn+animTime)*alpha + Math.sin(2*xn+animTime*1.5)*Math.sqrt(1-alpha*alpha);
-        const y = h - psi*psi*h*0.45 - 8;
-        x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-      animTime += 0.05;
-      requestAnimationFrame(draw);
+    drawLabel('动量空间', W*0.75, 50, COLORS.red, 12);
+    for (var i2 = 0; i2 < 1500; i2++) {
+      var r2 = -Math.log(1-Math.random())*0.5, theta2 = Math.random()*Math.PI*2, prob2 = Math.exp(-r2*r2*0.5);
+      if (Math.random() < prob2) { ctx.fillStyle = hexToRgba(COLORS.red, prob2*0.5); ctx.beginPath(); ctx.arc(W*0.75+r2*Math.cos(theta2)*50, cy+r2*Math.sin(theta2)*50, 1.2, 0, Math.PI*2); ctx.fill(); }
     }
-    draw();
-    registerLabPlaygroundCleanup(() => { });
+    drawLabel('电子云分布 vs 动量分布', cx, 24, COLORS.white, 13);
+  };
+
+  viz.uncertainty_molecular = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, a = W*0.2, b = H*0.2;
+    ctx.strokeStyle = hexToRgba(COLORS.gray,0.2); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(60,cy); ctx.lineTo(W-60,cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,40); ctx.lineTo(cx,H-40); ctx.stroke();
+    ctx.strokeStyle = COLORS.cyan; ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(cx,cy,a,b,0,0,Math.PI*2); ctx.stroke();
+    var angle = time*2;
+    drawParticle(cx+Math.cos(angle)*a, cy-Math.sin(angle)*b, 6, COLORS.yellow);
+    for (var i = 0; i < 200; i++) {
+      ctx.fillStyle = hexToRgba(COLORS.purple,0.05);
+      ctx.beginPath(); ctx.arc(cx+Math.random()*a*0.9*Math.cos(Math.random()*Math.PI*2), cy-Math.random()*b*0.9*Math.sin(Math.random()*Math.PI*2), 2, 0, Math.PI*2); ctx.fill();
+    }
+    drawLabel('分子振动相空间', cx, 24, COLORS.white, 13);
+    drawLabel('位置 x', W-50, cy+16, COLORS.textDim, 11); drawLabel('动量 p', cx+16, 50, COLORS.textDim, 11);
+  };
+
+  viz.uncertainty_macro = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, amp = H*0.3;
+    ctx.strokeStyle = COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for (var px = 40; px < W-40; px++) { var x=(px-cx)/5; px===40?ctx.moveTo(px,cy-Math.exp(-x*x/20000)*amp):ctx.lineTo(px,cy-Math.exp(-x*x/20000)*amp); } ctx.stroke();
+    ctx.strokeStyle = COLORS.red; ctx.lineWidth=2; ctx.beginPath();
+    for (var px2 = 40; px2 < W-40; px2++) { var x2=(px2-cx)/5; px2===40?ctx.moveTo(px2,cy+Math.exp(-x2*x2/20000)*amp*0.5):ctx.lineTo(px2,cy+Math.exp(-x2*x2/20000)*amp*0.5); } ctx.stroke();
+    drawParticle(cx, cy, 20, COLORS.yellow);
+    drawLabel('宏观物体', cx, cy+4, COLORS.bg, 10);
+    drawLabel('Δx·Δp → 0 (可忽略)', cx, H-16, COLORS.yellow, 12);
+    drawLabel('宏观极限：不确定性可忽略', cx, 24, COLORS.white, 13);
+  };
+
+  // ==================== 4. 叠加原理 ====================
+  viz.superposition_quantum = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, amp = H*0.3;
+    var slitY1 = cy-30, slitY2 = cy+30;
+    ctx.fillStyle = hexToRgba(COLORS.gray,0.5);
+    ctx.fillRect(W*0.35, 0, 4, slitY1-4); ctx.fillRect(W*0.35, slitY1+4, 4, slitY2-slitY1-8); ctx.fillRect(W*0.35, slitY2+4, 4, H-slitY2-4);
+    for (var px = W*0.4; px < W*0.95; px++) {
+      var x = px-W*0.35, d=60, lambda=20;
+      var intensity = Math.pow(Math.cos(Math.PI*d*(cy-(cy-amp)+(px-W*0.5)*0.5)/(lambda*x*0.1+1)),2);
+      ctx.fillStyle = hexToRgba(COLORS.cyan, Math.max(0,Math.min(1,intensity*0.8)));
+      ctx.fillRect(px, cy-amp, 2, amp*2);
+    }
+    for (var i = 0; i < 20; i++) { var phase = (time*0.5+i*0.3)%3; if (phase<1) drawParticle(W*0.1+phase*W*0.25, cy+Math.sin(time+i)*5, 3, COLORS.yellow); }
+    drawLabel('双缝干涉图样', cx, 24, COLORS.white, 13);
+    drawLabel('缝1', W*0.35-20, slitY1, COLORS.textDim, 10); drawLabel('缝2', W*0.35-20, slitY2, COLORS.textDim, 10);
+  };
+
+  viz.superposition_atomic = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, R = Math.min(W,H)*0.3;
+    ctx.strokeStyle = hexToRgba(COLORS.cyan,0.3); ctx.lineWidth=1; ctx.beginPath(); ctx.arc(cx,cy,R*0.3,0,Math.PI*2); ctx.stroke();
+    [COLORS.purple, COLORS.red, COLORS.yellow].forEach(function(color, idx) {
+      var a = (idx+1)*Math.PI/3+time*0.3;
+      ctx.strokeStyle = hexToRgba(color,0.6); ctx.lineWidth=2; ctx.beginPath();
+      for (var tt = 0; tt < Math.PI; tt += 0.05) {
+        var r = Math.cos(tt)*R*0.6;
+        var ppx = cx+Math.cos(a)*r*Math.cos(tt), ppy = cy+Math.sin(a)*r*Math.cos(tt)+Math.sin(tt)*R*0.2;
+        tt === 0 ? ctx.moveTo(ppx, ppy) : ctx.lineTo(ppx, ppy);
+      } ctx.stroke();
+    });
+    ctx.strokeStyle = hexToRgba(COLORS.yellow,0.5); ctx.lineWidth=2;
+    for (var i = 0; i < 4; i++) { var a2 = i*Math.PI/2+time*0.2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a2)*R*0.7, cy+Math.sin(a2)*R*0.7); ctx.stroke(); drawParticle(cx+Math.cos(a2)*R*0.7, cy+Math.sin(a2)*R*0.7, 4, COLORS.yellow); }
+    drawParticle(cx, cy, 6, COLORS.white);
+    drawLabel('杂化轨道叠加', cx, 24, COLORS.white, 13); drawLabel('sp³ 杂化', cx, H-16, COLORS.yellow, 12);
+  };
+
+  viz.superposition_molecular = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, atomR = W*0.12;
+    drawParticle(cx-atomR, cy, 20, hexToRgba(COLORS.cyan,0.3)); drawParticle(cx-atomR, cy, 8, COLORS.cyan);
+    drawParticle(cx+atomR, cy, 20, hexToRgba(COLORS.red,0.3)); drawParticle(cx+atomR, cy, 8, COLORS.red);
+    ctx.strokeStyle = COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for (var px = cx-atomR*2; px <= cx+atomR*2; px++) { var x=(px-cx)/(atomR*0.5); var psi=Math.exp(-x*x*0.3)*Math.cos(x*0.5+time); px===cx-atomR*2?ctx.moveTo(px,cy-80-psi*40):ctx.lineTo(px,cy-80-psi*40); } ctx.stroke();
+    drawLabel('σ(成键)', cx, cy-140, COLORS.cyan, 11);
+    ctx.strokeStyle = COLORS.red; ctx.lineWidth=2; ctx.beginPath();
+    for (var px2 = cx-atomR*2; px2 <= cx+atomR*2; px2++) { var x2=(px2-cx)/(atomR*0.5); var psi2=Math.exp(-x2*x2*0.3)*Math.sin(x2*0.5+time); px2===cx-atomR*2?ctx.moveTo(px2,cy+80+psi2*40):ctx.lineTo(px2,cy+80+psi2*40); } ctx.stroke();
+    drawLabel('σ*(反键)', cx, cy+140, COLORS.red, 11);
+    drawLabel('分子轨道（成键/反键）', cx, 24, COLORS.white, 13);
+  };
+
+  viz.superposition_macro = function(time) {
+    clearBg(); var cx = W/2, cy = H/2, amp = H*0.2;
+    ctx.strokeStyle = hexToRgba(COLORS.cyan,0.5); ctx.lineWidth=1.5; ctx.beginPath();
+    for (var px=40;px<W-40;px++){var x=(px/W)*4*Math.PI;px===40?ctx.moveTo(px,cy-30-Math.sin(x-time)*amp):ctx.lineTo(px,cy-30-Math.sin(x-time)*amp);}ctx.stroke();
+    ctx.strokeStyle = hexToRgba(COLORS.red,0.5); ctx.lineWidth=1.5; ctx.beginPath();
+    for (var px2=40;px2<W-40;px2++){var x2=(px2/W)*4*Math.PI;px2===40?ctx.moveTo(px2,cy-30-Math.sin(x2*1.5-time*1.2)*amp):ctx.lineTo(px2,cy-30-Math.sin(x2*1.5-time*1.2)*amp);}ctx.stroke();
+    ctx.strokeStyle = COLORS.yellow; ctx.lineWidth=2; ctx.beginPath();
+    for (var px3=40;px3<W-40;px3++){var x3=(px3/W)*4*Math.PI;px3===40?ctx.moveTo(px3,cy+50-(Math.sin(x3-time)+Math.sin(x3*1.5-time*1.2))*amp*0.5):ctx.lineTo(px3,cy+50-(Math.sin(x3-time)+Math.sin(x3*1.5-time*1.2))*amp*0.5);}ctx.stroke();
+    drawLabel('经典叠加（无干涉）', cx, 24, COLORS.white, 13);
+    drawLabel('波1', 70, cy-30-amp-10, COLORS.cyan, 11); drawLabel('波2', 70, cy-30-amp+4, COLORS.red, 11);
+  };
+
+  // ==================== 5. 对易关系 ====================
+  viz.commutator_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var x=(px-W/2)/(W*0.12);px===40?ctx.moveTo(px,cy-40-Math.exp(-x*x/2)*Math.cos(time*0.5)*amp):ctx.lineTo(px,cy-40-Math.exp(-x*x/2)*Math.cos(time*0.5)*amp);}ctx.stroke();
+    ctx.strokeStyle=COLORS.red; ctx.lineWidth=2; ctx.beginPath();
+    for(var px2=40;px2<W-40;px2++){var k=(px2-W/2)/(W*0.12);px2===40?ctx.moveTo(px2,cy+40+Math.exp(-k*k/2)*Math.cos(time*0.5)*amp):ctx.lineTo(px2,cy+40+Math.exp(-k*k/2)*Math.cos(time*0.5)*amp);}ctx.stroke();
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(cx,cy-20); ctx.lineTo(cx,cy+20); ctx.stroke(); ctx.setLineDash([]);
+    drawLabel('ℱ', cx+10, cy, COLORS.yellow, 14);
+    drawLabel('x 空间', W*0.12, cy-40-amp-10, COLORS.cyan, 12); drawLabel('p 空间(k)', W*0.12, cy+40+amp+16, COLORS.red, 12);
+    drawLabel('[x̂,p̂] = iℏ → 傅里叶变换对', cx, 24, COLORS.white, 13);
+  };
+
+  viz.commutator_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.25, L=R*0.8;
+    var lx=Math.sin(time*0.8)*L, ly=-Math.cos(time*0.8)*L*0.3;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+lx,cy+ly); ctx.stroke();
+    drawParticle(cx+lx, cy+ly, 5, COLORS.cyan);
+    ctx.fillStyle=hexToRgba(COLORS.purple,0.1); ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,L,-0.5,0.5); ctx.fill();
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy-L); ctx.stroke();
+    drawLabel('L⃗', cx+lx+10, cy+ly, COLORS.cyan, 12); drawLabel('Lz(确定)', cx+10, cy-L, COLORS.yellow, 11);
+    drawLabel('[Lx,Ly] = iℏLz', cx, 24, COLORS.white, 13);
+  };
+
+  viz.commutator_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.25;
+    var bondLen=R*(1+0.1*Math.sin(time*4)), angle=time*1.5;
+    var ax=cx+Math.cos(angle)*bondLen*0.5, ay=cy+Math.sin(angle)*bondLen*0.3;
+    var bx=cx-Math.cos(angle)*bondLen*0.5, by=cy-Math.sin(angle)*bondLen*0.3;
+    ctx.strokeStyle=COLORS.gray; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+    drawParticle(ax,ay,12,COLORS.cyan); drawParticle(bx,by,12,COLORS.red);
+    ctx.strokeStyle=hexToRgba(COLORS.yellow,0.3); ctx.lineWidth=1;
+    for(var i=0;i<30;i++){var tt=i*0.1,r=R*(1+0.1*Math.sin(tt*4)),a2=angle+tt*0.05;ctx.beginPath();ctx.moveTo(cx+Math.cos(a2)*r*0.5,cy+Math.sin(a2)*r*0.3);ctx.lineTo(cx-Math.cos(a2)*r*0.5,cy-Math.sin(a2)*r*0.3);ctx.stroke();}
+    drawLabel('振动-转动耦合', cx, 24, COLORS.white, 13); drawLabel('[J²,V] ≠ 0', cx, H-16, COLORS.yellow, 12);
+  };
+
+  viz.commutator_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.3;
+    ctx.strokeStyle=hexToRgba(COLORS.gray,0.15); ctx.lineWidth=1;
+    for(var i=-5;i<=5;i++){ctx.beginPath();for(var j=0;j<100;j++){var tt=j*0.05;j===0?ctx.moveTo(cx+(i*40+Math.cos(tt+time)*20),cy+Math.sin(tt+time)*amp):ctx.lineTo(cx+(i*40+Math.cos(tt+time)*20),cy+Math.sin(tt+time)*amp);}ctx.stroke();}
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var i2=0;i2<200;i2++){var tt2=i2*0.03;i2===0?ctx.moveTo(cx+Math.cos(tt2*2+time)*W*0.3,cy+Math.sin(tt2*3+time*0.7)*amp):ctx.lineTo(cx+Math.cos(tt2*2+time)*W*0.3,cy+Math.sin(tt2*3+time*0.7)*amp);}ctx.stroke();
+    drawLabel('经典泊松括号 {f,g}', cx, 24, COLORS.white, 13); drawLabel('{q,p} = 1 → 经典极限', cx, H-16, COLORS.yellow, 12);
+  };
+
+  // ==================== 6. 密度矩阵 ====================
+  viz.density_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.3;
+    ctx.strokeStyle=hexToRgba(COLORS.gray,0.3); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx,cy,R,R*0.3,0,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx,cy,R*0.3,R,0,0,Math.PI*2); ctx.stroke();
+    var theta=time*0.5, phi=time*0.8;
+    var sx=R*Math.sin(theta)*Math.cos(phi), sy=-R*Math.cos(theta);
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+sx,cy+sy); ctx.stroke();
+    drawParticle(cx+sx,cy+sy,5,COLORS.cyan);
+    var mixR=R*0.5, mx=mixR*Math.sin(theta+1)*Math.cos(phi+0.5), my=-mixR*Math.cos(theta+1);
+    ctx.strokeStyle=COLORS.red; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+mx,cy+my); ctx.stroke();
+    drawParticle(cx+mx,cy+my,5,COLORS.red);
+    drawLabel('|0⟩',cx,cy-R-10,COLORS.textDim,11); drawLabel('|1⟩',cx,cy+R+16,COLORS.textDim,11);
+    drawLabel('纯态',cx+sx+10,cy+sy,COLORS.cyan,10); drawLabel('混合态',cx+mx+10,cy+my,COLORS.red,10);
+    drawLabel('布洛赫球', cx, 24, COLORS.white, 13);
+  };
+
+  viz.density_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    var states=[{l:'|1⟩',p:0.6,c:COLORS.cyan},{l:'|2⟩',p:0.3,c:COLORS.purple},{l:'|3⟩',p:0.1,c:COLORS.red}];
+    var barW=50, startX=cx-states.length*(barW+40)/2;
+    states.forEach(function(s,i){var x=startX+i*(barW+40),h=s.p*H*0.4,y=cy+40-h;var grad=ctx.createLinearGradient(x,cy+40,x,y);grad.addColorStop(0,hexToRgba(s.c,0.2));grad.addColorStop(1,s.c);ctx.fillStyle=grad;ctx.fillRect(x,y,barW,h);drawLabel(s.l,x+barW/2,cy+56,s.c,11);drawLabel('P='+s.p,x+barW/2,y-8,COLORS.textDim,10);});
+    drawLabel('统计混合的原子态 ρ = Σ pᵢ|ψᵢ⟩⟨ψᵢ|', cx, 24, COLORS.white, 13);
+  };
+
+  viz.density_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, n=4, cellW=60, cellH=60;
+    var startX=cx-n*cellW/2, startY=cy-n*cellH/2;
+    var T=0.5+0.3*Math.sin(time*0.3), Z=1+Math.exp(-T)+Math.exp(-2*T)+Math.exp(-3*T);
+    for(var i=0;i<n;i++) for(var j=0;j<n;j++){
+      var val=i===j?Math.exp(-i*T)/Z:0.05*Math.exp(-Math.abs(i-j)*2/T);
+      var x=startX+j*cellW, y=startY+i*cellH, absV=Math.abs(val);
+      ctx.fillStyle=hexToRgba(COLORS.purple,absV*0.8); ctx.fillRect(x+2,y+2,cellW-4,cellH-4);
+      ctx.strokeStyle=hexToRgba(COLORS.gray,0.3); ctx.lineWidth=1; ctx.strokeRect(x,y,cellW,cellH);
+      ctx.fillStyle=absV>0.2?COLORS.white:COLORS.textDim; ctx.font='11px monospace'; ctx.textAlign='center';
+      ctx.fillText(val.toFixed(2),x+cellW/2,y+cellH/2+4);
+    }
+    drawLabel('热平衡态密度矩阵 (对角占优)', cx, startY-20, COLORS.white, 13);
+    drawLabel('T = '+T.toFixed(2), cx, startY+n*cellH+20, COLORS.yellow, 12);
+  };
+
+  viz.density_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.3;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var x=(px-cx)/(W*0.1);var p=(Math.exp(-x*x/2)+0.5*Math.exp(-(x-2)*(x-2)/2)+0.3*Math.exp(-(x+2.5)*(x+2.5)))/1.8;px===40?ctx.moveTo(px,cy-p*amp):ctx.lineTo(px,cy-p*amp);}ctx.stroke();
+    ctx.fillStyle=hexToRgba(COLORS.cyan,0.15); ctx.beginPath(); ctx.moveTo(40,cy);
+    for(var px2=40;px2<W-40;px2++){var x2=(px2-cx)/(W*0.1);var p2=(Math.exp(-x2*x2/2)+0.5*Math.exp(-(x2-2)*(x2-2)/2)+0.3*Math.exp(-(x2+2.5)*(x2+2.5)))/1.8;ctx.lineTo(px2,cy-p2*amp);}ctx.lineTo(W-40,cy);ctx.fill();
+    drawAxis(40,cy+10,W-80,amp+20,'状态空间','概率 P(x)');
+    drawLabel('经典概率分布', cx, 24, COLORS.white, 13);
+  };
+
+  // ==================== 7. 玻恩规则 ====================
+  viz.born_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var x=(px-W/2)/(W*0.12);var psi=Math.sin(x*2+time)*Math.exp(-x*x/4);px===40?ctx.moveTo(px,cy-30-psi*amp):ctx.lineTo(px,cy-30-psi*amp);}ctx.stroke();
+    ctx.fillStyle=hexToRgba(COLORS.purple,0.3); ctx.beginPath(); ctx.moveTo(40,cy+30);
+    for(var px2=40;px2<W-40;px2++){var x2=(px2-W/2)/(W*0.12);var psi2=Math.sin(x2*2+time)*Math.exp(-x2*x2/4);ctx.lineTo(px2,cy+30-psi2*psi2*amp*1.5);}ctx.lineTo(W-40,cy+30);ctx.fill();
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    for(var i=0;i<8;i++){var ppx=80+i*(W-160)/7;ctx.beginPath();ctx.moveTo(ppx,cy-10);ctx.lineTo(ppx,cy+10);ctx.stroke();}ctx.setLineDash([]);
+    drawLabel('ψ(x)',W*0.15,cy-30-amp-10,COLORS.cyan,12); drawLabel('P(x)=|ψ(x)|²',W*0.15,cy+30+amp+16,COLORS.purple,12);
+    drawLabel('玻恩规则：|ψ|² → 概率', cx, 24, COLORS.white, 13);
+  };
+
+  viz.born_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    var lvls=[{n:3,y:cy-H*0.3,c:COLORS.red},{n:2,y:cy,c:COLORS.yellow},{n:1,y:cy+H*0.3,c:COLORS.cyan}];
+    lvls.forEach(function(l){ctx.strokeStyle=l.c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-80,l.y);ctx.lineTo(cx+80,l.y);ctx.stroke();drawLabel('n='+l.n,cx+90,l.y+4,l.c,11);});
+    var ta=(Math.sin(time*2)+1)/2;
+    ctx.strokeStyle=hexToRgba(COLORS.purple,ta); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx-30,lvls[0].y+5); ctx.lineTo(cx-30,lvls[1].y-5); ctx.stroke();
+    ctx.fillStyle=hexToRgba(COLORS.purple,ta); ctx.beginPath(); ctx.moveTo(cx-30,lvls[1].y-5); ctx.lineTo(cx-34,lvls[1].y-12); ctx.lineTo(cx-26,lvls[1].y-12); ctx.fill();
+    drawLabel('P='+(ta*0.42).toFixed(2),cx-60,(lvls[0].y+lvls[1].y)/2,COLORS.purple,11);
+    drawLabel('跃迁概率', cx, 24, COLORS.white, 13);
+  };
+
+  viz.born_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.3;
+    for(var i=0;i<8;i++){var phase=((time*0.5+i*0.4)%2);if(phase<1.5)drawParticle(cx-R-50+phase*(R+50),cy+(i-3.5)*15,3,COLORS.yellow);}
+    drawParticle(cx,cy,15,COLORS.purple);
+    for(var r=20;r<R;r+=20){var alpha=Math.max(0,0.3-r/R*0.3)*(0.5+0.5*Math.sin(time*3-r*0.1));ctx.strokeStyle=hexToRgba(COLORS.cyan,alpha);ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,r+(time*30)%20,0,Math.PI*2);ctx.stroke();}
+    ctx.strokeStyle=hexToRgba(COLORS.red,0.4); ctx.lineWidth=1.5; ctx.beginPath();
+    for(var a=0;a<Math.PI*2;a+=0.05){var ds=Math.pow(1+Math.cos(a),2)*0.5;a===0?ctx.moveTo(cx+Math.cos(a)*ds*R*1.5,cy+Math.sin(a)*ds*R*1.5):ctx.lineTo(cx+Math.cos(a)*ds*R*1.5,cy+Math.sin(a)*ds*R*1.5);}ctx.closePath();ctx.stroke();
+    drawLabel('散射截面 dσ/dΩ', cx, 24, COLORS.white, 13);
+  };
+
+  viz.born_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, N=500, bins=20, counts=[];
+    for(var b=0;b<bins;b++)counts.push(0);
+    for(var i=0;i<N;i++){counts[Math.floor(Math.random()*bins)]++;}
+    var barW=(W-100)/bins, maxC=Math.max.apply(null,counts);
+    counts.forEach(function(c,i){var h=(c/maxC)*H*0.5;ctx.fillStyle=hexToRgba(COLORS.cyan,0.5);ctx.fillRect(50+i*barW+1,cy+40-h,barW-2,h);});
+    ctx.strokeStyle=COLORS.red; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=50;px<W-50;px++){var x=(px-50)/(W-100);var p=Math.exp(-Math.pow(x-0.5,2)/0.05)/0.5;px===50?ctx.moveTo(px,cy+40-p*H*0.45):ctx.lineTo(px,cy+40-p*H*0.45);}ctx.stroke();
+    drawLabel('N = '+N+' 次测量', cx, 24, COLORS.white, 13); drawLabel('频率 → 概率 (大数定律)', cx, H-16, COLORS.yellow, 12);
+  };
+
+  // ==================== 8. 期望值 ====================
+  viz.expectation_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25;
+    for(var s=0;s<5;s++){ctx.strokeStyle=hexToRgba(COLORS.cyan,0.2);ctx.lineWidth=1;ctx.beginPath();for(var px=40;px<W-40;px++){var x=(px-40)/(W-80)*4*Math.PI;px===40?ctx.moveTo(px,cy-(Math.sin(x-time+s)+Math.sin(x*3+s*2+time)*0.3)*amp*0.4):ctx.lineTo(px,cy-(Math.sin(x-time+s)+Math.sin(x*3+s*2+time)*0.3)*amp*0.4);}ctx.stroke();}
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=3; ctx.beginPath();
+    for(var px2=40;px2<W-40;px2++){var x2=(px2-40)/(W-80)*4*Math.PI;px2===40?ctx.moveTo(px2,cy-Math.sin(x2-time)*amp*0.4):ctx.lineTo(px2,cy-Math.sin(x2-time)*amp*0.4);}ctx.stroke();
+    drawLabel('⟨A⟩ = ⟨ψ|Â|ψ⟩ 系综平均', cx, 24, COLORS.white, 13);
+    drawLabel('单次测量',W*0.15,cy-amp-10,COLORS.cyan,11); drawLabel('期望值',W*0.7,cy-amp*0.5,COLORS.yellow,11);
+  };
+
+  viz.expectation_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, scale=H*0.35/15;
+    var lvls=[{n:1,E:-13.6,c:COLORS.cyan},{n:2,E:-3.4,c:COLORS.purple},{n:3,E:-1.51,c:COLORS.red},{n:4,E:-0.85,c:COLORS.yellow}];
+    lvls.forEach(function(l){var y=cy-l.E*scale;ctx.strokeStyle=l.c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-60,y);ctx.lineTo(cx+60,y);ctx.stroke();drawLabel('n='+l.n+' E='+l.E+'eV',cx+70,y+4,l.c,10);});
+    var mixE=-13.6*0.5+(-3.4)*0.3+(-1.51)*0.15+(-0.85)*0.05, ey=cy-mixE*scale;
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(cx-80,ey); ctx.lineTo(cx+80,ey); ctx.stroke(); ctx.setLineDash([]);
+    drawLabel('⟨E⟩ = '+mixE.toFixed(1)+' eV', cx, ey-10, COLORS.yellow, 11);
+    drawLabel('原子能级期望值', cx, 24, COLORS.white, 13);
+  };
+
+  viz.expectation_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    var atoms=[{x:cx-60,y:cy,ch:-0.5,c:COLORS.red,r:18},{x:cx+60,y:cy,ch:0.5,c:COLORS.cyan,r:18}];
+    for(var i=0;i<12;i++){var angle=(i/12)*Math.PI*2;ctx.strokeStyle=hexToRgba(COLORS.yellow,0.2);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(atoms[0].x+Math.cos(angle)*23,atoms[0].y+Math.sin(angle)*23);ctx.quadraticCurveTo(cx,cy+Math.sin(angle)*40,atoms[1].x+Math.cos(angle)*23,atoms[1].y+Math.sin(angle)*23);ctx.stroke();}
+    atoms.forEach(function(a){drawParticle(a.x,a.y,a.r,a.c);drawLabel(a.ch>0?'δ+':'δ-',a.x,a.y+4,COLORS.white,12);});
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(atoms[0].x,cy+40); ctx.lineTo(atoms[1].x,cy+40); ctx.stroke();
+    ctx.fillStyle=COLORS.yellow; ctx.beginPath(); ctx.moveTo(atoms[1].x,cy+40); ctx.lineTo(atoms[1].x-8,cy+36); ctx.lineTo(atoms[1].x-8,cy+44); ctx.fill();
+    drawLabel('μ⃗ = ⟨ψ|e·r|ψ⟩', cx, cy+60, COLORS.yellow, 12);
+    drawLabel('分子偶极矩', cx, 24, COLORS.white, 13);
+  };
+
+  viz.expectation_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=1.5; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var tt=(px-40)/(W-80)*10;var val=Math.sin(tt*2)+0.5*Math.sin(tt*5)+0.3*Math.cos(tt*3);px===40?ctx.moveTo(px,cy-val*amp*0.3):ctx.lineTo(px,cy-val*amp*0.3);}ctx.stroke();
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=2; ctx.setLineDash([8,4]); ctx.beginPath(); ctx.moveTo(40,cy); ctx.lineTo(W-40,cy); ctx.stroke(); ctx.setLineDash([]);
+    drawLabel('f(t)',W*0.1,cy-amp-10,COLORS.cyan,11); drawLabel('⟨f⟩_T = (1/T)∫f(t)dt', cx, H-16, COLORS.yellow, 12);
+    drawLabel('经典时间平均', cx, 24, COLORS.white, 13);
+  };
+
+  // ==================== 9. 海森堡方程 ====================
+  viz.heisenberg_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var tt=(px-40)/(W-80)*4*Math.PI;px===40?ctx.moveTo(px,cy-30-Math.cos(tt+time)*Math.cos(tt*0.5)*amp):ctx.lineTo(px,cy-30-Math.cos(tt+time)*Math.cos(tt*0.5)*amp);}ctx.stroke();
+    ctx.strokeStyle=COLORS.red; ctx.lineWidth=2; ctx.beginPath();
+    for(var px2=40;px2<W-40;px2++){var tt2=(px2-40)/(W-80)*4*Math.PI;px2===40?ctx.moveTo(px2,cy+30+Math.sin(tt2+time)*Math.cos(tt2*0.5)*amp):ctx.lineTo(px2,cy+30+Math.sin(tt2+time)*Math.cos(tt2*0.5)*amp);}ctx.stroke();
+    drawLabel('x̂(t)',W*0.1,cy-30-amp-10,COLORS.cyan,12); drawLabel('p̂(t)',W*0.1,cy+30+amp+16,COLORS.red,12);
+    drawLabel('dÂ/dt = (i/ℏ)[Ĥ,Â]', cx, 24, COLORS.white, 13);
+  };
+
+  viz.heisenberg_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.3, precA=time*0.6;
+    ctx.strokeStyle=hexToRgba(COLORS.cyan,0.4); ctx.lineWidth=1; ctx.beginPath();
+    for(var a=0;a<Math.PI*2;a+=0.05){var r=R*0.91/(1+0.3*Math.cos(a));var ppx=cx+r*Math.cos(a+precA),ppy=cy+r*Math.sin(a+precA)*0.6;a===0?ctx.moveTo(ppx,ppy):ctx.lineTo(ppx,ppy);}ctx.closePath();ctx.stroke();
+    var eA=time*2, eR=R*0.91/(1+0.3*Math.cos(eA));
+    drawParticle(cx+eR*Math.cos(eA+precA),cy+eR*Math.sin(eA+precA)*0.6,6,COLORS.cyan);
+    drawParticle(cx,cy,10,COLORS.yellow);
+    ctx.strokeStyle=hexToRgba(COLORS.red,0.3); ctx.lineWidth=1; ctx.beginPath(); ctx.ellipse(cx,cy,R*1.1,R*0.1,0,0,Math.PI*2); ctx.stroke();
+    drawLabel('轨道进动', cx, 24, COLORS.white, 13); drawLabel('dL/dt = τ', cx, H-16, COLORS.yellow, 12);
+  };
+
+  viz.heisenberg_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    var modes=[{l:'对称伸缩',f:1,c:COLORS.cyan},{l:'反对称伸缩',f:1.5,c:COLORS.red},{l:'弯曲振动',f:0.8,c:COLORS.yellow}];
+    modes.forEach(function(mode,idx){
+      var baseY=60+idx*(H-100)/3, ax=cx-50, bx=cx+50, ay=baseY, by=baseY;
+      if(idx===0){ax-=10*Math.sin(time*mode.f);bx+=10*Math.sin(time*mode.f);}
+      else if(idx===1){ax-=10*Math.sin(time*mode.f);bx-=10*Math.sin(time*mode.f);}
+      else{ay-=10*Math.sin(time*mode.f);by+=10*Math.sin(time*mode.f);}
+      drawParticle(ax,ay,10,mode.c); drawParticle(cx,baseY,10,mode.c); drawParticle(bx,by,10,mode.c);
+      ctx.strokeStyle=hexToRgba(mode.c,0.5); ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(cx,baseY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,baseY); ctx.lineTo(bx,by); ctx.stroke();
+      drawLabel(mode.l, 60, baseY+4, mode.c, 11);
+    });
+    drawLabel('分子振动模式', cx, 24, COLORS.white, 13);
+  };
+
+  viz.heisenberg_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.3;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var i=0;i<300;i++){var tt=i*0.02;i===0?ctx.moveTo(cx+Math.cos(tt+time)*W*0.3,cy+Math.sin(tt+time)*amp):ctx.lineTo(cx+Math.cos(tt+time)*W*0.3,cy+Math.sin(tt+time)*amp);}ctx.stroke();
+    drawParticle(cx+Math.cos(time)*W*0.3,cy+Math.sin(time)*amp,6,COLORS.yellow);
+    drawAxis(40,cy+amp+20,W-80,amp*2+20,'位置 x','动量 p');
+    drawLabel('经典运动方程 (相空间)', cx, 24, COLORS.white, 13);
+  };
+
+  // ==================== 10. 路径积分 ====================
+  viz.path_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, startX=60, endX=W-60, paths=8;
+    for(var i=0;i<paths;i++){var yOff=(i-paths/2+0.5)*(H*0.6/paths), phase=i*0.8+time, alpha=0.3+0.3*Math.cos(phase);
+    ctx.strokeStyle=hexToRgba(COLORS.cyan,alpha); ctx.lineWidth=1.5; ctx.beginPath();
+    for(var px=startX;px<=endX;px+=2){var tt=(px-startX)/(endX-startX);px===startX?ctx.moveTo(px,cy+yOff*Math.sin(tt*Math.PI)+Math.sin(tt*10+phase)*5):ctx.lineTo(px,cy+yOff*Math.sin(tt*Math.PI)+Math.sin(tt*10+phase)*5);}ctx.stroke();}
+    for(var i2=0;i2<50;i2++){var y=cy+(i2-25)*4,amp2=0;for(var j=0;j<paths;j++)amp2+=Math.cos(j*0.8+time+(j-paths/2+0.5)*(H*0.6/paths)*0.1);ctx.fillStyle=hexToRgba(COLORS.yellow,(amp2*amp2)/(paths*paths)*0.8);ctx.fillRect(endX-10,y,10,3);}
+    drawLabel('多路径干涉 K = ∫ e^(iS/ℏ) Dx', cx, 24, COLORS.white, 13);
+  };
+
+  viz.path_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    var lvls=[{n:3,y:cy-H*0.3,c:COLORS.red},{n:2,y:cy,c:COLORS.yellow},{n:1,y:cy+H*0.3,c:COLORS.cyan}];
+    lvls.forEach(function(l){ctx.strokeStyle=l.c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-100,l.y);ctx.lineTo(cx+100,l.y);ctx.stroke();drawLabel('n='+l.n,cx+110,l.y+4,l.c,11);});
+    var pa=(Math.sin(time*1.5)+1)/2;
+    ctx.strokeStyle=hexToRgba(COLORS.purple,pa); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx-40,lvls[0].y); ctx.lineTo(cx-40,lvls[2].y); ctx.stroke();
+    ctx.strokeStyle=hexToRgba(COLORS.yellow,pa*0.7); ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(cx+40,lvls[0].y); ctx.lineTo(cx+40,lvls[1].y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+40,lvls[1].y); ctx.lineTo(cx+40,lvls[2].y); ctx.stroke(); ctx.setLineDash([]);
+    drawLabel('直接',cx-60,(lvls[0].y+lvls[2].y)/2,COLORS.purple,10); drawLabel('间接',cx+55,(lvls[0].y+lvls[1].y)/2,COLORS.yellow,10);
+    drawLabel('电子跃迁路径', cx, 24, COLORS.white, 13);
+  };
+
+  viz.path_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.3;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var x=(px-40)/(W-80)*6-3;var E=Math.exp(-x*x)-0.5*Math.exp(-(x-2)*(x-2))+0.3*Math.exp(-(x+2)*(x+2));px===40?ctx.moveTo(px,cy-E*amp):ctx.lineTo(px,cy-E*amp);}ctx.stroke();
+    ctx.strokeStyle=COLORS.red; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(cx,cy-amp); ctx.lineTo(cx,cy+20); ctx.stroke(); ctx.setLineDash([]);
+    drawLabel('过渡态 ‡',cx,cy-amp-10,COLORS.red,11); drawLabel('反应物',cx-W*0.3,cy+30,COLORS.cyan,11); drawLabel('产物',cx+W*0.3,cy+30,COLORS.cyan,11);
+    drawLabel('化学反应路径', cx, 24, COLORS.white, 13);
+  };
+
+  viz.path_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    for(var i=0;i<6;i++){var yOff=(i-2.5)*30,action=Math.abs(yOff)*0.1,alpha=Math.max(0.05,0.5-action);
+    ctx.strokeStyle=hexToRgba(COLORS.gray,alpha); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(60,cy+yOff); ctx.quadraticCurveTo(cx,cy+yOff*0.5+Math.sin(time+i)*10,W-60,cy+yOff*0.3); ctx.stroke();}
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(60,cy); ctx.quadraticCurveTo(cx,cy+10*Math.sin(time*0.5),W-60,cy); ctx.stroke();
+    drawParticle(60,cy,5,COLORS.cyan); drawParticle(W-60,cy,5,COLORS.red);
+    drawLabel('A',60,cy-12,COLORS.cyan,12); drawLabel('B',W-60,cy-12,COLORS.red,12);
+    drawLabel('最小作用量路径 δS = 0', cx, 24, COLORS.white, 13);
+  };
+
+  // ==================== 11. 泡利不相容原理 ====================
+  viz.pauli_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var x=(px-W/2)/(W*0.12);var psiS=(Math.exp(-x*x)+Math.exp(-(x-2)*(x-2)))*Math.cos(time);px===40?ctx.moveTo(px,cy-30-psiS*amp*0.5):ctx.lineTo(px,cy-30-psiS*amp*0.5);}ctx.stroke();
+    ctx.strokeStyle=COLORS.red; ctx.lineWidth=2; ctx.beginPath();
+    for(var px2=40;px2<W-40;px2++){var x2=(px2-W/2)/(W*0.12);var psiA=(Math.exp(-x2*x2)-Math.exp(-(x2-2)*(x2-2)))*Math.cos(time);px2===40?ctx.moveTo(px2,cy+30+psiA*amp*0.5):ctx.lineTo(px2,cy+30+psiA*amp*0.5);}ctx.stroke();
+    var nodeX=cx+W*0.06; ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(nodeX,cy+10); ctx.lineTo(nodeX,cy+50); ctx.stroke(); ctx.setLineDash([]);
+    drawLabel('节点(ψ=0)',nodeX+5,cy+60,COLORS.yellow,10);
+    drawLabel('ψ_S(对称)',W*0.15,cy-30-amp-10,COLORS.cyan,11); drawLabel('ψ_A(反对称)',W*0.15,cy+30+amp+16,COLORS.red,11);
+    drawLabel('反对称波函数 ψ(x₁,x₂) = −ψ(x₂,x₁)', cx, 24, COLORS.white, 13);
+  };
+
+  viz.pauli_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, maxR=Math.min(W,H)*0.35;
+    var shells=[{n:1,max:2,elec:2,c:COLORS.cyan},{n:2,max:8,elec:8,c:COLORS.purple},{n:3,max:18,elec:8,c:COLORS.red}];
+    shells.forEach(function(shell,si){
+      var r=maxR*(si+1)/shells.length;
+      ctx.strokeStyle=hexToRgba(shell.c,0.3); ctx.lineWidth=1; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke();
+      for(var e=0;e<shell.elec;e++){var angle=(e/shell.elec)*Math.PI*2+time*(1+si*0.3);var ex=cx+Math.cos(angle)*r,ey=cy+Math.sin(angle)*r;var up=e%2===0;
+      drawParticle(ex,ey,5,up?COLORS.yellow:COLORS.red);ctx.strokeStyle=up?COLORS.yellow:COLORS.red;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ex,ey-8);ctx.lineTo(ex,ey+(up?-14:2));ctx.stroke();}
+      drawLabel('n='+shell.n+'('+shell.elec+'/'+shell.max+')',cx+r+10,cy-5,shell.c,10);
+    });
+    drawParticle(cx,cy,8,COLORS.white);
+    drawLabel('壳层填充', cx, 24, COLORS.white, 13);
+  };
+
+  viz.pauli_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, sep=W*0.15;
+    drawParticle(cx-sep,cy,25,hexToRgba(COLORS.cyan,0.2)); drawParticle(cx-sep,cy,10,COLORS.cyan);
+    drawParticle(cx+sep,cy,25,hexToRgba(COLORS.red,0.2)); drawParticle(cx+sep,cy,10,COLORS.red);
+    for(var i=0;i<4;i++){var phase=time*2+i*Math.PI/2;drawParticle(cx+Math.cos(phase)*sep*0.6,cy+Math.sin(phase)*20,4,COLORS.yellow);}
+    for(var i2=0;i2<100;i2++){var r=Math.random()*sep*1.2,a=Math.random()*Math.PI*2,prob=Math.exp(-r*r/(sep*sep*0.3));if(Math.random()<prob){ctx.fillStyle=hexToRgba(COLORS.yellow,prob*0.2);ctx.beginPath();ctx.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r*0.4,1.5,0,Math.PI*2);ctx.fill();}}
+    drawLabel('共价键（共享电子对）', cx, 24, COLORS.white, 13);
+  };
+
+  viz.pauli_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, gs=6, sp=Math.min(W,H)*0.08, sx=cx-(gs-1)*sp/2, sy=cy-(gs-1)*sp/2;
+    for(var i=0;i<gs;i++) for(var j=0;j<gs;j++){
+      var x=sx+i*sp, y=sy+j*sp, wb=Math.sin(time*2+i+j)*2;
+      drawParticle(x+wb,y+wb,6,COLORS.cyan);
+      if(i<gs-1){ctx.strokeStyle=hexToRgba(COLORS.purple,0.3);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+wb,y+wb);ctx.lineTo(sx+(i+1)*sp+Math.sin(time*2+i+1+j)*2,y+wb);ctx.stroke();}
+      if(j<gs-1){ctx.strokeStyle=hexToRgba(COLORS.purple,0.3);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+wb,y+wb);ctx.lineTo(x+wb,sy+(j+1)*sp+Math.sin(time*2+i+j+1)*2);ctx.stroke();}
+    }
+    drawLabel('物质稳定性（泡利排斥 → 晶格结构）', cx, 24, COLORS.white, 13);
+  };
+
+  // ==================== 12. 量子纠缠 ====================
+  viz.entangle_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.25;
+    var ax=cx-R*1.5, bx=cx+R*1.5;
+    drawParticle(ax,cy,15,COLORS.cyan); drawLabel('A',ax,cy+4,COLORS.bg,12);
+    drawParticle(bx,cy,15,COLORS.red); drawLabel('B',bx,cy+4,COLORS.bg,12);
+    for(var i=0;i<5;i++){var alpha=0.2+0.2*Math.sin(time*2+i);ctx.strokeStyle=hexToRgba(COLORS.purple,alpha);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ax+15,cy);ctx.bezierCurveTo(cx-30,cy-40+i*20,cx+30,cy+40-i*20,bx-15,cy);ctx.stroke();}
+    var mA=Math.sin(time*3)>0?'↑':'↓';
+    drawLabel('自旋A: '+mA,ax,cy-30,COLORS.cyan,11); drawLabel('自旋B: '+mA,bx,cy-30,COLORS.red,11);
+    drawLabel('|Φ⁺⟩ = (|00⟩+|11⟩)/√2', cx, 24, COLORS.white, 13);
+    drawLabel('完美关联：测量A即知B', cx, H-16, COLORS.yellow, 12);
+  };
+
+  viz.entangle_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.2;
+    drawParticle(cx,cy,12,COLORS.yellow); drawLabel('源',cx,cy+20,COLORS.yellow,11);
+    var dist=R*2*((time*0.3)%1);
+    if(dist<R*2){drawParticle(cx-dist,cy,6,COLORS.cyan);drawParticle(cx+dist,cy,6,COLORS.red);
+    ctx.strokeStyle=hexToRgba(COLORS.cyan,0.3);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx-dist,cy);ctx.stroke();
+    ctx.strokeStyle=hexToRgba(COLORS.red,0.3);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+dist,cy);ctx.stroke();}
+    ctx.strokeStyle=COLORS.gray; ctx.lineWidth=2;
+    ctx.strokeRect(cx-R*2.5,cy-20,15,40); ctx.strokeRect(cx+R*2.5-15,cy-20,15,40);
+    drawLabel('D₁',cx-R*2.5+7,cy+35,COLORS.textDim,10); drawLabel('D₂',cx+R*2.5-7,cy+35,COLORS.textDim,10);
+    drawLabel('EPR 对', cx, 24, COLORS.white, 13);
+  };
+
+  viz.entangle_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, m1x=cx-W*0.2, m2x=cx+W*0.2;
+    drawParticle(m1x-15,cy,10,COLORS.cyan); drawParticle(m1x+15,cy,10,COLORS.red);
+    ctx.strokeStyle=hexToRgba(COLORS.gray,0.5); ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(m1x-15,cy); ctx.lineTo(m1x+15,cy); ctx.stroke();
+    drawParticle(m2x-15,cy,10,COLORS.cyan); drawParticle(m2x+15,cy,10,COLORS.red);
+    ctx.beginPath(); ctx.moveTo(m2x-15,cy); ctx.lineTo(m2x+15,cy); ctx.stroke();
+    ctx.strokeStyle=hexToRgba(COLORS.purple,0.4); ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(m1x,cy-30); ctx.lineTo(m2x,cy-30); ctx.stroke(); ctx.setLineDash([]);
+    drawLabel('分子A',m1x,cy+30,COLORS.cyan,11); drawLabel('分子B',m2x,cy+30,COLORS.red,11);
+    drawLabel('纠缠关联',cx,cy-35,COLORS.purple,11);
+    drawLabel('分子纠缠态', cx, 24, COLORS.white, 13);
+  };
+
+  viz.entangle_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    drawLabel('经典关联',W*0.25,50,COLORS.cyan,12);
+    for(var i=0;i<100;i++){var x=W*0.1+Math.random()*W*0.3,y=80+Math.random()*(H-120);ctx.fillStyle=hexToRgba(Math.random()>0.5?COLORS.cyan:COLORS.red,0.3);ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();}
+    drawLabel('量子关联',W*0.75,50,COLORS.purple,12);
+    for(var i2=0;i2<50;i2++){var a=Math.random()*Math.PI*2,r=Math.random()*Math.min(W,H)*0.2;ctx.fillStyle=hexToRgba(COLORS.purple,0.3);ctx.beginPath();ctx.arc(W*0.75+Math.cos(a)*r,cy+Math.sin(a)*r,3,0,Math.PI*2);ctx.fill();}
+    drawLabel('S = '+(2+Math.sqrt(2)).toFixed(3)+' > 2 (违反贝尔不等式)', cx, H-16, COLORS.yellow, 12);
+    drawLabel('经典关联 vs 量子关联', cx, 24, COLORS.white, 13);
+  };
+
+  // ==================== 13. 二次量子化 ====================
+  viz.second_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    var states=[{n:0,l:'|0⟩',p:0.6,c:COLORS.gray},{n:1,l:'|1⟩',p:0.25,c:COLORS.cyan},{n:2,l:'|2⟩',p:0.1,c:COLORS.purple},{n:3,l:'|3⟩',p:0.04,c:COLORS.red},{n:4,l:'|4⟩',p:0.01,c:COLORS.yellow}];
+    var barW=50, startX=cx-states.length*(barW+20)/2;
+    states.forEach(function(s,i){var x=startX+i*(barW+20),h=s.p*H*0.5;var grad=ctx.createLinearGradient(x,cy+40,x,cy+40-h);grad.addColorStop(0,hexToRgba(s.c,0.2));grad.addColorStop(1,s.c);ctx.fillStyle=grad;ctx.fillRect(x,cy+40-h,barW,h);drawLabel(s.l,x+barW/2,cy+56,s.c,11);for(var p=0;p<s.n;p++)drawParticle(x+barW/2-(s.n-1)*6+p*12,cy+40-h-12,4,s.c);});
+    drawLabel('Fock 空间粒子数态', cx, 24, COLORS.white, 13); drawLabel('a†|n⟩ = √(n+1)|n+1⟩', cx, H-16, COLORS.yellow, 12);
+  };
+
+  viz.second_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.25;
+    drawParticle(cx,cy,15,COLORS.cyan);
+    for(var i=0;i<5;i++){var r=((time*40+i*30)%(R*1.5));ctx.strokeStyle=hexToRgba(COLORS.yellow,Math.max(0,0.5-r/(R*1.5)));ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();}
+    for(var i2=0;i2<6;i2++){var angle=time*0.5+i2*Math.PI/3,r2=R*0.5+Math.sin(time+i2)*R*0.3;drawParticle(cx+Math.cos(angle)*r2,cy+Math.sin(angle)*r2,4,COLORS.yellow);}
+    drawLabel('光子产生湮灭 a†|0⟩ = |1⟩', cx, 24, COLORS.white, 13);
+  };
+
+  viz.second_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, gs=5, sp=Math.min(W,H)*0.1, sx=cx-(gs-1)*sp/2, sy=cy-(gs-1)*sp/2, atoms=[];
+    for(var i=0;i<gs;i++) for(var j=0;j<gs;j++){var x=sx+i*sp,y=sy+j*sp,d=Math.sin(time*3-(i+j)*0.8)*8;atoms.push({x:x+d,y:y+d*0.5});drawParticle(x+d,y+d*0.5,5,COLORS.cyan);}
+    ctx.strokeStyle=hexToRgba(COLORS.yellow,0.3); ctx.lineWidth=1;
+    for(var i2=0;i2<gs;i2++){ctx.beginPath();for(var j2=0;j2<gs;j2++){var a=atoms[i2*gs+j2];j2===0?ctx.moveTo(a.x,a.y):ctx.lineTo(a.x,a.y);}ctx.stroke();}
+    drawLabel('声子激发（晶格振动量子）', cx, 24, COLORS.white, 13);
+  };
+
+  viz.second_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25, N=100;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var x=(px-40)/(W-80)*4*Math.PI;px===40?ctx.moveTo(px,cy-Math.sqrt(N)*Math.sin(x-time*2)*amp/Math.sqrt(N)):ctx.lineTo(px,cy-Math.sqrt(N)*Math.sin(x-time*2)*amp/Math.sqrt(N));}ctx.stroke();
+    for(var i=0;i<N;i++){var phase=(time*0.5+i*0.05)%4;if(phase<3){var ppx=40+phase*(W-80)/3;ctx.fillStyle=hexToRgba(COLORS.yellow,0.3);ctx.beginPath();ctx.arc(ppx,cy-Math.sin((ppx-40)/(W-80)*4*Math.PI-time*2)*amp/Math.sqrt(N)+(Math.random()-0.5)*10,1.5,0,Math.PI*2);ctx.fill();}}
+    drawLabel('N = '+N+' → 经典场极限', cx, 24, COLORS.white, 13); drawLabel('E ∝ √N', cx, H-16, COLORS.yellow, 12);
+  };
+
+  // ==================== 14. 退相干 ====================
+  viz.decoherence_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, n=4, cellW=55, cellH=55, decay=Math.exp(-0.5*(time%6));
+    var startX=cx-n*cellW/2, startY=cy-n*cellH/2;
+    for(var i=0;i<n;i++) for(var j=0;j<n;j++){
+      var val=i===j?0.5:0.3*decay*Math.cos(time+i+j), absV=Math.abs(val);
+      var x=startX+j*cellW, y=startY+i*cellH;
+      ctx.fillStyle=hexToRgba(i===j?COLORS.cyan:COLORS.purple,absV*0.8); ctx.fillRect(x+2,y+2,cellW-4,cellH-4);
+      ctx.strokeStyle=hexToRgba(COLORS.gray,0.3); ctx.lineWidth=1; ctx.strokeRect(x,y,cellW,cellH);
+      ctx.fillStyle=absV>0.2?COLORS.white:COLORS.textDim; ctx.font='10px monospace'; ctx.textAlign='center';
+      ctx.fillText(val.toFixed(2),x+cellW/2,y+cellH/2+4);
+    }
+    drawLabel('退相干因子: '+decay.toFixed(3), cx, startY-15, COLORS.yellow, 12);
+    drawLabel('密度矩阵非对角元衰减', cx, 24, COLORS.white, 13);
+  };
+
+  viz.decoherence_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.25, coh=Math.exp(-(time%6)/3);
+    ctx.strokeStyle=hexToRgba(COLORS.gray,0.2); ctx.lineWidth=1; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+    var vL=R*coh, angle=time*0.8;
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.sin(angle)*vL,cy-Math.cos(angle)*vL); ctx.stroke();
+    drawParticle(cx+Math.sin(angle)*vL,cy-Math.cos(angle)*vL,5,COLORS.cyan);
+    drawLabel('T₂ = 3s  相干度: '+coh.toFixed(2), cx, 24, COLORS.white, 13);
+  };
+
+  viz.decoherence_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25, coh=Math.exp(-0.3*(time%8));
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var x=(px-W/2)/(W*0.12);px===40?ctx.moveTo(px,cy-Math.exp(-x*x/2)*Math.cos(x*2-time)*amp):ctx.lineTo(px,cy-Math.exp(-x*x/2)*Math.cos(x*2-time)*amp);}ctx.stroke();
+    ctx.strokeStyle=hexToRgba(COLORS.purple,coh); ctx.lineWidth=2; ctx.beginPath();
+    for(var px2=40;px2<W-40;px2++){var x2=(px2-W/2)/(W*0.12);px2===40?ctx.moveTo(px2,cy+40+Math.exp(-x2*x2)*Math.sin(2*x2)*coh*Math.cos(time)*amp):ctx.lineTo(px2,cy+40+Math.exp(-x2*x2)*Math.sin(2*x2)*coh*Math.cos(time)*amp);}ctx.stroke();
+    drawLabel('相干度: '+coh.toFixed(2), cx, H-16, COLORS.yellow, 12);
+    drawLabel('分子退相干', cx, 24, COLORS.white, 13);
+  };
+
+  viz.decoherence_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.3;
+    for(var i=0;i<8;i++){var angle=time*0.5+i*Math.PI/4;drawParticle(cx+Math.cos(angle)*R*0.8,cy+Math.sin(angle)*R*0.6,6,COLORS.cyan);
+    ctx.strokeStyle=hexToRgba(COLORS.cyan,0.15);ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(cx,cy,R*0.8,R*0.6,0,0,Math.PI*2);ctx.stroke();}
+    drawLabel('完全经典（退相干完成）', cx, 24, COLORS.white, 13); drawLabel('量子叠加 → 经典确定态', cx, H-16, COLORS.yellow, 12);
+  };
+
+  // ==================== 15. 林布拉德方程 ====================
+  viz.lindblad_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.25;
+    ctx.strokeStyle=hexToRgba(COLORS.gray,0.2); ctx.lineWidth=1; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var i=0;i<200;i++){var tt=i*0.03,decay=Math.exp(-tt*0.5),angle=tt*3+time,r=R*decay;i===0?ctx.moveTo(cx+Math.cos(angle)*r,cy+Math.sin(angle)*r*0.6):ctx.lineTo(cx+Math.cos(angle)*r,cy+Math.sin(angle)*r*0.6);}ctx.stroke();
+    var cT=(time*0.5)%6, cD=Math.exp(-cT*0.5), cA=cT*3+time;
+    drawParticle(cx+Math.cos(cA)*R*cD,cy+Math.sin(cA)*R*cD*0.6,5,COLORS.yellow);
+    drawParticle(cx,cy,4,COLORS.red); drawLabel('稳态',cx+8,cy+12,COLORS.red,10);
+    drawLabel('dρ/dt = −(i/ℏ)[H,ρ] + L(ρ)', cx, 24, COLORS.white, 13);
+  };
+
+  viz.lindblad_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.3, exc=Math.exp(-(time%4));
+    var atomC=exc>0.5?COLORS.cyan:COLORS.gray;
+    drawParticle(cx,cy,15+exc*10,hexToRgba(atomC,0.3)); drawParticle(cx,cy,8,atomC);
+    var nP=Math.floor((1-exc)*8);
+    for(var i=0;i<nP;i++){var angle=i*Math.PI*2/8+time*0.3,r=R*(1-exc)*(0.5+0.5*Math.sin(time+i));drawParticle(cx+Math.cos(angle)*r,cy+Math.sin(angle)*r,3,COLORS.yellow);}
+    ctx.strokeStyle=COLORS.red; ctx.lineWidth=1.5; ctx.beginPath();
+    for(var px=W*0.6;px<W-20;px++){var tt=(px-W*0.6)/(W*0.35)*4;px===W*0.6?ctx.moveTo(px,cy+H*0.3-Math.exp(-tt)*H*0.5):ctx.lineTo(px,cy+H*0.3-Math.exp(-tt)*H*0.5);}ctx.stroke();
+    drawLabel('自发辐射', cx, 24, COLORS.white, 13); drawLabel('P(激发)', W*0.75, cy-H*0.2, COLORS.red, 10);
+  };
+
+  viz.lindblad_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2;
+    var lvls=[{l:'E₃',y:cy-H*0.3,c:COLORS.red},{l:'E₂',y:cy-H*0.1,c:COLORS.yellow},{l:'E₁',y:cy+H*0.15,c:COLORS.cyan},{l:'E₀',y:cy+H*0.35,c:COLORS.purple}];
+    lvls.forEach(function(l){ctx.strokeStyle=l.c;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-80,l.y);ctx.lineTo(cx+80,l.y);ctx.stroke();drawLabel(l.l,cx+90,l.y+4,l.c,11);});
+    var rP=(time*0.5)%4, rA=Math.max(0,1-rP/2);
+    for(var i=0;i<lvls.length-1;i++){ctx.strokeStyle=hexToRgba(COLORS.yellow,rA*(1-i*0.3));ctx.lineWidth=2;var x=cx-40+i*25;ctx.beginPath();ctx.moveTo(x,lvls[i].y+5);ctx.lineTo(x,lvls[i+1].y-5);ctx.stroke();ctx.fillStyle=hexToRgba(COLORS.yellow,rA*(1-i*0.3));ctx.beginPath();ctx.moveTo(x,lvls[i+1].y-5);ctx.lineTo(x-4,lvls[i+1].y-12);ctx.lineTo(x+4,lvls[i+1].y-12);ctx.fill();}
+    drawLabel('能量弛豫 T₁', cx, 24, COLORS.white, 13);
+  };
+
+  viz.lindblad_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, T_eq=300, T0=600, tau=3;
+    var T_curr=T_eq+(T0-T_eq)*Math.exp(-(time%8)/tau), barW=30, barH=H*0.5;
+    var grad=ctx.createLinearGradient(cx-barW/2,cy+barH/2,cx-barW/2,cy-barH/2);
+    grad.addColorStop(0,hexToRgba(COLORS.cyan,0.3));grad.addColorStop(0.5,hexToRgba(COLORS.yellow,0.5));grad.addColorStop(1,hexToRgba(COLORS.red,0.8));
+    ctx.fillStyle=grad; ctx.fillRect(cx-barW/2,cy-barH/2,barW,barH);
+    var tempY=cy+barH/2-((T_curr-200)/500)*barH;
+    ctx.strokeStyle=COLORS.white; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx-barW/2-10,tempY); ctx.lineTo(cx+barW/2+10,tempY); ctx.stroke();
+    drawLabel(T_curr.toFixed(0)+' K', cx+barW/2+20, tempY+4, COLORS.white, 12);
+    drawLabel('T_eq = 300 K', cx, cy+barH/2+20, COLORS.textDim, 11);
+    drawLabel('趋近热平衡', cx, 24, COLORS.white, 13);
+  };
+
+  // ==================== 16. 对应原理 ====================
+  viz.correspondence_quantum = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.25, hbar=0.1+0.9*(0.5+0.5*Math.cos(time*0.3));
+    ctx.strokeStyle=COLORS.cyan; ctx.lineWidth=2; ctx.beginPath();
+    for(var px=40;px<W-40;px++){var x=(px-W/2)/(W*0.1);var psi=Math.exp(-x*x/(2*hbar))/Math.sqrt(hbar);px===40?ctx.moveTo(px,cy-20-psi*amp*hbar):ctx.lineTo(px,cy-20-psi*amp*hbar);}ctx.stroke();
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(40,cy-20-amp*0.5); ctx.lineTo(W-40,cy-20-amp*0.5); ctx.stroke(); ctx.setLineDash([]);
+    drawLabel('ℏ = '+hbar.toFixed(2), cx, H-16, COLORS.yellow, 13);
+    drawLabel('量子分布',W*0.15,cy-20-amp-10,COLORS.cyan,11); drawLabel('经典极限',W*0.7,cy-30,COLORS.yellow,11);
+    drawLabel('ℏ → 0 过渡', cx, 24, COLORS.white, 13);
+  };
+
+  viz.correspondence_atomic = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.3, n=Math.floor(3+(time*0.5)%12);
+    ctx.strokeStyle=hexToRgba(COLORS.gray,0.2); ctx.lineWidth=1; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+    for(var i=0;i<500;i++){var r=Math.random()*R,theta=Math.random()*Math.PI*2,prob=r*r*Math.pow(Math.cos(n*theta/2),2)*Math.exp(-r/(R*0.5));
+    if(Math.random()<prob*0.01){ctx.fillStyle=hexToRgba(COLORS.cyan,prob*0.3);ctx.beginPath();ctx.arc(cx+Math.cos(theta)*r,cy+Math.sin(theta)*r,1,0,Math.PI*2);ctx.fill();}}
+    drawParticle(cx+Math.cos(time*2)*R*0.8,cy+Math.sin(time*2)*R*0.8,5,COLORS.yellow);
+    drawParticle(cx,cy,8,COLORS.white);
+    drawLabel('n = '+n+' (大量子数极限)', cx, 24, COLORS.white, 13); drawLabel('n→∞: 量子→经典轨道', cx, H-16, COLORS.yellow, 12);
+  };
+
+  viz.correspondence_molecular = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, amp=H*0.15;
+    for(var n=0;n<6;n++){var y=cy+60-(n+0.5)*amp*0.5;ctx.strokeStyle=hexToRgba(COLORS.cyan,0.3);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx-80,y);ctx.lineTo(cx+80,y);ctx.stroke();if(n<4)drawLabel('n='+n,cx+90,y+4,COLORS.textDim,9);}
+    var bL=60+20*Math.sin(time*4);
+    drawParticle(cx-bL/2,cy-60,12,COLORS.cyan); drawParticle(cx+bL/2,cy-60,12,COLORS.red);
+    ctx.strokeStyle=COLORS.gray; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(cx-bL/2,cy-60); ctx.lineTo(cx+bL/2,cy-60); ctx.stroke();
+    ctx.strokeStyle=COLORS.yellow; ctx.lineWidth=1.5; ctx.beginPath();
+    for(var px=cx-100;px<=cx+100;px++){var x=(px-cx)/30;px===cx-100?ctx.moveTo(px,cy+60-x*x*0.5*amp*0.5):ctx.lineTo(px,cy+60-x*x*0.5*amp*0.5);}ctx.stroke();
+    drawLabel('经典分子振动 (n→∞)', cx, 24, COLORS.white, 13);
+  };
+
+  viz.correspondence_macro = function(time) {
+    clearBg(); var cx=W/2, cy=H/2, R=Math.min(W,H)*0.3;
+    ctx.strokeStyle=hexToRgba(COLORS.gray,0.2); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.ellipse(cx,cy,R*1.2,R*0.8,0,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx,cy,R*0.7,R*0.5,0.3,0,Math.PI*2); ctx.stroke();
+    var p1A=time*0.5;
+    drawParticle(cx+Math.cos(p1A)*R*1.2,cy+Math.sin(p1A)*R*0.8,10,COLORS.cyan);
+    var p2A=time*1.2;
+    drawParticle(cx+Math.cos(p2A)*R*0.7*Math.cos(0.3)-Math.sin(p2A)*R*0.5*Math.sin(0.3),cy+Math.cos(p2A)*R*0.7*Math.sin(0.3)+Math.sin(p2A)*R*0.5*Math.cos(0.3),7,COLORS.red);
+    drawParticle(cx,cy,18,COLORS.yellow);
+    drawLabel('完全经典物理', cx, 24, COLORS.white, 13); drawLabel('量子效应可忽略 (ℏ→0)', cx, H-16, COLORS.yellow, 12);
+  };
+
+  // ==================== 动画循环 ====================
+  function animate() {
+    var time = t();
+    var key = currentFormula + '_' + currentLevel;
+    if (viz[key]) { viz[key](time); }
+    else { clearBg(); drawLabel('可视化开发中...', W/2, H/2, COLORS.textDim, 16); }
+    animFrameId = requestAnimationFrame(animate);
   }
+
+  // ==================== 更新信息 ====================
+  function updateInfo() {
+    var formula = formulas.filter(function(f) { return f.id === currentFormula; })[0];
+    if (formula) {
+      var symEl = document.getElementById('formula-symbol');
+      var catEl = document.getElementById('formula-category');
+      if (symEl) symEl.textContent = formula.symbol;
+      if (catEl) catEl.textContent = formula.category;
+    }
+    formulas.forEach(function(f) {
+      var btn = document.getElementById('ftab-' + f.id);
+      if (btn) { btn.style.background = f.id === currentFormula ? COLORS.purple + '33' : COLORS.bgLight; btn.style.color = f.id === currentFormula ? COLORS.purple : COLORS.gray; }
+    });
+    levels.forEach(function(l) {
+      var btn = document.getElementById('ltab-' + l.id);
+      if (btn) { btn.style.background = l.id === currentLevel ? COLORS.cyan + '33' : COLORS.bgLight; btn.style.color = l.id === currentLevel ? COLORS.cyan : COLORS.gray; }
+    });
+  }
+
+  // ==================== 切换函数 ====================
+  window._qf_setFormula = function(id) { currentFormula = id; updateInfo(); };
+  window._qf_setLevel = function(id) { currentLevel = id; updateInfo(); };
+
+  // ==================== 启动 ====================
+  updateInfo();
+  animate();
 }
 
 function renderLabPage(page) {
