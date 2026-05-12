@@ -2,3 +2,16 @@ __pycache__/
 *.pyc
 .tmp/
 tmp_*.gz
+.env
+.env.*
+!.env.example
+.concept_ai.local.json
+concept_ai.local.json
+config.local.json
+.collaboration/concept_runs/
+.collaboration/research_cycles/
+.collaboration/web_evidence/
+.collaboration/agent_cycles/
+.collaboration/human_feedback/
+.collaboration/human_qa/
+concept_console_*.log
